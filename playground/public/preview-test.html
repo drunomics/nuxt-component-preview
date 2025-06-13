@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Nuxt Component Preview Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .preview-target {
+      border: 2px dashed #ccc;
+      min-height: 200px;
+      padding: 20px;
+      margin: 20px 0;
+      background: #fafafa;
+    }
+    .preview-target:empty::before {
+      content: "Component will appear here";
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <h1>Nuxt Component Preview Test</h1>
+  <p>This page demonstrates how to use the nuxt-component-preview module.</p>
+
+  <!-- Hidden Nuxt app container -->
+  <div id="__nuxt" style="display:none;"></div>
+
+  <!-- Preview targets -->
+  <div id="preview-target-1" class="preview-target"></div>
+  <div id="preview-target-2" class="preview-target"></div>
+  <div id="preview-target-3" class="preview-target"></div>
+
+  <!-- Nuxt configuration with preview mode enabled -->
+  <script>
+    window.__NUXT__ = {};
+    window.__NUXT__.config = {
+      public: {
+        componentPreview: true
+      },
+      app: {
+        baseURL: "/",
+        buildId: "dev",
+        buildAssetsDir: "/_nuxt/",
+        cdnURL: ""
+      }
+    };
+  </script>
+
+  <!-- Load Nuxt entry script -->
+  <script type="module" src="/_nuxt/home/fago/projects/xb-dev/nuxt-component-preview/node_modules/nuxt/dist/app/entry.js"></script>
+
+  <!-- Test script that runs when Nuxt is ready -->
+  <script>
+    window.addEventListener('nuxt-component-preview:ready', (event) => {
+      const { nuxtApp } = event.detail;
+      
+      console.log('Nuxt Component Preview is ready!');
+
+      // Preview TestMarkup component
+      nuxtApp.$previewComponent(
+        'TestMarkup',
+        {
+          content: `
+            <div style="color: blue;">
+              <h2>Rendered HTML Content</h2>
+              <p>This is <strong>HTML</strong> content rendered through the TestMarkup component.</p>
+            </div>
+          `
+        },
+        '#preview-target-1'
+      );
+
+      // Preview TestCard component
+      nuxtApp.$previewComponent(
+        'TestCard',
+        {
+          title: 'Amazing Card Title',
+          description: 'This is a test card component with custom props.'
+        },
+        '#preview-target-2'
+      );
+
+      // Preview another TestCard with different props
+      nuxtApp.$previewComponent(
+        'TestCard',
+        {
+          title: 'Another Card',
+          description: 'This demonstrates multiple component instances.'
+        },
+        '#preview-target-3'
+      );
+    });
+  </script>
+</body>
+</html>
