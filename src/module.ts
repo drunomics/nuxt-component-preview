@@ -1,4 +1,4 @@
-import { defineNuxtModule, addPlugin, createResolver, addComponent } from '@nuxt/kit'
+import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
@@ -33,6 +33,12 @@ export default defineNuxtModule<ModuleOptions>({
         path: resolver.resolve('./runtime/router.options.ts'),
         optional: true
       })
+    })
+
+    // Add server route for entry.js redirect
+    addServerHandler({
+      route: '/nuxt-component-preview/entry.js',
+      handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/entry.js.get.ts')
     })
 
     // Don't set any default runtime config - only enabled via static HTML when needed
