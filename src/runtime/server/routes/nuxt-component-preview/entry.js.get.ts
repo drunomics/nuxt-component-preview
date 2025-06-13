@@ -1,3 +1,6 @@
+import { defineEventHandler, getHeader, sendRedirect } from 'h3'
+import { $fetch } from 'ofetch'
+
 export default defineEventHandler(async (event) => {
   // In development mode, dynamically discover the entry.js path
   if (process.dev || import.meta.dev) {
