@@ -110,6 +110,13 @@ This module includes comprehensive tests. To run them:
 npm run test
 ```
 
+## Releasing
+
+Run command
+```bash
+npm run release -- --release-as 1.0.0-alpha.1
+```
+
 ## About
 
 This module is maintained by [drunomics](https://drunomics.com/en) and inspired by the needs of decoupled Drupal projects, such as [nuxtjs-drupal-ce](https://github.com/drunomics/nuxtjs-drupal-ce).
