@@ -1,4 +1,6 @@
 import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler } from '@nuxt/kit'
+import { resolve, join } from 'path';
+import { promises as fs } from 'fs';
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
@@ -14,6 +16,7 @@ export default defineNuxtModule<ModuleOptions>({
   defaults: {},
   setup(_options, nuxt) {
     const resolver = createResolver(import.meta.url)
+    let resolvedEntryPath = ''
 
     // Add the component preview area component
     addComponent({
@@ -35,12 +38,44 @@ export default defineNuxtModule<ModuleOptions>({
       })
     })
 
-    // Add server route for entry.js redirect
+    // Resolve entry path for dev
+    if (nuxt.options.dev) {
+      nuxt.hook('ready', () => {
+        const appDir = nuxt.options.appDir
+        resolvedEntryPath = `/_nuxt${appDir}/entry.js`
+      })
+    }
+
+    // Configure Nitro
+    nuxt.hook('nitro:config', (nitroConfig) => {
+      nitroConfig.virtual = nitroConfig.virtual || {}
+      nitroConfig.virtual['#nuxt-entry-path'] = () => {
+        return `export default '${resolvedEntryPath}'`
+      }
+
+      nuxt.hook('nitro:build:public-assets', async (nitro) => {
+        if (!nuxt.options.dev) {
+          try {
+            const manifestPath = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.json')
+            const manifestContent = await fs.readFile(manifestPath, 'utf-8')
+            const manifest = JSON.parse(manifestContent)
+            const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
+            if (!entryKey || !manifest[entryKey]) {
+              throw new Error('Entry file not found in client manifest')
+            }
+            resolvedEntryPath = `/_nuxt/${manifest[entryKey].file}`
+            nitro.options.virtual['#nuxt-entry-path'] = () => `export default '${resolvedEntryPath}'`
+          } catch (error) {
+            console.error('CRITICAL: Failed to resolve Nuxt entry path:', error)
+            throw error
+          }
+        }
+      })
+    })
+
     addServerHandler({
       route: '/nuxt-component-preview/entry.js',
       handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/entry.js.get.ts')
     })
-
-    // Don't set any default runtime config - only enabled via static HTML when needed
   },
 })
