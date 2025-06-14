@@ -2,21 +2,21 @@
 
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
+[![ci](https://github.com/drunomics/nuxt-component-preview/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/drunomics/nuxt-component-preview/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/drunomics/nuxt-component-preview/branch/main/graph/badge.svg)](https://codecov.io/gh/drunomics/nuxt-component-preview)
 [![License][license-src]][license-href]
 [![Nuxt][nuxt-src]][nuxt-href]
 
-A Nuxt module that enables component previewing functionality for rendering Vue components in external contexts (like iframes or separate HTML pages).
+> A Nuxt module by [drunomics](https://drunomics.com/en) for previewing Vue components in external contexts (like iframes or separate HTML pages). Originally developed for use with decoupled Drupal environments, but can be used with any backend.
 
 - [✨ &nbsp;Release Notes](/CHANGELOG.md)
 
 ## Features
 
-- 🎭 **Component Preview Mode**: Conditionally render components based on runtime configuration
-- 🚀 **Production Safe**: Module is inactive by default, only activates when explicitly enabled
-- 🔄 **Dynamic Rendering**: Use Vue's `h()` function to render components with props
-- 📦 **Auto-imported Components**: Automatically registers `ComponentPreviewArea` component
+- 🎭 **Component Preview Mode**: Conditionally render components for previewing in isolation
+- 🚀 **Production Safe**: Inactive by default, only activates when explicitly enabled
 - 🎯 **Target Rendering**: Render components to specific DOM elements using CSS selectors
-- 🧪 **Testing Ready**: Includes comprehensive test coverage and playground setup
+- 🧪 **Testing Ready**: Comprehensive test coverage and playground setup
 
 ## Quick Setup
 
@@ -26,199 +26,71 @@ Install the module to your Nuxt application:
 npm install nuxt-component-preview
 ```
 
-Add the module to your `nuxt.config.ts`:
+Add it to your `nuxt.config.ts`:
 
-```typescript
+```ts
 export default defineNuxtConfig({
-  modules: ['nuxt-component-preview']
+  modules: [
+    'nuxt-component-preview',
+  ],
+  // Optionally configure here
+  // componentPreview: { ... }
 })
 ```
 
-Update your `app.vue` to include the preview area:
+## Usage
+
+### Rendering Component Previews
+
+To render a component preview, use the `<ComponentPreviewArea />` component in your app. 
+
+**Example `app.vue`**
 
 ```vue
 <template>
-  <ComponentPreviewArea v-if="useRuntimeConfig().public.componentPreview.inPreviewMode === true" />
+  <ComponentPreviewArea v-if="useRuntimeConfig().public.componentPreview" />
   <NuxtPage v-else />
 </template>
 ```
 
+**Important:** Then, when rendering outside of a Nuxt app (e.g., in a static HTML file or external context), you must manually set the runtime config on `window.__NUXT__` before loading the Nuxt entry script to activate it. See the [playground/public/preview-test.html](./playground/public/preview-test.html) for a working example.
 
-## Usage
-
-### Basic HTML Setup
-
-Create an HTML page that loads your Nuxt application with preview mode enabled:
+#### Example: Setting runtime config in a static HTML file
 
 ```html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Component Preview</title>
-</head>
-<body>
-  <!-- Hidden Nuxt app container -->
-  <div id="__nuxt" style="display:none;"></div>
-
-  <!-- Target elements for component rendering -->
-  <div id="preview-target-1" class="preview-container"></div>
-  <div id="preview-target-2" class="preview-container"></div>
-
-  <!-- Configure Nuxt with preview mode enabled -->
-  <script>
-    window.__NUXT__ = {
-      config: {
-        public: {
-          componentPreview: {
-            inPreviewMode: true
-          }
-        },
-        app: {
-          baseURL: "/",
-          buildId: "dev",
-          buildAssetsDir: "/_nuxt/",
-          cdnURL: "http://localhost:3000"
-        }
-      }
-    };
-  </script>
-
-  <!-- Load Nuxt -->
-  <script type="module" src="http://localhost:3000/_nuxt/entry.js"></script>
-
-  <!-- Preview components when ready -->
-  <script>
-    window.addEventListener('nuxt-component-preview:ready', (event) => {
-      const { nuxtApp } = event.detail;
-
-      // Preview a component
-      nuxtApp.$previewComponent(
-        'MyComponent',
-        { title: 'Hello World', description: 'Component preview example' },
-        '#preview-target-1'
-      );
-    });
-  </script>
-</body>
-</html>
-```
-
-### API Reference
-
-#### `$previewComponent(componentName, props, target)`
-
-Renders a Vue component to a target element.
-
-**Parameters:**
-- `componentName` (string): Name of the registered Vue component
-- `props` (object): Props to pass to the component
-- `target` (string|Element): CSS selector or DOM element where component will be rendered
-
-**Returns:**
-- Object with `unmount()` method to remove the component
-
-**Example:**
-```javascript
-const preview = nuxtApp.$previewComponent(
-  'TestCard',
-  { title: 'My Title', content: 'My content' },
-  '#target-element'
-);
-
-// Later, remove the component
-preview.unmount();
-```
-
-### Events
-
-#### `nuxt-component-preview:ready`
-
-Dispatched when Nuxt is ready and the preview functionality is available.
-
-```javascript
-window.addEventListener('nuxt-component-preview:ready', (event) => {
-  const { nuxtApp } = event.detail;
-  // nuxtApp.$previewComponent is now available
-});
-```
-
-### Runtime Configuration
-
-The module adds the following runtime configuration:
-
-```typescript
-{
-  public: {
-    componentPreview: {
-      inPreviewMode: false // Set to true to enable preview mode
+<script>
+  window.__NUXT__ = window.__NUXT__ || {};
+  window.__NUXT__.config = {
+    public: {
+      componentPreview: true
     }
-  }
-}
+  };
+</script>
 ```
 
-## Development
+You can then load the Nuxt entry script as shown in [preview-test.html](./playground/public/preview-test.html).
 
-### Testing the Module
+This setup is ideal for integrating with a Drupal backend (or any backend) that needs to render Nuxt components in isolation, such as for CMS previews or design systems.
 
-The module includes a playground with test components and a static HTML test page:
+## Testing
 
-1. Start the development server:
-   ```bash
-   npm run dev
-   ```
+This module includes comprehensive tests. To run them:
 
-2. Visit the test page:
-   ```
-   http://localhost:3000/test-preview.html
-   ```
+```bash
+npm run test
+```
 
-3. Run tests:
-   ```bash
-   npm run test
-   ```
+## About
 
-## Contribution
+This module is maintained by [drunomics](https://drunomics.com/en) and inspired by the needs of decoupled Drupal projects, such as [nuxtjs-drupal-ce](https://github.com/drunomics/nuxtjs-drupal-ce).
 
-<details>
-  <summary>Local development</summary>
-  
-  ```bash
-  # Install dependencies
-  npm install
-  
-  # Generate type stubs
-  npm run dev:prepare
-  
-  # Develop with the playground
-  npm run dev
-  
-  # Build the playground
-  npm run dev:build
-  
-  # Run ESLint
-  npm run lint
-  
-  # Run Vitest
-  npm run test
-  npm run test:watch
-  
-  # Release new version
-  npm run release
-  ```
+---
 
-</details>
-
-
-<!-- Badges -->
-[npm-version-src]: https://img.shields.io/npm/v/nuxt-component-preview/latest.svg?style=flat&colorA=020420&colorB=00DC82
+[npm-version-src]: https://img.shields.io/npm/v/nuxt-component-preview/latest.svg?style=flat-square
 [npm-version-href]: https://npmjs.com/package/nuxt-component-preview
-
-[npm-downloads-src]: https://img.shields.io/npm/dm/nuxt-component-preview.svg?style=flat&colorA=020420&colorB=00DC82
-[npm-downloads-href]: https://npm.chart.dev/nuxt-component-preview
-
-[license-src]: https://img.shields.io/npm/l/nuxt-component-preview.svg?style=flat&colorA=020420&colorB=00DC82
+[npm-downloads-src]: https://img.shields.io/npm/dm/nuxt-component-preview.svg?style=flat-square
+[npm-downloads-href]: https://npmjs.com/package/nuxt-component-preview
+[license-src]: https://img.shields.io/npm/l/nuxt-component-preview.svg?style=flat-square
 [license-href]: https://npmjs.com/package/nuxt-component-preview
-
-[nuxt-src]: https://img.shields.io/badge/Nuxt-020420?logo=nuxt.js
+[nuxt-src]: https://img.shields.io/badge/Nuxt-3-green.svg
 [nuxt-href]: https://nuxt.com
