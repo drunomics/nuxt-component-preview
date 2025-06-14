@@ -72,6 +72,36 @@ You can then load the Nuxt entry script as shown in [preview-test.html](./playgr
 
 This setup is ideal for integrating with a Drupal backend (or any backend) that needs to render Nuxt components in isolation, such as for CMS previews or design systems.
 
+**Example: Rendering a component preview via JavaScript**
+
+You can use the `$previewComponent` method on the Nuxt app instance to dynamically render a component into a target element. For example, in a static HTML file:
+
+```html
+<script>
+  window.addEventListener('nuxt-component-preview:ready', (event) => {
+    const { nuxtApp } = event.detail;
+    console.log('Nuxt Component Preview is ready!');
+
+    // Preview TestMarkup component
+    nuxtApp.$previewComponent(
+      'TestMarkup',
+      {
+        content: `
+          <div style="color: blue;">
+            <h2>Rendered HTML Content</h2>
+            <p>This is <strong>HTML</strong> content rendered through the TestMarkup component.</p>
+          </div>
+        `
+      },
+      '#preview-target-1'
+    );
+    // ...more examples in preview-test.html
+  });
+</script>
+```
+
+See [playground/public/preview-test.html](./playground/public/preview-test.html) for a full working example including multiple components and targets.
+
 ## Testing
 
 This module includes comprehensive tests. To run them:
