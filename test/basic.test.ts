@@ -20,7 +20,6 @@ describe('nuxt-component-preview module', async () => {
     expect(html).toContain('componentPreview: true')
   })
 
-  // @todo atm this only works in dev mode, not in production build
   it('returns js code for entry.js', async () => {
     const js = await $fetch('/nuxt-component-preview/entry.js', {
       headers: {
@@ -33,4 +32,15 @@ describe('nuxt-component-preview module', async () => {
     expect(js).toMatch(/(?:function|const|var|let|import|export|=>|\{|\})/i)
   })
 
+  it('renders the preview-test static route with expected content', async () => {
+    const html = await $fetch('/preview-test.html')
+    expect(html).toContain('<h1>Nuxt Component Preview Test</h1>')
+    expect(html).toContain('componentPreview: true')
+    expect(html).toContain('Rendered HTML Content')
+    expect(html).toContain('Amazing Card Title')
+    expect(html).toContain('Another Card')
+    // Check for preview target containers
+    expect(html).toContain('id="preview-target-1"')
+    expect(html).toContain('id="preview-target-2"')
+  })
 })
