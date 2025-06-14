@@ -1,5 +1,6 @@
 <script setup>
-import { h } from 'vue'
+import { h, resolveComponent } from 'vue'
+import { useState } from '#imports'
 
 const previews = useState('componentPreviews', () => [])
 
