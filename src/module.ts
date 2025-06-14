@@ -1,5 +1,5 @@
 import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler } from '@nuxt/kit'
-import { resolve, join } from 'path';
+import { resolve } from 'path';
 import { promises as fs } from 'fs';
 
 // Module options TypeScript interface definition
@@ -61,6 +61,7 @@ export default defineNuxtModule<ModuleOptions>({
             const manifest = JSON.parse(manifestContent)
             const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
             if (!entryKey || !manifest[entryKey]) {
+              console.error('Entry file not found in client manifest')
               throw new Error('Entry file not found in client manifest')
             }
             resolvedEntryPath = `/_nuxt/${manifest[entryKey].file}`

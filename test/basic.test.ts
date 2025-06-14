@@ -29,7 +29,7 @@ describe('nuxt-component-preview module', async () => {
     expect(typeof js).toBe('string')
     expect(js.length).toBeGreaterThan(0)
     // Check if it's JavaScript content (should contain common JS patterns)
-    expect(js).toMatch(/(?:function|const|var|let|import|export|=>|\{|\})/i)
+    expect(js).toMatch(/function|const|var|let|import|export|=>|{|}/i)
   })
 
   it('renders the preview-test static route with expected content', async () => {
