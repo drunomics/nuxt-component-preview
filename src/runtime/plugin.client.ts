@@ -1,3 +1,5 @@
+import { defineNuxtPlugin, useState, useRuntimeConfig, onNuxtReady } from '#imports'
+
 export default defineNuxtPlugin((nuxtApp) => {
   // Only activate when preview mode is enabled
   const config = useRuntimeConfig()
