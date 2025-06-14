@@ -9,12 +9,12 @@
 defineProps({
   title: {
     type: String,
-    default: 'Default Title'
+    default: 'Default Title',
   },
   description: {
     type: String,
-    default: 'Default description'
-  }
+    default: 'Default description',
+  },
 })
 </script>
 

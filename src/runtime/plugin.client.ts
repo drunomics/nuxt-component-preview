@@ -11,9 +11,9 @@ export default defineNuxtPlugin((nuxtApp) => {
    * Creates a preview of a component and renders it to a target element
    *
    * @param {string} componentName - The name of the registered Vue component
-   * @param {Object} props - Props to pass to the component
+   * @param {object} props - Props to pass to the component
    * @param {string|Element} target - CSS selector or DOM element where the component will be rendered
-   * @returns {Object} An object with unmount method
+   * @returns {object} An object with unmount method
    */
   function previewComponent(componentName, props, target) {
     const targetEl = typeof target === 'string'
@@ -28,8 +28,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       target: targetEl,
       content: {
         element: componentName,
-        ...props
-      }
+        ...props,
+      },
     }
 
     previews.value.push(previewData)
@@ -37,7 +37,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     return {
       unmount() {
         previews.value = previews.value.filter(c => c.target !== targetEl)
-      }
+      },
     }
   }
 
@@ -47,7 +47,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   // Dispatch ready event when Nuxt is ready
   onNuxtReady(() => {
     const event = new CustomEvent('nuxt-component-preview:ready', {
-      detail: { nuxtApp }
+      detail: { nuxtApp },
     })
     window.dispatchEvent(event)
   })

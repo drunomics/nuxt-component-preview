@@ -6,12 +6,12 @@ export default <RouterConfig>{
   history: (base) => {
     if (import.meta.client && typeof window !== 'undefined') {
       const previewMode = window.__NUXT__?.config?.public?.componentPreview
-      
+
       if (previewMode) {
         console.log('[Component Preview] Using memory history')
         return createMemoryHistory(base)
       }
     }
     // Use Nuxt's default history otherwise (no return statement lets Nuxt handle it)
-  }
+  },
 }

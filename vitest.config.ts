@@ -10,11 +10,10 @@ export default defineVitestConfig({
         port: 3001,
         overrides: {
           modules: ['../src/module.ts'],
-        }
-      }
+        },
+      },
     },
     testTimeout: 5000,
     include: ['test/**/*.test.ts'],
   },
 })
-

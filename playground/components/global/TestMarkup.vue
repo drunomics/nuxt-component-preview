@@ -1,13 +1,14 @@
 <template>
-  <div v-html="content" class="test-markup"></div>
+  <!-- eslint-disable-next-line -->
+  <div v-html="content" class="markup"></div>
 </template>
 
 <script setup>
 defineProps({
   content: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 })
 </script>
 
