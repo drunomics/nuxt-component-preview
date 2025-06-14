@@ -27,14 +27,14 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Add the client-side plugin for component preview functionality
     addPlugin({
-      src: resolver.resolve('./runtime/plugin.client.ts'),
+      src: resolver.resolve('./runtime/plugin.client'),
       mode: 'client',
     })
 
     // Add router options for iframe compatibility
     nuxt.hook('pages:routerOptions', (options) => {
       options.files.push({
-        path: resolver.resolve('./runtime/router.options.ts'),
+        path: resolver.resolve('./runtime/router.options'),
         optional: true,
       })
     })
@@ -78,7 +78,7 @@ export default defineNuxtModule<ModuleOptions>({
 
     addServerHandler({
       route: '/nuxt-component-preview/entry.js',
-      handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/entry.js.get.ts'),
+      handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/entry.js.get'),
     })
   },
 })
