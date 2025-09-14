@@ -2,7 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nuxt Component Preview Test</title>
+  <script type="importmap">{"imports":{"#entry":"/nuxt-component-preview/entry.js"}}</script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -20,6 +22,7 @@
       color: #999;
     }
   </style>
+  <script type="module" src="/nuxt-component-preview/entry.js"></script>
 </head>
 <body>
   <h1>Nuxt Component Preview Test</h1>
@@ -27,13 +30,14 @@
 
   <!-- Hidden Nuxt app container -->
   <div id="__nuxt" style="display:none;"></div>
+  <div id="teleports"></div>
 
   <!-- Preview targets -->
   <div id="preview-target-1" class="preview-target"></div>
   <div id="preview-target-2" class="preview-target"></div>
   <div id="preview-target-3" class="preview-target"></div>
 
-  <!-- Nuxt configuration with preview mode enabled -->
+  <script type="application/json" data-nuxt-data="nuxt-app" data-ssr="false" id="__NUXT_DATA__">[{"serverRendered":1},false]</script>
   <script>
     window.__NUXT__ = {};
     window.__NUXT__.config = {
@@ -42,16 +46,13 @@
       },
       app: {
         baseURL: "/",
-        buildId: "dev",
+        buildId: "009c1152-656e-4064-92f5-576f1f12dac1",
         buildAssetsDir: "/_nuxt/",
         cdnURL: ""
       }
     };
   </script>
-
-  <!-- Load Nuxt entry script -->
-  <script type="module" src="/nuxt-component-preview/entry.js"></script>
-
+  
   <!-- Test script that runs when Nuxt is ready -->
   <script>
     window.addEventListener('nuxt-component-preview:ready', (event) => {

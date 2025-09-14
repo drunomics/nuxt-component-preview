@@ -8,6 +8,8 @@ const previews = useState('componentPreviews', () => [])
 function renderComponent(preview) {
   const { element, ...props } = preview.content
 
+  console.log(`Component "${element}" being rendered`)
+
   // Resolve the component - it should be globally available
   const component = resolveComponent(element)
 
