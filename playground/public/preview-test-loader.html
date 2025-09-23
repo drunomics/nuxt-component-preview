@@ -33,7 +33,7 @@
     }
   </style>
   <!-- Single script to initialize Nuxt app with component preview enabled -->
-  <script src="/nuxt-component-preview/init-app.js"></script>
+  <script src="/nuxt-component-preview/app-loader.js"></script>
 </head>
 <body>
   <h1>Nuxt Component Preview Test - Using Loader Script</h1>
@@ -41,7 +41,7 @@
   <div class="info">
     <p><strong>This page uses the new loader approach:</strong></p>
     <ul>
-      <li>Single script tag: <code>&lt;script src="/nuxt-component-preview/init-app.js"&gt;</code></li>
+      <li>Single script tag: <code>&lt;script src="/nuxt-component-preview/app-loader.js"&gt;</code></li>
       <li>Automatically creates Nuxt containers</li>
       <li>Sets up runtime config with componentPreview enabled</li>
       <li>Loads the Nuxt entry module</li>
@@ -84,7 +84,7 @@
         'TestCard',
         {
           title: 'Card Component via Loader',
-          description: 'This card was rendered using the new init-app.js loader script.'
+          description: 'This card was rendered using the new app-loader.js loader script.'
         },
         '#preview-target-2'
       );
