@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nuxt Component Preview Test - Loader</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .preview-target {
+      border: 2px dashed #ccc;
+      min-height: 200px;
+      padding: 20px;
+      margin: 20px 0;
+      background: #fafafa;
+    }
+    .preview-target:empty::before {
+      content: "Component will appear here";
+      color: #999;
+    }
+    h2 {
+      color: #333;
+      border-bottom: 2px solid #007acc;
+      padding-bottom: 5px;
+    }
+    .info {
+      background: #e7f3ff;
+      border-left: 4px solid #007acc;
+      padding: 10px;
+      margin: 10px 0;
+    }
+  </style>
+  <!-- Single script to initialize Nuxt app with component preview enabled -->
+  <script src="/nuxt-component-preview/app-loader.js"></script>
+</head>
+<body>
+  <h1>Nuxt Component Preview Test - Using Loader Script</h1>
+
+  <div class="info">
+    <p><strong>This page uses the new loader approach:</strong></p>
+    <ul>
+      <li>Single script tag: <code>&lt;script src="/nuxt-component-preview/app-loader.js"&gt;</code></li>
+      <li>Automatically creates Nuxt containers</li>
+      <li>Sets up runtime config with componentPreview enabled</li>
+      <li>Loads the Nuxt entry module</li>
+    </ul>
+  </div>
+
+  <h2>Preview Targets</h2>
+  <p>Components will be rendered into these containers once Nuxt is ready:</p>
+
+  <!-- Preview targets -->
+  <div id="preview-target-1" class="preview-target"></div>
+  <div id="preview-target-2" class="preview-target"></div>
+  <div id="preview-target-3" class="preview-target"></div>
+
+  <!-- Test script that runs when Nuxt is ready -->
+  <script>
+    window.addEventListener('nuxt-component-preview:ready', (event) => {
+      const { nuxtApp } = event.detail;
+
+      console.log('Nuxt Component Preview is ready via loader!');
+
+      // Preview TestMarkup component
+      nuxtApp.$previewComponent(
+        'TestMarkup',
+        {
+          content: `
+            <div style="color: blue;">
+              <h2>HTML Content via Loader</h2>
+              <p>This content was rendered using the <strong>loader script</strong> approach.</p>
+              <p>The Nuxt app was initialized automatically!</p>
+            </div>
+          `
+        },
+        '#preview-target-1'
+      );
+
+      // Preview TestCard component
+      nuxtApp.$previewComponent(
+        'TestCard',
+        {
+          title: 'Card Component via Loader',
+          description: 'This card was rendered using the new app-loader.js loader script.'
+        },
+        '#preview-target-2'
+      );
+
+      // Preview another TestCard with different props
+      nuxtApp.$previewComponent(
+        'TestCard',
+        {
+          title: 'Another Card',
+          description: 'Multiple components work with the loader approach!'
+        },
+        '#preview-target-3'
+      );
+
+      // Log success
+      console.log('All components rendered successfully using the loader!');
+    });
+
+    // Error handling
+    window.addEventListener('error', (event) => {
+      if (event.message && event.message.includes('nuxt')) {
+        console.error('Nuxt error:', event);
+      }
+    });
+  </script>
+</body>
+</html>
