@@ -17,8 +17,8 @@ describe('preview E2E (production mode)', async () => {
 
       // Wait for containers to be created
       await page.waitForFunction(() => {
-        return document.getElementById('__nuxt') !== null &&
-               document.getElementById('teleports') !== null
+        return document.getElementById('__nuxt') !== null
+          && document.getElementById('teleports') !== null
       }, { timeout: 5000 })
 
       // Verify containers exist
@@ -69,19 +69,19 @@ describe('preview E2E (production mode)', async () => {
         const target2 = document.getElementById('preview-target-2')
 
         // Look for actual rendered content from TestMarkup component
-        const hasMarkupContent = target1?.innerHTML.includes('HTML Content via Loader') ||
-                                target1?.querySelector('h2')?.textContent?.includes('HTML Content')
+        const hasMarkupContent = target1?.innerHTML.includes('HTML Content via Loader')
+          || target1?.querySelector('h2')?.textContent?.includes('HTML Content')
 
         // Look for TestCard component structure (card elements)
-        const hasCardStructure = target2?.querySelector('.card') !== null ||
-                                target2?.innerHTML.includes('Card Component') ||
-                                target2?.innerHTML.includes('card')
+        const hasCardStructure = target2?.querySelector('.card') !== null
+          || target2?.innerHTML.includes('Card Component')
+          || target2?.innerHTML.includes('card')
 
         return {
           hasMarkupContent,
           hasCardStructure,
           target1HTML: target1?.innerHTML.substring(0, 200), // First 200 chars for debugging
-          target2HTML: target2?.innerHTML.substring(0, 200)
+          target2HTML: target2?.innerHTML.substring(0, 200),
         }
       })
 

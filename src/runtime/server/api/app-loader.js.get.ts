@@ -1,6 +1,6 @@
 import { defineEventHandler, setResponseHeader } from 'h3'
 import { useRuntimeConfig } from '#imports'
-// @ts-ignore
+// @ts-expect-error - Virtual import
 import entryPath from '#nuxt-entry-path'
 
 export default defineEventHandler((event) => {
@@ -18,7 +18,7 @@ export default defineEventHandler((event) => {
   // Only include what's needed for the client
   const publicConfigStr = JSON.stringify({
     ...config.public,
-    componentPreview: true
+    componentPreview: true,
   })
 
   // Generate the script with prepared values

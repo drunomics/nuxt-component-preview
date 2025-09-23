@@ -23,7 +23,7 @@ describe('nuxt-component-preview module', async () => {
 
   it('serves app-loader.js endpoint', async () => {
     const script = await $fetch('/nuxt-component-preview/app-loader.js', {
-      responseType: 'text'
+      responseType: 'text',
     })
     expect(typeof script).toBe('string')
     expect(script).toContain('function initNuxt()')
