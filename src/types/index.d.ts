@@ -1,6 +1,8 @@
+import type { NuxtApp } from '#app'
+
 declare global {
   interface Window {
-    __nuxtComponentPreviewApp?: any
+    __nuxtComponentPreviewApp?: NuxtApp
   }
 }
 
