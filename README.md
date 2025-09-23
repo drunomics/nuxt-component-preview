@@ -52,16 +52,15 @@ To render a component preview, use the `<ComponentPreviewArea />` component in y
 </template>
 ```
 
-### Using the App Loader (Recommended)
+### Using the App Loader
 
-The simplest way to enable component preview in an external HTML page is using the app-loader script. This single script automatically handles all the setup:
+The app-loader script automatically sets up everything needed for component preview:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
   <title>Component Preview</title>
-  <!-- Single script that handles everything -->
   <script src="/nuxt-component-preview/app-loader.js"></script>
 </head>
 <body>
@@ -72,10 +71,14 @@ The simplest way to enable component preview in an external HTML page is using t
   <div id="preview-target-2"></div>
 
   <script>
-    // Wait for the preview system to be ready
-    window.addEventListener('nuxt-component-preview:ready', (event) => {
-      const { nuxtApp } = event.detail;
+    // Helper function that handles both sync and async cases
+    const onNuxtComponentPreviewReady = (callback) =>
+      window.__nuxtComponentPreviewApp
+        ? callback(window.__nuxtComponentPreviewApp)
+        : window.addEventListener('nuxt-component-preview:ready', event => callback(event.detail.nuxtApp), { once: true })
 
+    // Use the helper
+    onNuxtComponentPreviewReady((nuxtApp) => {
       // Render components into targets
       nuxtApp.$previewComponent('MyComponent', { prop: 'value' }, '#preview-target-1');
       nuxtApp.$previewComponent('OtherComponent', { data: 123 }, '#preview-target-2');
@@ -85,33 +88,47 @@ The simplest way to enable component preview in an external HTML page is using t
 </html>
 ```
 
-The app-loader script automatically:
-- Creates the necessary DOM containers (`#__nuxt` and `#teleports`)
-- Sets up the runtime configuration with `componentPreview: true`
-- Loads the Nuxt entry module
-- Fires the `nuxt-component-preview:ready` event when ready
-
-See [playground/public/preview-test-loader.html](./playground/public/preview-test-loader.html) for a complete working example.
-
-This setup is ideal for integrating with a Drupal backend (or any backend) that needs to render Nuxt components in isolation, such as for CMS previews or design systems.
+See [playground/public/preview-test-loader.html](./playground/public/preview-test-loader.html) for a working example.
 
 ### API Reference
 
-#### `$previewComponent(componentName, props, targetSelector)`
+#### `nuxt-component-preview:ready` Event
 
-The `$previewComponent` method is available on the Nuxt app instance after the `nuxt-component-preview:ready` event fires:
-
-- **componentName** (string): Name of the registered Vue component to render
-- **props** (object): Props to pass to the component
-- **targetSelector** (string | Element): CSS selector or DOM element where the component will be rendered
+Fired when the Nuxt app is ready for component preview:
 
 ```javascript
-// Example usage
-nuxtApp.$previewComponent(
-  'TestCard',
-  { title: 'My Card', description: 'Card content' },
-  '#preview-target'
-);
+window.addEventListener('nuxt-component-preview:ready', (event) => {
+  const { nuxtApp } = event.detail;
+  // Use nuxtApp.$previewComponent() here
+});
+```
+
+#### Helper Function Pattern
+
+For convenience, you can use this helper that works whether Nuxt is already ready or still loading:
+
+```javascript
+const onNuxtComponentPreviewReady = (callback) =>
+  window.__nuxtComponentPreviewApp
+    ? callback(window.__nuxtComponentPreviewApp)
+    : window.addEventListener('nuxt-component-preview:ready', event => callback(event.detail.nuxtApp), { once: true })
+
+// Usage
+onNuxtComponentPreviewReady((nuxtApp) => {
+  nuxtApp.$previewComponent('MyComponent', props, '#target');
+});
+```
+
+#### `$previewComponent(componentName, props, targetSelector)`
+
+Renders a Vue component to a target element:
+
+- **componentName** (string): Name of the registered Vue component
+- **props** (object): Props to pass to the component
+- **targetSelector** (string | Element): CSS selector or DOM element
+
+```javascript
+nuxtApp.$previewComponent('TestCard', { title: 'My Card' }, '#preview-target');
 ```
 
 ## Testing

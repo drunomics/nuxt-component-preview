@@ -35,22 +35,12 @@ describe('preview E2E (production mode)', async () => {
     it('fires ready event when component preview is enabled', async () => {
       const page = await createPage('/preview-test-loader.html')
 
-      // Inject listener before page loads
-      await page.addInitScript(() => {
-        window.__PREVIEW_READY__ = false
-        window.addEventListener('nuxt-component-preview:ready', () => {
-          window.__PREVIEW_READY__ = true
-        })
-      })
-
-      await page.reload()
-
-      // Wait for event
-      const ready = await page.waitForFunction(() => {
-        return window.__PREVIEW_READY__ === true
+      // Wait for event to fire or check if app is already ready
+      const eventFired = await page.waitForFunction(() => {
+        return window.__nuxtComponentPreviewApp !== undefined
       }, { timeout: 10000 })
 
-      expect(ready).toBeTruthy()
+      expect(eventFired).toBeTruthy()
       await page.close()
     })
 

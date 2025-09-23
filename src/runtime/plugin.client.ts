@@ -46,12 +46,15 @@ export default defineNuxtPlugin((nuxtApp) => {
   // Provide the preview function
   nuxtApp.provide('previewComponent', previewComponent)
 
-  // Dispatch ready event when Nuxt is ready
+  // Store nuxtApp globally and dispatch event when ready
   onNuxtReady(() => {
+    // Store nuxtApp for direct access
+    window.__nuxtComponentPreviewApp = nuxtApp
+
+    // Dispatch event
     const event = new CustomEvent('nuxt-component-preview:ready', {
       detail: { nuxtApp },
     })
-
     window.dispatchEvent(event)
   })
 })
