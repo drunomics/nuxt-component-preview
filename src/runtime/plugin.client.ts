@@ -51,6 +51,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     const event = new CustomEvent('nuxt-component-preview:ready', {
       detail: { nuxtApp },
     })
+
     window.dispatchEvent(event)
   })
 })
