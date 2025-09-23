@@ -80,5 +80,11 @@ export default defineNuxtModule<ModuleOptions>({
       route: '/nuxt-component-preview/entry.js',
       handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/entry.js.get'),
     })
+
+    // Add server handler directly - use runtime handler that gets actual runtime config
+    addServerHandler({
+      route: '/nuxt-component-preview/init-app.js',
+      handler: resolver.resolve('./runtime/server/api/init-app.js.get'),
+    })
   },
 })
