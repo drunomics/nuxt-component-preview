@@ -25,7 +25,6 @@ export default defineNuxtPlugin((nuxtApp) => {
     if (!targetEl) {
       throw new Error(`Target element "${target}" not found in DOM`)
     }
-    console.log(`Component "${componentName}" being rendered`)
 
     const previewData = {
       target: targetEl,
@@ -43,7 +42,6 @@ export default defineNuxtPlugin((nuxtApp) => {
       },
     }
   }
-  console.log(`registering`)
 
   // Provide the preview function
   nuxtApp.provide('previewComponent', previewComponent)
@@ -54,7 +52,6 @@ export default defineNuxtPlugin((nuxtApp) => {
       detail: { nuxtApp },
     })
 
-    console.log(`dispatching`)
     window.dispatchEvent(event)
   })
 })
