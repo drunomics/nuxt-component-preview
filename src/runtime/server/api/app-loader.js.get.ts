@@ -73,11 +73,6 @@ export default defineEventHandler((event) => {
       entry.type = 'module';
       entry.src = '${entryPathValue}';
       document.head.appendChild(entry);
-
-      // Add event listener for component preview
-      window.addEventListener('nuxt-component-preview:ready', function(event) {
-        console.log('Nuxt Component Preview initialized via loader');
-      });
     }
 
     // Wait for DOM to be ready

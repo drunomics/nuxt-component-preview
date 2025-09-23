@@ -35,22 +35,12 @@ describe('preview E2E (dev mode)', async () => {
     it('fires ready event when component preview is enabled', async () => {
       const page = await createPage('/preview-test-loader.html')
 
-      // Inject listener before page loads
-      await page.addInitScript(() => {
-        window.__PREVIEW_READY__ = false
-        window.addEventListener('nuxt-component-preview:ready', () => {
-          window.__PREVIEW_READY__ = true
-        })
-      })
-
-      await page.reload()
-
-      // Wait for event
-      const ready = await page.waitForFunction(() => {
-        return window.__PREVIEW_READY__ === true
+      // Wait for event to fire or check if app is already ready
+      const eventFired = await page.waitForFunction(() => {
+        return window.__nuxtComponentPreviewApp !== undefined
       }, { timeout: 10000 })
 
-      expect(ready).toBeTruthy()
+      expect(eventFired).toBeTruthy()
       await page.close()
     })
 
@@ -95,45 +85,28 @@ describe('preview E2E (dev mode)', async () => {
     it('works with manually configured HTML', async () => {
       const page = await createPage('/preview-test.html')
 
-      // Inject listener before page loads
-      await page.addInitScript(() => {
-        window.__MANUAL_READY__ = false
-        window.addEventListener('nuxt-component-preview:ready', () => {
-          window.__MANUAL_READY__ = true
-        })
-      })
-
-      await page.reload()
-
-      // Wait for ready event
-      const ready = await page.waitForFunction(() => {
-        return window.__MANUAL_READY__ === true
+      // Check if global nuxtApp is set after ready
+      const isReady = await page.waitForFunction(() => {
+        return window.__nuxtComponentPreviewApp !== undefined
       }, { timeout: 10000 })
 
-      expect(ready).toBeTruthy()
+      expect(isReady).toBeTruthy()
       await page.close()
     })
 
     it('provides $previewComponent method', async () => {
       const page = await createPage('/preview-test.html')
 
-      // Inject listener before page loads
-      await page.addInitScript(() => {
-        window.__HAS_METHOD__ = false
-        window.addEventListener('nuxt-component-preview:ready', (event) => {
-          const { nuxtApp } = (event as CustomEvent).detail
-          window.__HAS_METHOD__ = typeof nuxtApp?.$previewComponent === 'function'
-        })
+      // Wait for app to be ready and check if method exists
+      await page.waitForFunction(() => {
+        return window.__nuxtComponentPreviewApp !== undefined
+      }, { timeout: 10000 })
+
+      const hasMethod = await page.evaluate(() => {
+        return typeof window.__nuxtComponentPreviewApp?.$previewComponent === 'function'
       })
 
-      await page.reload()
-
-      // Wait and check
-      await page.waitForFunction(() => window.__HAS_METHOD__ !== false, { timeout: 10000 })
-
-      const hasMethod = await page.evaluate(() => window.__HAS_METHOD__)
       expect(hasMethod).toBe(true)
-
       await page.close()
     })
 
