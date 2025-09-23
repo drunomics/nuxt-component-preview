@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nuxt Component Preview Test</title>
+  <title>Nuxt Component Preview Test (Manual Setup - Dev Only)</title>
   <script type="importmap">{"imports":{"#entry":"/nuxt-component-preview/entry.js"}}</script>
   <style>
     body {
@@ -25,8 +25,15 @@
   <script type="module" src="/nuxt-component-preview/entry.js"></script>
 </head>
 <body>
-  <h1>Nuxt Component Preview Test</h1>
-  <p>This page demonstrates how to use the nuxt-component-preview module.</p>
+  <h1>Nuxt Component Preview Test (Manual Setup - Dev Only)</h1>
+
+  <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+    <strong>⚠️ Important:</strong> This manual setup approach is for testing purposes only and <strong>only works in development mode</strong>.
+    <br><br>
+    For production use, please use the <a href="/preview-test-loader.html">app-loader.js approach</a> instead, which works in both development and production modes.
+  </div>
+
+  <p>This page demonstrates the manual setup approach for testing the nuxt-component-preview module in development.</p>
 
   <!-- Hidden Nuxt app container -->
   <div id="__nuxt" style="display:none;"></div>

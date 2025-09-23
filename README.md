@@ -41,7 +41,7 @@ export default defineNuxtConfig({
 
 ### Rendering Component Previews
 
-To render a component preview, use the `<ComponentPreviewArea />` component in your app. 
+To render a component preview, use the `<ComponentPreviewArea />` component in your app.
 
 **Example `app.vue`**
 
@@ -52,54 +52,67 @@ To render a component preview, use the `<ComponentPreviewArea />` component in y
 </template>
 ```
 
-**Important:** Then, when rendering outside of a Nuxt app (e.g., in a static HTML file or external context), you must manually set the runtime config on `window.__NUXT__` before loading the Nuxt entry script to activate it. See the [playground/public/preview-test.html](./playground/public/preview-test.html) for a working example.
+### Using the App Loader (Recommended)
 
-#### Example: Setting runtime config in a static HTML file
+The simplest way to enable component preview in an external HTML page is using the app-loader script. This single script automatically handles all the setup:
 
 ```html
-<script>
-  window.__NUXT__ = window.__NUXT__ || {};
-  window.__NUXT__.config = {
-    public: {
-      componentPreview: true
-    }
-  };
-</script>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Component Preview</title>
+  <!-- Single script that handles everything -->
+  <script src="/nuxt-component-preview/app-loader.js"></script>
+</head>
+<body>
+  <h1>Component Preview Page</h1>
+
+  <!-- Preview targets where components will render -->
+  <div id="preview-target-1"></div>
+  <div id="preview-target-2"></div>
+
+  <script>
+    // Wait for the preview system to be ready
+    window.addEventListener('nuxt-component-preview:ready', (event) => {
+      const { nuxtApp } = event.detail;
+
+      // Render components into targets
+      nuxtApp.$previewComponent('MyComponent', { prop: 'value' }, '#preview-target-1');
+      nuxtApp.$previewComponent('OtherComponent', { data: 123 }, '#preview-target-2');
+    });
+  </script>
+</body>
+</html>
 ```
 
-You can then load the Nuxt entry script as shown in [preview-test.html](./playground/public/preview-test.html).
+The app-loader script automatically:
+- Creates the necessary DOM containers (`#__nuxt` and `#teleports`)
+- Sets up the runtime configuration with `componentPreview: true`
+- Loads the Nuxt entry module
+- Fires the `nuxt-component-preview:ready` event when ready
+
+See [playground/public/preview-test-loader.html](./playground/public/preview-test-loader.html) for a complete working example.
 
 This setup is ideal for integrating with a Drupal backend (or any backend) that needs to render Nuxt components in isolation, such as for CMS previews or design systems.
 
-**Example: Rendering a component preview via JavaScript**
+### API Reference
 
-You can use the `$previewComponent` method on the Nuxt app instance to dynamically render a component into a target element. For example, in a static HTML file:
+#### `$previewComponent(componentName, props, targetSelector)`
 
-```html
-<script>
-  window.addEventListener('nuxt-component-preview:ready', (event) => {
-    const { nuxtApp } = event.detail;
-    console.log('Nuxt Component Preview is ready!');
+The `$previewComponent` method is available on the Nuxt app instance after the `nuxt-component-preview:ready` event fires:
 
-    // Preview TestMarkup component
-    nuxtApp.$previewComponent(
-      'TestMarkup',
-      {
-        content: `
-          <div style="color: blue;">
-            <h2>Rendered HTML Content</h2>
-            <p>This is <strong>HTML</strong> content rendered through the TestMarkup component.</p>
-          </div>
-        `
-      },
-      '#preview-target-1'
-    );
-    // ...more examples in preview-test.html
-  });
-</script>
+- **componentName** (string): Name of the registered Vue component to render
+- **props** (object): Props to pass to the component
+- **targetSelector** (string | Element): CSS selector or DOM element where the component will be rendered
+
+```javascript
+// Example usage
+nuxtApp.$previewComponent(
+  'TestCard',
+  { title: 'My Card', description: 'Card content' },
+  '#preview-target'
+);
 ```
-
-See [playground/public/preview-test.html](./playground/public/preview-test.html) for a full working example including multiple components and targets.
 
 ## Testing
 
