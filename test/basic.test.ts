@@ -60,4 +60,22 @@ describe('nuxt-component-preview module', async () => {
       expect(entryMatch[1]).toContain(configMatch[1])
     }
   })
+
+  it('app-loader.js generates valid JavaScript', async () => {
+    const script = await $fetch('/nuxt-component-preview/app-loader.js', {
+      responseType: 'text',
+    })
+
+    // Verify the script has valid JavaScript syntax
+    const isValidJS = () => {
+      try {
+        new Function(script)
+        return true
+      }
+      catch {
+        return false
+      }
+    }
+    expect(isValidJS()).toBe(true)
+  })
 })
