@@ -60,4 +60,25 @@ describe('nuxt-component-preview module', async () => {
       expect(entryMatch[1]).toContain(configMatch[1])
     }
   })
+
+  it('app-loader.js handles complex config with special characters', async () => {
+    const script = await $fetch('/nuxt-component-preview/app-loader.js', {
+      responseType: 'text',
+    })
+
+    // Verify the script has valid JavaScript syntax
+    const isValidJS = () => {
+      try {
+        new Function(script) // eslint-disable-line no-new-func
+        return true
+      } catch {
+        return false
+      }
+    }
+    expect(isValidJS()).toBe(true)
+
+    // Check that public config is embedded directly as JSON (not with JSON.parse)
+    expect(script).toContain('public: {')
+    expect(script).not.toContain('JSON.parse')
+  })
 })

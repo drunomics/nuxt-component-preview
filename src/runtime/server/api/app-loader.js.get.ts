@@ -25,10 +25,11 @@ export default defineEventHandler((event) => {
 
   // Serialize public config (with componentPreview enabled)
   // Only include what's needed for the client
-  const publicConfigStr = JSON.stringify({
+  const publicConfig = {
     ...config.public,
     componentPreview: true,
-  })
+  }
+  const publicConfigStr = JSON.stringify(publicConfig)
 
   // Generate the script with prepared values
   const script = `(function() {
@@ -59,16 +60,18 @@ export default defineEventHandler((event) => {
 
       // Add Nuxt config with componentPreview enabled
       const nuxtConfig = document.createElement('script');
-      nuxtConfig.textContent = 'window.__NUXT__ = {};' +
-        'window.__NUXT__.config = {' +
-          'public: ' + '${publicConfigStr}' + ',' +
-          'app: {' +
-            'baseURL: "${baseURL}",' +
-            'buildId: "${buildId}",' +
-            'buildAssetsDir: "${buildAssetsDir}",' +
-            'cdnURL: "${cdnURL}"' +
-          '}' +
-        '};';
+      nuxtConfig.textContent = \`
+        window.__NUXT__ = {};
+        window.__NUXT__.config = {
+          public: ${publicConfigStr},
+          app: {
+            baseURL: "${baseURL}",
+            buildId: "${buildId}",
+            buildAssetsDir: "${buildAssetsDir}",
+            cdnURL: "${cdnURL}"
+          }
+        };
+      \`;
       document.head.appendChild(nuxtConfig);
 
       // Add import map
