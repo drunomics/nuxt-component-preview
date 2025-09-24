@@ -31,9 +31,7 @@ Add it to your `nuxt.config.ts`:
 export default defineNuxtConfig({
   modules: [
     'nuxt-component-preview',
-  ],
-  // Optionally configure here
-  // componentPreview: { ... }
+  ]
 })
 ```
 
@@ -61,7 +59,7 @@ The app-loader script automatically sets up everything needed for component prev
 <html>
 <head>
   <title>Component Preview</title>
-  <script src="/nuxt-component-preview/app-loader.js"></script>
+  <script src="http://localhost:3000/nuxt-component-preview/app-loader.js"></script>
 </head>
 <body>
   <h1>Component Preview Page</h1>
