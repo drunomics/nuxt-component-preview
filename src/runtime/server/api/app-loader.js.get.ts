@@ -1,4 +1,4 @@
-import { defineEventHandler, setResponseHeader } from 'h3'
+import { defineEventHandler, setResponseHeader, getRequestURL } from 'h3'
 import { useRuntimeConfig } from '#imports'
 // @ts-expect-error - Virtual import
 import entryPath from '#nuxt-entry-path'
@@ -11,8 +11,17 @@ export default defineEventHandler((event) => {
   const buildId = config.app.buildId
   const baseURL = config.app.baseURL || '/'
   const buildAssetsDir = config.app.buildAssetsDir || '/_nuxt/'
-  const cdnURL = config.app.cdnURL || ''
-  const entryPathValue = entryPath
+
+  // Set cdnURL - use config if set, otherwise use the current request's origin.
+  let cdnURL = config.app.cdnURL
+  if (!cdnURL) {
+    const requestURL = getRequestURL(event)
+    cdnURL = requestURL.port
+      ? `${requestURL.protocol}//${requestURL.hostname}:${requestURL.port}`
+      : `${requestURL.protocol}//${requestURL.host}`
+  }
+
+  const entryPathValue = cdnURL + entryPath
 
   // Serialize public config (with componentPreview enabled)
   // Only include what's needed for the client
@@ -39,7 +48,7 @@ export default defineEventHandler((event) => {
       teleports.id = 'teleports';
       document.body.insertBefore(teleports, nuxt.nextSibling);
 
-      // Add Nuxt data script
+      // Add Nuxt data script - minimal client-side initialization
       const nuxtData = document.createElement('script');
       nuxtData.type = 'application/json';
       nuxtData.setAttribute('data-nuxt-data', 'nuxt-app');

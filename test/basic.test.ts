@@ -29,4 +29,35 @@ describe('nuxt-component-preview module', async () => {
     expect(script).toContain('function initNuxt()')
     expect(script).toContain('componentPreview')
   })
+
+  it('app-loader.js always sets cdnURL', async () => {
+    const script = await $fetch('/nuxt-component-preview/app-loader.js', {
+      responseType: 'text',
+    })
+
+    // Check that cdnURL is used in window.__NUXT__.config
+    expect(script).toContain('window.__NUXT__.config')
+    expect(script).toContain('cdnURL:')
+
+    // Verify the cdnURL is properly set in the generated config
+    // The script should include cdnURL in the app config section
+    const configMatch = script.match(/cdnURL:\s*"([^"]*)"/)
+    expect(configMatch).toBeTruthy()
+
+    // The cdnURL should be set to a valid URL (from request origin)
+    if (configMatch && configMatch[1]) {
+      const cdnURL = configMatch[1]
+      expect(cdnURL).toBeTruthy()
+      // Should be a valid URL with protocol and host
+      expect(cdnURL).toMatch(/^https?:\/\/[^\/]+/)
+    }
+
+    // Check that entry module src uses the same URL
+    const entryMatch = script.match(/entry\.src\s*=\s*'([^']+)'/)
+    expect(entryMatch).toBeTruthy()
+    if (entryMatch && configMatch) {
+      // Entry src should start with cdnURL
+      expect(entryMatch[1]).toContain(configMatch[1])
+    }
+  })
 })

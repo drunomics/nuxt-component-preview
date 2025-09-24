@@ -79,6 +79,7 @@ describe('preview E2E (dev mode)', async () => {
       expect(componentContent.hasCardStructure).toBe(true)
       await page.close()
     })
+
   })
 
   describe('without app-loader.js (manual setup)', () => {
