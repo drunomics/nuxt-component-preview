@@ -69,9 +69,10 @@ describe('nuxt-component-preview module', async () => {
     // Verify the script has valid JavaScript syntax
     const isValidJS = () => {
       try {
-        new Function(script) // eslint-disable-line no-new-func
+        new Function(script)
         return true
-      } catch {
+      }
+      catch {
         return false
       }
     }

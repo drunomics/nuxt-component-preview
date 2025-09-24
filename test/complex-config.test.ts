@@ -12,23 +12,23 @@ describe('complex config handling', async () => {
         public: {
           testEscaping: {
             quotes: 'Test with "double quotes"',
-            apostrophes: "Test with 'single quotes' and apostrophe's",
+            apostrophes: 'Test with \'single quotes\' and apostrophe\'s',
             mixed: 'Mixed "double" and \'single\' quotes',
-            backslashes: "Path\\with\\backslashes",
+            backslashes: 'Path\\with\\backslashes',
             jsonLike: '{"key": "value"}',
             translation: '$t("translation.key")',
             code: 'function() { return "test"; }',
             special: 'GTM-K8BN8699',
             nested: {
               array: [
-                { name: '$t("test.name")', value: "test's value" },
-                { id: 'GTM-123', desc: 'Item with "quotes"' }
-              ]
-            }
-          }
-        }
-      }
-    }
+                { name: '$t("test.name")', value: 'test\'s value' },
+                { id: 'GTM-123', desc: 'Item with "quotes"' },
+              ],
+            },
+          },
+        },
+      },
+    },
   })
 
   it('app-loader.js generates valid JavaScript with complex config', async () => {
@@ -40,9 +40,10 @@ describe('complex config handling', async () => {
     const validateJS = (code: string): boolean => {
       try {
         // Use Function constructor to validate syntax
-        new Function(code) // eslint-disable-line no-new-func
+        new Function(code)
         return true
-      } catch (e) {
+      }
+      catch (e) {
         console.error('Invalid JavaScript:', e)
         return false
       }
