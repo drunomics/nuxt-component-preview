@@ -49,7 +49,7 @@ describe('nuxt-component-preview module', async () => {
       const cdnURL = configMatch[1]
       expect(cdnURL).toBeTruthy()
       // Should be a valid URL with protocol and host
-      expect(cdnURL).toMatch(/^https?:\/\/[^\/]+/)
+      expect(cdnURL).toMatch(/^https?:\/\/[^/]+/)
     }
 
     // Check that entry module src uses the same URL
