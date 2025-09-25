@@ -2,13 +2,11 @@
 
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
-[![ci](https://github.com/drunomics/nuxt-component-preview/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/drunomics/nuxt-component-preview/actions/workflows/ci.yml)
+[![ci](https://github.com/drunomics/nuxt-component-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/drunomics/nuxt-component-preview/actions/workflows/ci.yml)
 [![License][license-src]][license-href]
 [![Nuxt][nuxt-src]][nuxt-href]
 
 > A Nuxt module by [drunomics](https://drunomics.com/en) for previewing Vue components in external contexts (like iframes or separate HTML pages). Originally developed for use with decoupled Drupal environments, but can be used with any backend.
-
-- [✨ &nbsp;Release Notes](/CHANGELOG.md)
 
 ## Features
 
@@ -156,5 +154,5 @@ This module is maintained by [drunomics](https://drunomics.com/en) and inspired 
 [npm-downloads-href]: https://npmjs.com/package/nuxt-component-preview
 [license-src]: https://img.shields.io/npm/l/nuxt-component-preview.svg?style=flat-square
 [license-href]: https://npmjs.com/package/nuxt-component-preview
-[nuxt-src]: https://img.shields.io/badge/Nuxt-3-green.svg
+[nuxt-src]: https://img.shields.io/badge/Nuxt-4-green.svg
 [nuxt-href]: https://nuxt.com
