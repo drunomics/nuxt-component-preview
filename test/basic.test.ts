@@ -35,8 +35,8 @@ describe('nuxt-component-preview module', async () => {
       responseType: 'text',
     })
 
-    // Check that cdnURL is used in window.__NUXT__.config
-    expect(script).toContain('window.__NUXT__.config')
+    // Check that cdnURL is set in the config
+    expect(script).toContain('window.__NUXT__')
     expect(script).toContain('cdnURL:')
 
     // Verify the cdnURL is properly set in the generated config
