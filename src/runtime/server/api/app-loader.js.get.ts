@@ -33,10 +33,26 @@ export default defineEventHandler((event) => {
 
   // Generate the script with prepared values
   const script = `(function() {
-    // Function to initialize Nuxt
+    // Set Nuxt config IMMEDIATELY when script runs, before DOM ready
+    // This ensures app.vue can read the config when it evaluates
+    window.__NUXT__ = {
+      config: {
+        public: ${publicConfigStr},
+        app: {
+          baseURL: "${baseURL}",
+          buildId: "${buildId}",
+          buildAssetsDir: "${buildAssetsDir}",
+          cdnURL: "${cdnURL}"
+        }
+      }
+    };
+
+    // Function to initialize Nuxt DOM elements
     function initNuxt() {
       // Check if already initialized
       if (document.getElementById('__nuxt')) return;
+
+      console.log('[nuxt] Nuxt app for component preview is initializing...');
 
       // Create hidden Nuxt app container
       const nuxt = document.createElement('div');
@@ -65,12 +81,10 @@ export default defineEventHandler((event) => {
       document.head.appendChild(importMap);
 
       // Load entry module
-      // Module scripts are deferred by default, so this will execute
-      // AFTER the DOM is parsed and after our config is already set
       const entry = document.createElement('script');
       entry.type = 'module';
       entry.src = '${entryPathValue}';
-      document.body.appendChild(entry);
+      document.head.appendChild(entry);
     }
 
     // Wait for DOM to be ready before adding DOM elements
@@ -85,10 +99,9 @@ export default defineEventHandler((event) => {
   // Set headers using h3 helper
   setResponseHeader(event, 'Content-Type', 'application/javascript')
 
-  // Always use no-cache headers since URL doesn't change across builds
-  setResponseHeader(event, 'Cache-Control', 'no-cache, no-store, must-revalidate')
-  setResponseHeader(event, 'Pragma', 'no-cache')
-  setResponseHeader(event, 'Expires', '0')
+  // Cache for 5 minutes to avoid constant reloads, but revalidate to catch new builds
+  // private ensures proxies/CDNs don't cache it
+  setResponseHeader(event, 'Cache-Control', 'private, max-age=300, must-revalidate')
 
   return script
 })
