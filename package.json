@@ -1,6 +1,6 @@
 {
   "name": "nuxt-component-preview",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-alpha.7",
   "description": "A Nuxt module for component previewing functionality",
   "repository": "drunomics/nuxt-component-preview",
   "license": "MIT",
