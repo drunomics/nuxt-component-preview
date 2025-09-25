@@ -54,6 +54,41 @@ export default defineNuxtConfig({
 
 **Why?** In dev mode, Nuxt's appManifest feature (default since v3.8) tries to fetch metadata using relative URLs that fail in cross-domain contexts. Production builds work fine with appManifest enabled. Since component preview doesn't require this feature, it's safe to disable in development.
 
+### CORS Configuration
+
+For cross-origin embedding, configure CORS in your Nuxt app:
+
+```ts
+export default defineNuxtConfig({
+  // Development: Vite server CORS
+  vite: {
+    server: {
+      cors: {
+        origin: ['https://your-backend.com'],
+      },
+    },
+  },
+
+  // Production: Nitro route rules
+  nitro: {
+    routeRules: {
+      '/nuxt-component-preview/*.js': {
+        cors: true,
+        headers: {
+          'Access-Control-Allow-Origin': 'https://your-backend.com',
+        },
+      },
+      '/_nuxt/**': {
+        cors: true,
+        headers: {
+          'Access-Control-Allow-Origin': 'https://your-backend.com',
+        },
+      },
+    },
+  },
+})
+```
+
 ## Usage
 
 ### Rendering Component Previews
