@@ -33,6 +33,27 @@ export default defineNuxtConfig({
 })
 ```
 
+### Cross-domain configuration
+
+When embedding component previews on a different domain, disable the app manifest in development mode only:
+
+```ts
+export default defineNuxtConfig({
+  modules: [
+    'nuxt-component-preview',
+  ],
+
+  // Disable appManifest in development only
+  $development: {
+    experimental: {
+      appManifest: false
+    }
+  }
+})
+```
+
+**Why?** In dev mode, Nuxt's appManifest feature (default since v3.8) tries to fetch metadata using relative URLs that fail in cross-domain contexts. Production builds work fine with appManifest enabled. Since component preview doesn't require this feature, it's safe to disable in development.
+
 ## Usage
 
 ### Rendering Component Previews
