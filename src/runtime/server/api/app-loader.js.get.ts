@@ -56,38 +56,24 @@ export default defineEventHandler((event) => {
       nuxtData.setAttribute('data-ssr', 'false');
       nuxtData.id = '__NUXT_DATA__';
       nuxtData.textContent = '[{"serverRendered":1},false]';
-      document.head.appendChild(nuxtData);
+      document.body.appendChild(nuxtData);
 
-      // Add Nuxt config with componentPreview enabled
-      const nuxtConfig = document.createElement('script');
-      nuxtConfig.textContent = \`
-        window.__NUXT__ = {};
-        window.__NUXT__.config = {
-          public: ${publicConfigStr},
-          app: {
-            baseURL: "${baseURL}",
-            buildId: "${buildId}",
-            buildAssetsDir: "${buildAssetsDir}",
-            cdnURL: "${cdnURL}"
-          }
-        };
-      \`;
-      document.head.appendChild(nuxtConfig);
-
-      // Add import map
+      // Add import map (must be in head before module scripts)
       const importMap = document.createElement('script');
       importMap.type = 'importmap';
       importMap.textContent = '{"imports":{"#entry":"${entryPathValue}"}}';
       document.head.appendChild(importMap);
 
       // Load entry module
+      // Module scripts are deferred by default, so this will execute
+      // AFTER the DOM is parsed and after our config is already set
       const entry = document.createElement('script');
       entry.type = 'module';
       entry.src = '${entryPathValue}';
-      document.head.appendChild(entry);
+      document.body.appendChild(entry);
     }
 
-    // Wait for DOM to be ready
+    // Wait for DOM to be ready before adding DOM elements
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initNuxt);
     } else {
