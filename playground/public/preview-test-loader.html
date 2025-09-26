@@ -48,13 +48,16 @@
     </ul>
   </div>
 
-  <h2>Preview Targets</h2>
-  <p>Components will be rendered into these containers once Nuxt is ready:</p>
+  <h2>Component Showcase</h2>
 
-  <!-- Preview targets -->
-  <div id="preview-target-1" class="preview-target"></div>
-  <div id="preview-target-2" class="preview-target"></div>
-  <div id="preview-target-3" class="preview-target"></div>
+  <h3>1. Buttons</h3>
+  <div id="preview-buttons" class="preview-target"></div>
+
+  <h3>2. Popovers</h3>
+  <div id="preview-popovers" class="preview-target"></div>
+
+  <h3>3. Two Column Layout</h3>
+  <div id="preview-layout" class="preview-target"></div>
 
   <!-- Test script that runs when Nuxt is ready -->
   <script>
@@ -65,40 +68,30 @@
     onNuxtComponentPreviewReady((nuxtApp) => {
       console.log('Nuxt Component Preview is ready!');
 
-      // Preview TestMarkup component
-      nuxtApp.$previewComponent(
-        'TestMarkup',
-        {
-          content: `
-            <div style="color: blue;">
-              <h2>HTML Content via Loader</h2>
-              <p>This content was rendered using the <strong>loader script</strong> approach.</p>
-              <p>The Nuxt app was initialized automatically!</p>
-            </div>
-          `
-        },
-        '#preview-target-1'
-      );
+      // TODO: Slots are not yet supported in component preview
+      // For now, only props can be passed to components
 
-      // Preview TestCard component
-      nuxtApp.$previewComponent(
-        'TestCard',
-        {
-          title: 'Card Component via Loader',
-          description: 'This card was rendered using the new app-loader.js loader script.'
-        },
-        '#preview-target-2'
-      );
+      // 1. Button component
+      nuxtApp.$previewComponent('TestButton', {
+        label: 'Primary Button',
+        variant: 'primary',
+        size: 'medium'
+      }, '#preview-buttons');
 
-      // Preview another TestCard with different props
-      nuxtApp.$previewComponent(
-        'TestCard',
-        {
-          title: 'Another Card',
-          description: 'Multiple components work with the loader approach!'
-        },
-        '#preview-target-3'
-      );
+      // 2. Popover component
+      nuxtApp.$previewComponent('TestPopover', {
+        placement: 'bottom',
+        trigger: 'click'
+      }, '#preview-popovers');
+
+      // 3. Two Column Layout component (SDC-style)
+      // Render the TwoColumnLayout with 33% first column
+      nuxtApp.$previewComponent('TwoColumnLayout', {
+        width: 33
+      }, '#preview-layout');
+
+      // Since slots aren't supported yet, it will show the default content:
+      // "The contents of the one column." and "The contents of the two column."
     });
   </script>
 </body>
