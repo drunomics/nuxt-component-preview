@@ -14,10 +14,11 @@ export default defineNuxtPlugin((nuxtApp) => {
    *
    * @param {string} componentName - The name of the registered Vue component
    * @param {object} props - Props to pass to the component
+   * @param {object} slots - Optional slot content as HTML strings keyed by slot name
    * @param {string|Element} target - CSS selector or DOM element where the component will be rendered
    * @returns {object} An object with unmount method
    */
-  function previewComponent(componentName, props, target) {
+  function previewComponent(componentName, props = {}, slots = {}, target) {
     const targetEl = typeof target === 'string'
       ? document.querySelector(target)
       : target
@@ -30,7 +31,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       target: targetEl,
       content: {
         element: componentName,
-        ...props,
+        props,
+        slots,
       },
     }
 

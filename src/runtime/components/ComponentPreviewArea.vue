@@ -6,7 +6,7 @@ const previews = useState('componentPreviews', () => [])
 
 // Helper function to render components using Vue's h() function
 function renderComponent(preview) {
-  const { element, ...props } = preview.content
+  const { element, props = {}, slots = {} } = preview.content
 
   // Resolve the component - it should be globally available
   const component = resolveComponent(element)
@@ -16,7 +16,15 @@ function renderComponent(preview) {
     return h('div', { class: 'preview-error' }, `Component "${element}" not found`)
   }
 
-  return h(component, props)
+  // Convert HTML strings to VNodes for slots
+  const slotContent = {}
+  for (const [slotName, htmlContent] of Object.entries(slots)) {
+    if (htmlContent) {
+      slotContent[slotName] = () => h('div', { innerHTML: htmlContent })
+    }
+  }
+
+  return h(component, props, slotContent)
 }
 </script>
 

@@ -68,30 +68,32 @@
     onNuxtComponentPreviewReady((nuxtApp) => {
       console.log('Nuxt Component Preview is ready!');
 
-      // TODO: Slots are not yet supported in component preview
-      // For now, only props can be passed to components
-
       // 1. Button component
       nuxtApp.$previewComponent('TestButton', {
         label: 'Primary Button',
         variant: 'primary',
         size: 'medium'
-      }, '#preview-buttons');
+      }, {}, '#preview-buttons');
 
       // 2. Popover component
       nuxtApp.$previewComponent('TestPopover', {
         placement: 'bottom',
         trigger: 'click'
-      }, '#preview-popovers');
+      }, {}, '#preview-popovers');
 
-      // 3. Two Column Layout component (SDC-style)
-      // Render the TwoColumnLayout with 33% first column
-      nuxtApp.$previewComponent('TwoColumnLayout', {
-        width: 33
-      }, '#preview-layout');
-
-      // Since slots aren't supported yet, it will show the default content:
-      // "The contents of the one column." and "The contents of the two column."
+      // 3. Two Column Layout component with slots
+      // Render the TwoColumnLayout with 33% first column and custom slot content
+      nuxtApp.$previewComponent(
+        'TwoColumnLayout',
+        {
+          width: 33
+        },
+        {
+          column_one: '<h3>First Column</h3><p>This content is rendered in the first column (33% width).</p><ul><li>Item 1</li><li>Item 2</li></ul>',
+          column_two: '<h3>Second Column</h3><p>This content is rendered in the second column (67% width).</p><p><strong>Slots are now supported!</strong></p>'
+        },
+        '#preview-layout'
+      );
     });
   </script>
 </body>
