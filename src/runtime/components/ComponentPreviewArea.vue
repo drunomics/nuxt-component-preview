@@ -20,7 +20,7 @@ function renderComponent(preview) {
   const slotContent = {}
   for (const [slotName, htmlContent] of Object.entries(slots)) {
     if (htmlContent) {
-      slotContent[slotName] = () => h('div', { innerHTML: htmlContent })
+      slotContent[slotName] = () => h('div', { innerHTML: htmlContent, style: { display: 'contents' } })
     }
   }
 
