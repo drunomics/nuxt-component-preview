@@ -38,7 +38,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     previews.value.push(previewData)
 
-    // Wait for Vue to render the component
+    // Wait for Vue to render the component.
     await nextTick()
 
     return {
@@ -48,15 +48,11 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   }
 
-  // Provide the preview function
   nuxtApp.provide('previewComponent', previewComponent)
 
-  // Store nuxtApp globally and dispatch event when ready
+  // Store nuxtApp globally and dispatch event when ready.
   onNuxtReady(() => {
-    // Store nuxtApp for direct access
     window.__nuxtComponentPreviewApp = nuxtApp
-
-    // Dispatch event
     const event = new CustomEvent('nuxt-component-preview:ready', {
       detail: { nuxtApp },
     })
