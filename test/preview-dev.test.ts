@@ -78,6 +78,34 @@ describe('preview E2E (dev mode)', async () => {
       expect(componentContent.hasLayoutWithSlots).toBe(true)
       await page.close()
     })
+
+    it('renders nested components (2 levels deep)', async () => {
+      const page = await createPage('/preview-test-loader.html')
+
+      // Wait for deep nesting section to render
+      await page.waitForFunction(() => {
+        const deepCard1 = document.getElementById('deep-card-1')
+        const deepCard2 = document.getElementById('deep-card-2')
+        return deepCard1 && deepCard1.children.length > 0 && deepCard2 && deepCard2.children.length > 0
+      }, { timeout: 15000 })
+
+      const nestedContent = await page.evaluate(() => {
+        const deepCard1 = document.getElementById('deep-card-1')
+        const deepCard2 = document.getElementById('deep-card-2')
+        const outerButton = document.getElementById('outer-button-1')
+
+        return {
+          hasDeepCard1: deepCard1?.innerHTML.includes('Deep Card 1'),
+          hasDeepCard2: deepCard2?.innerHTML.includes('Deep Card 2'),
+          hasOuterButton: outerButton?.innerHTML.includes('Outer Button'),
+        }
+      })
+
+      expect(nestedContent.hasDeepCard1).toBe(true)
+      expect(nestedContent.hasDeepCard2).toBe(true)
+      expect(nestedContent.hasOuterButton).toBe(true)
+      await page.close()
+    })
   })
 
   describe('without app-loader.js (manual setup)', () => {
