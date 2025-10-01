@@ -18,12 +18,12 @@ defineProps({
   variant: {
     type: String,
     default: 'primary',
-    validator: (value) => ['primary', 'secondary', 'danger', 'success'].includes(value),
+    validator: value => ['primary', 'secondary', 'danger', 'success'].includes(value),
   },
   size: {
     type: String,
     default: 'medium',
-    validator: (value) => ['small', 'medium', 'large'].includes(value),
+    validator: value => ['small', 'medium', 'large'].includes(value),
   },
   disabled: {
     type: Boolean,

@@ -1,5 +1,8 @@
 <template>
-  <div class="two-column-layout" :data-component-id="'canvas_test_sdc:two_column'">
+  <div
+    class="two-column-layout"
+    :data-component-id="'canvas_test_sdc:two_column'"
+  >
     <div :class="`column-one width-${width}`">
       <slot name="column_one">
         The contents of the one column.
@@ -20,7 +23,7 @@ const props = defineProps({
   width: {
     type: Number,
     default: 50,
-    validator: (value) => [25, 33, 34, 50, 66, 67, 75].includes(value),
+    validator: value => [25, 33, 34, 50, 66, 67, 75].includes(value),
   },
 })
 
