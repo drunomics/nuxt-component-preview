@@ -173,28 +173,34 @@ onNuxtComponentPreviewReady((nuxtApp) => {
 
 #### `$previewComponent(componentName, props, slots, targetSelector)`
 
-Renders a Vue component to a target element. Parameter order mimics Vue's `h()` function with target added last:
+Renders a Vue component to a target element. **Returns a Promise** that resolves when rendering completes.
 
+**Parameters (in order):**
 - **componentName** (string): Name of the registered Vue component
 - **props** (object, optional): Props to pass to the component (default: `{}`)
 - **slots** (object, optional): Slot content as HTML strings, keyed by slot name (default: `{}`)
 - **targetSelector** (string | Element): CSS selector or DOM element where component will be rendered
 
+**Returns:** `Promise<{unmount: Function}>`
+
 ```javascript
-// Simple component without slots
-nuxtApp.$previewComponent('TestCard', { title: 'My Card' }, {}, '#preview-target');
+// Simple component
+await nuxtApp.$previewComponent('TestCard', { title: 'My Card' }, {}, '#preview-target');
 
 // Component with slots
-nuxtApp.$previewComponent(
+await nuxtApp.$previewComponent(
   'TwoColumnLayout',
   { width: 33 },
   {
-    column_one: '<h3>First Column</h3><p>Content for first column</p>',
-    column_two: '<h3>Second Column</h3><p>Content for second column</p>'
+    column_one: '<h3>First Column</h3><p>Content</p>',
+    column_two: '<h3>Second Column</h3><p>Content</p>'
   },
   '#preview-target'
 );
 ```
+
+**Nested Components:** Slots can contain additional preview containers. An example implementing rendering with an
+arbitrary depth can be found at the [example](./playground/public/preview-test-loader.html), which can be tested via `npm run dev`.
 
 ## Testing
 
