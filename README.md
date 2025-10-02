@@ -192,8 +192,8 @@ await nuxtApp.$previewComponent(
   'TwoColumnLayout',
   { width: 33 },
   {
-    column_one: '<h3>First Column</h3><p>Content</p>',
-    column_two: '<h3>Second Column</h3><p>Content</p>'
+    'column-one': '<h3>First Column</h3><p>Content</p>',
+    'column-two': '<h3>Second Column</h3><p>Content</p>'
   },
   '#preview-target'
 );

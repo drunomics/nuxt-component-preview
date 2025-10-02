@@ -4,12 +4,12 @@
     :data-component-id="'canvas_test_sdc:two_column'"
   >
     <div :class="`column-one width-${width}`">
-      <slot name="column_one">
+      <slot name="column-one">
         The contents of the one column.
       </slot>
     </div>
     <div :class="`column-two width-${secondColumnWidth}`">
-      <slot name="column_two">
+      <slot name="column-two">
         The contents of the two column.
       </slot>
     </div>

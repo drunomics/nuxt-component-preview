@@ -109,8 +109,8 @@
       nuxtApp.$previewComponent('TestButton', { label: 'Primary Button', variant: 'primary', size: 'medium' }, {}, '#preview-buttons');
       nuxtApp.$previewComponent('TestPopover', { placement: 'bottom', trigger: 'click' }, {}, '#preview-popovers');
       nuxtApp.$previewComponent('TwoColumnLayout', { width: 33 }, {
-        column_one: '<h3>First Column</h3><p>This content is rendered in the first column (33% width).</p><ul><li>Item 1</li><li>Item 2</li></ul>',
-        column_two: '<h3>Second Column</h3><p>This content is rendered in the second column (67% width).</p><p><strong>Slots are now supported!</strong></p>'
+        'column-one': '<h3>First Column</h3><p>This content is rendered in the first column (33% width).</p><ul><li>Item 1</li><li>Item 2</li></ul>',
+        'column-two': '<h3>Second Column</h3><p>This content is rendered in the second column (67% width).</p><p><strong>Slots are now supported!</strong></p>'
       }, '#preview-layout');
 
       // 4. Nested components - Use helper for initialization
@@ -121,7 +121,7 @@
       const col2 = `<div><h3>Column 2: Popover</h3>
         <div id="nested-popover-1" class="nuxt-preview-container" data-component-name="TestPopover" data-component-data='{"element":"TestPopover","placement":"top","trigger":"hover"}'></div>
       </div>`;
-      await nuxtApp.$previewComponent('TwoColumnLayout', { width: 40 }, { column_one: col1, column_two: col2 }, '#preview-nested');
+      await nuxtApp.$previewComponent('TwoColumnLayout', { width: 40 }, { 'column-one': col1, 'column-two': col2 }, '#preview-nested');
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       await new Promise(resolve => setTimeout(resolve, 50));
       await initializeAllContainers(document.getElementById('preview-nested'));
@@ -152,8 +152,8 @@
         element: 'TwoColumnLayout',
         width: 50,
         slots: {
-          column_one: deepCard1El.outerHTML,
-          column_two: deepCard2El.outerHTML
+          'column-one': deepCard1El.outerHTML,
+          'column-two': deepCard2El.outerHTML
         }
       });
 
@@ -166,8 +166,8 @@
 
       // Set up outer layout in preview-deep-nested
       const outerLayoutSlots = {
-        column_one: `<h3>Outer Column 1: Inner Layout</h3>${innerLayoutEl.outerHTML}`,
-        column_two: `<h3>Outer Column 2: Button</h3>${outerButtonEl.outerHTML}`
+        'column-one': `<h3>Outer Column 1: Inner Layout</h3>${innerLayoutEl.outerHTML}`,
+        'column-two': `<h3>Outer Column 2: Button</h3>${outerButtonEl.outerHTML}`
       };
 
       await nuxtApp.$previewComponent('TwoColumnLayout', { width: 50 }, outerLayoutSlots, '#preview-deep-nested');
