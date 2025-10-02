@@ -1,12 +1,15 @@
 <template>
-  <div class="two-column-layout" :data-component-id="'canvas_test_sdc:two_column'">
-    <div v-if="hasColumnOne" :class="`column-one width-${width}`">
-      <slot name="column_one">
+  <div
+    class="two-column-layout"
+    :data-component-id="'canvas_test_sdc:two_column'"
+  >
+    <div :class="`column-one width-${width}`">
+      <slot name="column-one">
         The contents of the one column.
       </slot>
     </div>
-    <div v-if="hasColumnTwo" :class="`column-two width-${secondColumnWidth}`">
-      <slot name="column_two">
+    <div :class="`column-two width-${secondColumnWidth}`">
+      <slot name="column-two">
         The contents of the two column.
       </slot>
     </div>
@@ -14,24 +17,14 @@
 </template>
 
 <script setup>
-import { computed, useSlots } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   width: {
     type: Number,
     default: 50,
-    validator: (value) => [25, 33, 34, 50, 66, 67, 75].includes(value),
+    validator: value => [25, 33, 34, 50, 66, 67, 75].includes(value),
   },
-})
-
-const slots = useSlots()
-
-const hasColumnOne = computed(() => {
-  return !!slots.column_one || true // Always show in preview since slots aren't supported yet
-})
-
-const hasColumnTwo = computed(() => {
-  return !!slots.column_two || true // Always show in preview since slots aren't supported yet
 })
 
 const secondColumnWidth = computed(() => {

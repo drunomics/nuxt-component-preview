@@ -1,4 +1,4 @@
-import { defineNuxtPlugin, useState, useRuntimeConfig, onNuxtReady } from '#imports'
+import { defineNuxtPlugin, useState, useRuntimeConfig, onNuxtReady, nextTick } from '#imports'
 
 export default defineNuxtPlugin((nuxtApp) => {
   // Only activate when preview mode is enabled
@@ -14,10 +14,11 @@ export default defineNuxtPlugin((nuxtApp) => {
    *
    * @param {string} componentName - The name of the registered Vue component
    * @param {object} props - Props to pass to the component
+   * @param {object} slots - Optional slot content as HTML strings keyed by slot name
    * @param {string|Element} target - CSS selector or DOM element where the component will be rendered
-   * @returns {object} An object with unmount method
+   * @returns {Promise<object>} A promise that resolves with an unmount method when rendering is complete
    */
-  function previewComponent(componentName, props, target) {
+  async function previewComponent(componentName, props = {}, slots = {}, target) {
     const targetEl = typeof target === 'string'
       ? document.querySelector(target)
       : target
@@ -30,11 +31,15 @@ export default defineNuxtPlugin((nuxtApp) => {
       target: targetEl,
       content: {
         element: componentName,
-        ...props,
+        props,
+        slots,
       },
     }
 
     previews.value.push(previewData)
+
+    // Wait for Vue to render the component.
+    await nextTick()
 
     return {
       unmount() {
@@ -43,15 +48,11 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   }
 
-  // Provide the preview function
   nuxtApp.provide('previewComponent', previewComponent)
 
-  // Store nuxtApp globally and dispatch event when ready
+  // Store nuxtApp globally and dispatch event when ready.
   onNuxtReady(() => {
-    // Store nuxtApp for direct access
     window.__nuxtComponentPreviewApp = nuxtApp
-
-    // Dispatch event
     const event = new CustomEvent('nuxt-component-preview:ready', {
       detail: { nuxtApp },
     })

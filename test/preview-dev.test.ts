@@ -49,34 +49,61 @@ describe('preview E2E (dev mode)', async () => {
 
       // Wait for components to render
       await page.waitForFunction(() => {
-        const target = document.getElementById('preview-target-1')
+        const target = document.getElementById('preview-buttons')
         return target && target.children.length > 0
       }, { timeout: 15000 })
 
       // Check for specific Vue component HTML content
       const componentContent = await page.evaluate(() => {
-        const target1 = document.getElementById('preview-target-1')
-        const target2 = document.getElementById('preview-target-2')
+        const buttonTarget = document.getElementById('preview-buttons')
+        const layoutTarget = document.getElementById('preview-layout')
 
-        // Look for actual rendered content from TestMarkup component
-        const hasMarkupContent = target1?.innerHTML.includes('HTML Content via Loader')
-          || target1?.querySelector('h2')?.textContent?.includes('HTML Content')
+        // Look for Button component
+        const hasButtonContent = buttonTarget?.innerHTML.includes('Primary Button')
+          || buttonTarget?.querySelector('button')?.textContent?.includes('Primary Button')
 
-        // Look for TestCard component structure (card elements)
-        const hasCardStructure = target2?.querySelector('.card') !== null
-          || target2?.innerHTML.includes('Card Component')
-          || target2?.innerHTML.includes('card')
+        // Look for TwoColumnLayout with slots
+        const hasLayoutWithSlots = layoutTarget?.innerHTML.includes('First Column')
+          && layoutTarget?.innerHTML.includes('Second Column')
 
         return {
-          hasMarkupContent,
-          hasCardStructure,
-          target1HTML: target1?.innerHTML.substring(0, 200), // First 200 chars for debugging
-          target2HTML: target2?.innerHTML.substring(0, 200),
+          hasButtonContent,
+          hasLayoutWithSlots,
+          buttonHTML: buttonTarget?.innerHTML.substring(0, 200),
+          layoutHTML: layoutTarget?.innerHTML.substring(0, 300),
         }
       })
 
-      expect(componentContent.hasMarkupContent).toBe(true)
-      expect(componentContent.hasCardStructure).toBe(true)
+      expect(componentContent.hasButtonContent).toBe(true)
+      expect(componentContent.hasLayoutWithSlots).toBe(true)
+      await page.close()
+    })
+
+    it('renders nested components (2 levels deep)', async () => {
+      const page = await createPage('/preview-test-loader.html')
+
+      // Wait for deep nesting section to render
+      await page.waitForFunction(() => {
+        const deepCard1 = document.getElementById('deep-card-1')
+        const deepCard2 = document.getElementById('deep-card-2')
+        return deepCard1 && deepCard1.children.length > 0 && deepCard2 && deepCard2.children.length > 0
+      }, { timeout: 15000 })
+
+      const nestedContent = await page.evaluate(() => {
+        const deepCard1 = document.getElementById('deep-card-1')
+        const deepCard2 = document.getElementById('deep-card-2')
+        const outerButton = document.getElementById('outer-button-1')
+
+        return {
+          hasDeepCard1: deepCard1?.innerHTML.includes('Deep Card 1'),
+          hasDeepCard2: deepCard2?.innerHTML.includes('Deep Card 2'),
+          hasOuterButton: outerButton?.innerHTML.includes('Outer Button'),
+        }
+      })
+
+      expect(nestedContent.hasDeepCard1).toBe(true)
+      expect(nestedContent.hasDeepCard2).toBe(true)
+      expect(nestedContent.hasOuterButton).toBe(true)
       await page.close()
     })
   })

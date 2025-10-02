@@ -123,17 +123,17 @@ The app-loader script automatically sets up everything needed for component prev
   <div id="preview-target-2"></div>
 
   <script>
-    // Helper function that handles both sync and async cases
+    // Helper function that handles both sync and async cases:
     const onNuxtComponentPreviewReady = (callback) =>
       window.__nuxtComponentPreviewApp
         ? callback(window.__nuxtComponentPreviewApp)
         : window.addEventListener('nuxt-component-preview:ready', event => callback(event.detail.nuxtApp), { once: true })
 
-    // Use the helper
+    // Example usage of the helper:
     onNuxtComponentPreviewReady((nuxtApp) => {
-      // Render components into targets
-      nuxtApp.$previewComponent('MyComponent', { prop: 'value' }, '#preview-target-1');
-      nuxtApp.$previewComponent('OtherComponent', { data: 123 }, '#preview-target-2');
+      nuxtApp.$previewComponent('MyComponent', { prop: 'value' }, {}, '#preview-target-1');
+      nuxtApp.$previewComponent('OtherComponent', { data: 123 }, {}, '#preview-target-2');
+      nuxtApp.$previewComponent('LayoutComponent', {}, { slot_name: '<p>HTML content for slot</p>' }, '#preview-target-3');
     });
   </script>
 </body>
@@ -167,21 +167,40 @@ const onNuxtComponentPreviewReady = (callback) =>
 
 // Usage
 onNuxtComponentPreviewReady((nuxtApp) => {
-  nuxtApp.$previewComponent('MyComponent', props, '#target');
+  nuxtApp.$previewComponent('MyComponent', props, slots, '#target');
 });
 ```
 
-#### `$previewComponent(componentName, props, targetSelector)`
+#### `$previewComponent(componentName, props, slots, targetSelector)`
 
-Renders a Vue component to a target element:
+Renders a Vue component to a target element. **Returns a Promise** that resolves when rendering completes.
 
+**Parameters (in order):**
 - **componentName** (string): Name of the registered Vue component
-- **props** (object): Props to pass to the component
-- **targetSelector** (string | Element): CSS selector or DOM element
+- **props** (object, optional): Props to pass to the component (default: `{}`)
+- **slots** (object, optional): Slot content as HTML strings, keyed by slot name (default: `{}`)
+- **targetSelector** (string | Element): CSS selector or DOM element where component will be rendered
+
+**Returns:** `Promise<{unmount: Function}>`
 
 ```javascript
-nuxtApp.$previewComponent('TestCard', { title: 'My Card' }, '#preview-target');
+// Simple component
+await nuxtApp.$previewComponent('TestCard', { title: 'My Card' }, {}, '#preview-target');
+
+// Component with slots
+await nuxtApp.$previewComponent(
+  'TwoColumnLayout',
+  { width: 33 },
+  {
+    'column-one': '<h3>First Column</h3><p>Content</p>',
+    'column-two': '<h3>Second Column</h3><p>Content</p>'
+  },
+  '#preview-target'
+);
 ```
+
+**Nested Components:** Slots can contain additional preview containers. An example implementing rendering with an
+arbitrary depth can be found at the [example](./playground/public/preview-test-loader.html), which can be tested via `npm run dev`.
 
 ## Testing
 
