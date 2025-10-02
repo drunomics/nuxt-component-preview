@@ -1,5 +1,8 @@
 <template>
-  <div class="popover-container" ref="popoverContainer">
+  <div
+    ref="popoverContainer"
+    class="popover-container"
+  >
     <div
       ref="triggerEl"
       class="popover-trigger"
@@ -8,7 +11,9 @@
       @mouseleave="handleMouseLeave"
     >
       <slot name="trigger">
-        <button class="default-trigger">Click me</button>
+        <button class="default-trigger">
+          Click me
+        </button>
       </slot>
     </div>
 
@@ -22,7 +27,11 @@
           :style="popoverStyle"
           @click.stop
         >
-          <div v-if="showArrow" class="popover-arrow" :style="arrowStyle"></div>
+          <div
+            v-if="showArrow"
+            class="popover-arrow"
+            :style="arrowStyle"
+          />
           <slot>
             <div class="default-content">
               Popover content goes here
@@ -35,18 +44,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, onBeforeUnmount, watch, nextTick } from 'vue'
 
 const props = defineProps({
   placement: {
     type: String,
     default: 'bottom',
-    validator: (value) => ['top', 'bottom', 'left', 'right', 'top-start', 'top-end', 'bottom-start', 'bottom-end'].includes(value),
+    validator: value => ['top', 'bottom', 'left', 'right', 'top-start', 'top-end', 'bottom-start', 'bottom-end'].includes(value),
   },
   trigger: {
     type: String,
     default: 'click',
-    validator: (value) => ['click', 'hover'].includes(value),
+    validator: value => ['click', 'hover'].includes(value),
   },
   offset: {
     type: Number,
@@ -208,8 +217,8 @@ const handleMouseLeave = () => {
 const handleClickOutside = (event) => {
   if (!props.closeOnClickOutside) return
 
-  if (popoverContainer.value && !popoverContainer.value.contains(event.target) &&
-      popoverEl.value && !popoverEl.value.contains(event.target)) {
+  if (popoverContainer.value && !popoverContainer.value.contains(event.target)
+    && popoverEl.value && !popoverEl.value.contains(event.target)) {
     isOpen.value = false
   }
 }
@@ -227,7 +236,8 @@ watch(isOpen, async (newVal) => {
     document.addEventListener('click', handleClickOutside)
     window.addEventListener('scroll', handleScroll, true)
     window.addEventListener('resize', calculatePosition)
-  } else {
+  }
+  else {
     document.removeEventListener('click', handleClickOutside)
     window.removeEventListener('scroll', handleScroll, true)
     window.removeEventListener('resize', calculatePosition)

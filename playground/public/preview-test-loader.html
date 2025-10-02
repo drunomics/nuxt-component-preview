@@ -59,39 +59,123 @@
   <h3>3. Two Column Layout</h3>
   <div id="preview-layout" class="preview-target"></div>
 
+  <h3>4. Nested Components Test - 3 Components in Slots</h3>
+  <div id="preview-nested" class="preview-target"></div>
+
+  <h3>5. Deep Nesting Test - 2 Levels (Layout > Layout > Cards + Button)</h3>
+  <div id="preview-deep-nested" class="preview-target"></div>
+
   <!-- Test script that runs when Nuxt is ready -->
   <script>
     // Helper function to handle both sync and async cases
     const onNuxtComponentPreviewReady = (callback) => window.__nuxtComponentPreviewApp ? callback(window.__nuxtComponentPreviewApp) : window.addEventListener('nuxt-component-preview:ready', event => callback(event.detail.nuxtApp), { once: true })
 
     // Use the helper
-    onNuxtComponentPreviewReady((nuxtApp) => {
+    onNuxtComponentPreviewReady(async (nuxtApp) => {
       console.log('Nuxt Component Preview is ready!');
 
-      // TODO: Slots are not yet supported in component preview
-      // For now, only props can be passed to components
+      // Helper: Initialize all containers iteratively (handles nested components)
+      async function initializeAllContainers(rootElement = document.body) {
+        const initialized = new Set();
 
-      // 1. Button component
-      nuxtApp.$previewComponent('TestButton', {
-        label: 'Primary Button',
-        variant: 'primary',
-        size: 'medium'
-      }, '#preview-buttons');
+        while (true) {
+          // Find all containers: rootElement itself + containers within
+          let containers = [];
+          if (rootElement.classList?.contains('nuxt-preview-container')) {
+            containers.push(rootElement);
+          }
+          containers.push(...rootElement.querySelectorAll('.nuxt-preview-container'));
 
-      // 2. Popover component
-      nuxtApp.$previewComponent('TestPopover', {
-        placement: 'bottom',
-        trigger: 'click'
-      }, '#preview-popovers');
+          const uninitiated = containers.filter(c => !initialized.has(c.id));
+          if (uninitiated.length === 0) break;
 
-      // 3. Two Column Layout component (SDC-style)
-      // Render the TwoColumnLayout with 33% first column
-      nuxtApp.$previewComponent('TwoColumnLayout', {
-        width: 33
+          // Initialize all containers in parallel
+          await Promise.all(uninitiated.map(async (container) => {
+            initialized.add(container.id);
+            const { element, slots = {}, ...props } = JSON.parse(container.dataset.componentData || '{}');
+            await nuxtApp.$previewComponent(container.dataset.componentName, props, slots, `#${container.id}`);
+          }));
+
+          // Wait for Teleport + innerHTML parsing to complete
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          // Pragmatic 50ms delay for reliable innerHTML parsing
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        console.log(`✓ Initialized ${initialized.size} component(s)`);
+      }
+
+      // 1-4. Simple examples - direct calls
+      nuxtApp.$previewComponent('TestButton', { label: 'Primary Button', variant: 'primary', size: 'medium' }, {}, '#preview-buttons');
+      nuxtApp.$previewComponent('TestPopover', { placement: 'bottom', trigger: 'click' }, {}, '#preview-popovers');
+      nuxtApp.$previewComponent('TwoColumnLayout', { width: 33 }, {
+        'column-one': '<h3>First Column</h3><p>This content is rendered in the first column (33% width).</p><ul><li>Item 1</li><li>Item 2</li></ul>',
+        'column-two': '<h3>Second Column</h3><p>This content is rendered in the second column (67% width).</p><p><strong>Slots are now supported!</strong></p>'
       }, '#preview-layout');
 
-      // Since slots aren't supported yet, it will show the default content:
-      // "The contents of the one column." and "The contents of the two column."
+      // 4. Nested components - Use helper for initialization
+      const col1 = `<div><h3>Column 1: Button + Card</h3>
+        <div id="nested-button-1" class="nuxt-preview-container" data-component-name="TestButton" data-component-data='{"element":"TestButton","label":"Nested Button","variant":"success","size":"large"}'></div>
+        <div id="nested-card-1" class="nuxt-preview-container" data-component-name="TestCard" data-component-data='{"element":"TestCard","title":"Nested Card","description":"In column 1"}'></div>
+      </div>`;
+      const col2 = `<div><h3>Column 2: Popover</h3>
+        <div id="nested-popover-1" class="nuxt-preview-container" data-component-name="TestPopover" data-component-data='{"element":"TestPopover","placement":"top","trigger":"hover"}'></div>
+      </div>`;
+      await nuxtApp.$previewComponent('TwoColumnLayout', { width: 40 }, { 'column-one': col1, 'column-two': col2 }, '#preview-nested');
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await initializeAllContainers(document.getElementById('preview-nested'));
+
+      // 5. Deep nesting (2 levels) - Build programmatically to avoid escaping hell
+      const deepCardData1 = { element: 'TestCard', title: 'Deep Card 1', description: 'Level 2 nesting' };
+      const deepCardData2 = { element: 'TestCard', title: 'Deep Card 2', description: 'Level 2 nesting' };
+
+      // Create deep card containers programmatically
+      const deepCard1El = document.createElement('div');
+      deepCard1El.id = 'deep-card-1';
+      deepCard1El.className = 'nuxt-preview-container';
+      deepCard1El.dataset.componentName = 'TestCard';
+      deepCard1El.dataset.componentData = JSON.stringify(deepCardData1);
+
+      const deepCard2El = document.createElement('div');
+      deepCard2El.id = 'deep-card-2';
+      deepCard2El.className = 'nuxt-preview-container';
+      deepCard2El.dataset.componentName = 'TestCard';
+      deepCard2El.dataset.componentData = JSON.stringify(deepCardData2);
+
+      // Create inner layout container with slot HTML
+      const innerLayoutEl = document.createElement('div');
+      innerLayoutEl.id = 'inner-layout-1';
+      innerLayoutEl.className = 'nuxt-preview-container';
+      innerLayoutEl.dataset.componentName = 'TwoColumnLayout';
+      innerLayoutEl.dataset.componentData = JSON.stringify({
+        element: 'TwoColumnLayout',
+        width: 50,
+        slots: {
+          'column-one': deepCard1El.outerHTML,
+          'column-two': deepCard2El.outerHTML
+        }
+      });
+
+      // Create outer button container
+      const outerButtonEl = document.createElement('div');
+      outerButtonEl.id = 'outer-button-1';
+      outerButtonEl.className = 'nuxt-preview-container';
+      outerButtonEl.dataset.componentName = 'TestButton';
+      outerButtonEl.dataset.componentData = JSON.stringify({ element: 'TestButton', label: 'Outer Button', variant: 'danger', size: 'large' });
+
+      // Set up outer layout in preview-deep-nested
+      const outerLayoutSlots = {
+        'column-one': `<h3>Outer Column 1: Inner Layout</h3>${innerLayoutEl.outerHTML}`,
+        'column-two': `<h3>Outer Column 2: Button</h3>${outerButtonEl.outerHTML}`
+      };
+
+      await nuxtApp.$previewComponent('TwoColumnLayout', { width: 50 }, outerLayoutSlots, '#preview-deep-nested');
+
+      // ONE call to helper handles all nesting
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await initializeAllContainers(document.getElementById('preview-deep-nested'));
     });
   </script>
 </body>

@@ -43,6 +43,7 @@
   <div id="preview-target-1" class="preview-target"></div>
   <div id="preview-target-2" class="preview-target"></div>
   <div id="preview-target-3" class="preview-target"></div>
+  <div id="preview-target-4" class="preview-target"></div>
 
   <script type="application/json" data-nuxt-data="nuxt-app" data-ssr="false" id="__NUXT_DATA__">[{"serverRendered":1},false]</script>
   <script>
@@ -80,6 +81,7 @@
             </div>
           `
         },
+        {},
         '#preview-target-1'
       );
 
@@ -90,6 +92,7 @@
           title: 'Amazing Card Title',
           description: 'This is a test card component with custom props.'
         },
+        {},
         '#preview-target-2'
       );
 
@@ -100,7 +103,21 @@
           title: 'Another Card',
           description: 'This demonstrates multiple component instances.'
         },
+        {},
         '#preview-target-3'
+      );
+
+      // Preview TwoColumnLayout component with slots
+      nuxtApp.$previewComponent(
+        'TwoColumnLayout',
+        {
+          width: 33
+        },
+        {
+          'column-one': '<h3>First Column</h3><p>This is slot content in the first column (33% width).</p><ul><li>Slot support added!</li><li>HTML content works</li></ul>',
+          'column-two': '<h3>Second Column</h3><p>This is slot content in the second column (67% width).</p><p><strong>Components can now have slotted content!</strong></p>'
+        },
+        '#preview-target-4'
       );
     });
   </script>
