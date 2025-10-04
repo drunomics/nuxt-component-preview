@@ -11,20 +11,39 @@
 
 <script setup>
 defineProps({
+  /**
+   * Button label text
+   * @example Submit
+   * @example Cancel
+   * @example Learn More
+   */
   label: {
     type: String,
     default: 'Click me',
   },
+  /**
+   * Visual style variant
+   * @example primary
+   * @example success
+   */
   variant: {
     type: String,
     default: 'primary',
     validator: value => ['primary', 'secondary', 'danger', 'success'].includes(value),
   },
+  /**
+   * Button size
+   * @example medium
+   */
   size: {
     type: String,
     default: 'medium',
     validator: value => ['small', 'medium', 'large'].includes(value),
   },
+  /**
+   * Whether the button is disabled
+   * @example false
+   */
   disabled: {
     type: Boolean,
     default: false,
