@@ -10,8 +10,8 @@ export default defineEventHandler((event) => {
   }
 
   setHeader(event, 'Content-Type', 'application/json')
-  // Private cache only, revalidate on each request, no proxy caching
-  setHeader(event, 'Cache-Control', 'private, must-revalidate, no-store, max-age=0')
+  // Allow client cache but must revalidate, no proxy caching
+  setHeader(event, 'Cache-Control', 'private, must-revalidate, max-age=0')
 
   return componentIndexData
 })
