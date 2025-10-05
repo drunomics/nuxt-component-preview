@@ -3,12 +3,12 @@
   <div v-html="content" class="markup"></div>
 </template>
 
-<script setup>
-defineProps({
-  content: {
-    type: String,
-    default: '',
-  },
+<script setup lang="ts">
+withDefaults(defineProps<{
+  /** HTML content to render */
+  content?: string
+}>(), {
+  content: '',
 })
 </script>
 

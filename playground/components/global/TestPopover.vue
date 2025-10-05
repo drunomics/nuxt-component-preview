@@ -43,36 +43,29 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onBeforeUnmount, watch, nextTick } from 'vue'
 
-const props = defineProps({
-  placement: {
-    type: String,
-    default: 'bottom',
-    validator: value => ['top', 'bottom', 'left', 'right', 'top-start', 'top-end', 'bottom-start', 'bottom-end'].includes(value),
-  },
-  trigger: {
-    type: String,
-    default: 'click',
-    validator: value => ['click', 'hover'].includes(value),
-  },
-  offset: {
-    type: Number,
-    default: 8,
-  },
-  showArrow: {
-    type: Boolean,
-    default: true,
-  },
-  closeOnClickOutside: {
-    type: Boolean,
-    default: true,
-  },
-  delay: {
-    type: Number,
-    default: 0,
-  },
+const props = withDefaults(defineProps<{
+  /** Popover placement @example bottom */
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end'
+  /** Trigger type @example click */
+  trigger?: 'click' | 'hover'
+  /** Offset in pixels @example 8 */
+  offset?: number
+  /** Show arrow pointer */
+  showArrow?: boolean
+  /** Close on click outside */
+  closeOnClickOutside?: boolean
+  /** Delay in milliseconds */
+  delay?: number
+}>(), {
+  placement: 'bottom',
+  trigger: 'click',
+  offset: 8,
+  showArrow: true,
+  closeOnClickOutside: true,
+  delay: 0,
 })
 
 const isOpen = ref(false)

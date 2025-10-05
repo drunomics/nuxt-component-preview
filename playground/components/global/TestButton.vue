@@ -9,26 +9,36 @@
   </button>
 </template>
 
-<script setup>
-defineProps({
-  label: {
-    type: String,
-    default: 'Click me',
-  },
-  variant: {
-    type: String,
-    default: 'primary',
-    validator: value => ['primary', 'secondary', 'danger', 'success'].includes(value),
-  },
-  size: {
-    type: String,
-    default: 'medium',
-    validator: value => ['small', 'medium', 'large'].includes(value),
-  },
-  disabled: {
-    type: Boolean,
-    default: false,
-  },
+<script setup lang="ts">
+withDefaults(defineProps<{
+  /**
+   * Button label text
+   * @example Submit
+   * @example Cancel
+   * @example Learn More
+   */
+  label?: string
+  /**
+   * Visual style variant
+   * @example primary
+   * @example success
+   */
+  variant?: 'primary' | 'secondary' | 'danger' | 'success'
+  /**
+   * Button size
+   * @example medium
+   * @enumLabels {"large": "Extra Large (XL)"}
+   */
+  size?: 'small' | 'medium' | 'large'
+  /**
+   * Whether the button is disabled
+   */
+  disabled?: boolean
+}>(), {
+  label: 'Click me',
+  variant: 'primary',
+  size: 'medium',
+  disabled: false,
 })
 
 const emit = defineEmits(['click'])

@@ -13,6 +13,7 @@
 - 🎭 **Component Preview Mode**: Conditionally render components for previewing in isolation
 - 🚀 **Production Safe**: Inactive by default, only activates when explicitly enabled
 - 🎯 **Target Rendering**: Render components to specific DOM elements using CSS selectors
+- 📋 **Component Index**: Auto-generates JSON metadata for global components (Drupal Canvas compatible)
 - 🧪 **Testing Ready**: Comprehensive test coverage and playground setup
 
 ## Quick Setup
@@ -201,6 +202,77 @@ await nuxtApp.$previewComponent(
 
 **Nested Components:** Slots can contain additional preview containers. An example implementing rendering with an
 arbitrary depth can be found at the [example](./playground/public/preview-test-loader.html), which can be tested via `npm run dev`.
+
+## Component Index
+
+This module automatically generates a component index JSON file containing metadata for all global components. This is particularly useful for integration with Drupal Canvas External JS module.
+
+### Endpoint
+
+The component index is available at:
+```
+http://localhost:3000/nuxt-component-preview/component-index.json
+```
+
+### Configuration
+
+```typescript
+export default defineNuxtConfig({
+  modules: ['nuxt-component-preview'],
+
+  componentPreview: {
+    componentIndex: {
+      enabled: true, // default: true
+      category: 'Nuxt Components', // default category
+      status: 'stable', // default: stable, experimental, deprecated, obsolete
+
+      // Exclude components (overwrites defaults)
+      exclude: {
+        components: ['*--default'], // default: excludes *--default pattern
+        directories: [] // exclude by directory pattern
+      },
+
+      // Override metadata for specific components
+      overrides: {
+        TestButton: { category: 'Forms', status: 'experimental' }
+      }
+    }
+  }
+})
+```
+
+### Requirements for Component Index
+
+- Components must be **global** (registered with `global: true` in Nuxt)
+  - Components in `components/global/` directory are automatically global
+  - Nuxt modules can also register global components
+- Use TypeScript inline syntax with JSDoc for best metadata extraction:
+
+```vue
+<script setup lang="ts">
+withDefaults(defineProps<{
+  /**
+   * Button label text
+   * @example Submit
+   * @example Cancel
+   */
+  label?: string
+  /**
+   * Button variant
+   * @example primary
+   * @enumLabels {"large": "Extra Large (XL)"}
+   */
+  variant?: 'primary' | 'secondary' | 'large'
+}>(), {
+  label: 'Click me',
+  variant: 'primary'
+})
+</script>
+```
+
+**Supported JSDoc tags:**
+- `@example` - Adds to `examples` field
+- `@enumLabels` - Custom labels for `meta:enum` (full or partial)
 
 ## Testing
 

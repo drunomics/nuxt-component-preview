@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$id": "https://drupal.org/modules/canvas_extjs/component-index.schema.json",
+  "title": "Canvas External JS Component Index",
+  "description": "Schema for component index containing metadata for external JavaScript components.",
+  "type": "object",
+  "required": ["version", "components"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version for future compatibility",
+      "examples": ["1.0"]
+    },
+    "components": {
+      "type": "array",
+      "description": "Array of component definitions",
+      "items": {
+        "$ref": "#/$defs/componentDefinition"
+      }
+    }
+  },
+  "$defs": {
+    "componentDefinition": {
+      "type": "object",
+      "required": ["id", "name", "category"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Machine name / component ID (will be prefixed with 'extjs.' for entity ID)",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
+          "examples": ["TestButton", "TwoColumnLayout"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable component name",
+          "examples": ["Test Button", "Two Column Layout"]
+        },
+        "category": {
+          "type": "string",
+          "description": "Component category for organization in Canvas UI",
+          "examples": ["Vue Components", "React Components", "Layout"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Component description",
+          "examples": ["A customizable button component"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Development status",
+          "enum": ["experimental", "stable", "deprecated", "obsolete"]
+        },
+        "props": {
+          "$ref": "#/$defs/propDefinition",
+          "description": "JSON Schema for component props"
+        },
+        "slots": {
+          "$ref": "#/$defs/slotDefinition",
+          "description": "Named slot definitions"
+        }
+      }
+    },
+    "propDefinition": {
+      "description": "Extended JSON Schema for props. Supports meta:enum for translatable enum labels, x-translation-context, and examples (like Drupal SDCs).",
+      "allOf": [
+        {
+          "$ref": "http://json-schema.org/draft-04/schema#"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "examples": {
+              "type": "array",
+              "description": "Example values for the prop",
+              "items": {}
+            },
+            "meta:enum": {
+              "type": "object",
+              "description": "Human-readable, translatable labels for enum values. Keys must match enum values.",
+              "minItems": 1,
+              "uniqueItems": true,
+              "patternProperties": {
+                "^[a-zA-Z0-9_-]*$": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "x-translation-context": {
+              "type": "string",
+              "title": "Translation Context",
+              "description": "Context for translations, allows same enum values to have different translations"
+            }
+          }
+        }
+      ]
+    },
+    "slotDefinition": {
+      "type": "object",
+      "description": "Named slots definition",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Human-readable slot title"
+            },
+            "description": {
+              "type": "string",
+              "description": "Slot description"
+            },
+            "examples": {
+              "type": "array",
+              "description": "Example slot content",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
