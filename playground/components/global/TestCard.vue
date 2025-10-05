@@ -5,16 +5,23 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  title: {
-    type: String,
-    default: 'Default Title',
-  },
-  description: {
-    type: String,
-    default: 'Default description',
-  },
+<script setup lang="ts">
+withDefaults(defineProps<{
+  /**
+   * Card title
+   * @example Featured Article
+   * @example Product Showcase
+   */
+  title?: string
+  /**
+   * Card description text
+   * @example Learn more about our services
+   * @example Discover new features
+   */
+  description?: string
+}>(), {
+  title: 'Default Title',
+  description: 'Default description'
 })
 </script>
 

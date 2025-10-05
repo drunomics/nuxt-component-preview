@@ -45,6 +45,27 @@
     </div>
 
     <div style="margin: 2rem 0;">
+      <h2>Component Index</h2>
+      <p>Component metadata is automatically generated for all global components.</p>
+      <div style="margin: 1rem 0; padding: 1rem; background: #f0f0f0; border-radius: 4px;">
+        <strong>Component Index URL:</strong><br>
+        <code v-if="fullUrl" style="display: block; margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 3px; user-select: all;">
+          {{ fullUrl }}
+        </code>
+        <code v-else style="display: block; margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 3px;">
+          Loading...
+        </code>
+        <a
+          :href="componentIndexUrl"
+          target="_blank"
+          style="display: inline-block; padding: 0.5rem 1rem; background: #42b883; color: white; text-decoration: none; border-radius: 4px; margin-top: 0.5rem;"
+        >
+          View Component Index
+        </a>
+      </div>
+    </div>
+
+    <div style="margin: 2rem 0;">
       <h2>Module Status</h2>
       <p><strong>Preview Mode:</strong> {{ $config.public.componentPreview ? 'Enabled' : 'Disabled' }}</p>
       <p>Preview mode should be disabled in normal app usage and only enabled when explicitly configured.</p>
@@ -54,6 +75,12 @@
 
 <script setup>
 const $config = useRuntimeConfig()
+const componentIndexUrl = '/nuxt-component-preview/component-index.json'
+const fullUrl = ref('')
+
+onMounted(() => {
+  fullUrl.value = window.location.origin + componentIndexUrl
+})
 </script>
 
 <style scoped>

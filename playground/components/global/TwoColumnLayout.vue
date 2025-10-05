@@ -16,16 +16,29 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  width: {
-    type: Number,
-    default: 50,
-    validator: value => [25, 33, 34, 50, 66, 67, 75].includes(value),
-  },
+const props = withDefaults(defineProps<{
+  /**
+   * First column width as percentage
+   * @example 33
+   */
+  width?: 25 | 33 | 34 | 50 | 66 | 67 | 75
+}>(), {
+  width: 50
 })
+
+defineSlots<{
+  /**
+   * First column content
+   */
+  'column-one'(): any
+  /**
+   * Second column content
+   */
+  'column-two'(): any
+}>()
 
 const secondColumnWidth = computed(() => {
   return 100 - props.width

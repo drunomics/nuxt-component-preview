@@ -54,11 +54,45 @@ export function generateComponentIndex(
     const props = meta.props
       .filter(p => !vueInternalProps.includes(p.name))
       .reduce((acc, prop) => {
-        acc[prop.name] = {
+        const propDef: any = {
           type: mapVueTypeToJsonSchema(prop.type),
           title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
-          description: prop.description || undefined,
-          default: prop.default !== undefined ? parseDefaultValue(prop.default) : undefined,
+        }
+
+        if (prop.description) propDef.description = prop.description
+        if (prop.default !== undefined) propDef.default = parseDefaultValue(prop.default)
+
+        // Extract enum from TypeScript union types
+        const enumValues = extractEnumFromType(prop.type)
+        if (enumValues.length > 0) {
+          propDef.enum = enumValues
+          // Generate meta:enum (human-readable labels)
+          propDef['meta:enum'] = enumValues.reduce((acc, val) => {
+            const strVal = String(val)
+            acc[val] = strVal.charAt(0).toUpperCase() + strVal.slice(1)
+            return acc
+          }, {} as Record<string, string>)
+        }
+
+        // Add examples from @example JSDoc tags
+        if (prop.tags) {
+          const exampleTags = prop.tags.filter((t: any) => t.name === 'example')
+          if (exampleTags.length > 0) {
+            propDef.examples = exampleTags.map((t: any) => parseDefaultValue(t.text))
+          }
+        }
+
+        acc[prop.name] = propDef
+        return acc
+      }, {} as Record<string, any>)
+
+    // Extract slots (excluding default)
+    const slots = meta.slots
+      .filter(slot => slot.name !== 'default')
+      .reduce((acc, slot) => {
+        acc[slot.name] = {
+          title: slot.name.charAt(0).toUpperCase() + slot.name.slice(1).replace(/([A-Z])/g, ' $1'),
+          description: slot.description || undefined,
         }
         return acc
       }, {} as Record<string, any>)
@@ -66,7 +100,7 @@ export function generateComponentIndex(
     // Apply overrides if present
     const override = options.overrides?.[component.pascalName]
 
-    return {
+    const result: any = {
       id: component.pascalName,
       name: component.pascalName.replace(/([A-Z])/g, ' $1').trim(),
       category: override?.category || options.category,
@@ -76,6 +110,12 @@ export function generateComponentIndex(
         properties: props,
       },
     }
+
+    if (Object.keys(slots).length > 0) {
+      result.slots = slots
+    }
+
+    return result
   })
 
   return {
@@ -84,12 +124,39 @@ export function generateComponentIndex(
   }
 }
 
+function extractEnumFromType(type: string): string[] {
+  // Match TypeScript union literals: "value1" | "value2" | ...
+  const match = type.match(/"([^"]+)"/g)
+  if (match) {
+    return match.map(m => m.replace(/"/g, ''))
+  }
+
+  // Also try numeric unions: 25 | 33 | 50
+  const numMatch = type.match(/\b(\d+)\b(?=\s*\||\s*$)/g)
+  if (numMatch) {
+    return numMatch.map(m => parseInt(m))
+  }
+
+  return []
+}
+
 function mapVueTypeToJsonSchema(vueType: string): string {
-  if (vueType.includes('string')) return 'string'
-  if (vueType.includes('number')) return 'number'
-  if (vueType.includes('boolean')) return 'boolean'
-  if (vueType.includes('object')) return 'object'
-  if (vueType.includes('array')) return 'array'
+  // Remove " | undefined" for checking base type
+  const cleanType = vueType.replace(/\s*\|\s*undefined/g, '')
+
+  // Check for string literals (union of strings)
+  if (cleanType.match(/"[^"]+"/)) return 'string'
+
+  // Check for numeric literals
+  if (/^\d+(\s*\|\s*\d+)*/.test(cleanType)) return 'integer'
+
+  // Check base types
+  if (cleanType.includes('string')) return 'string'
+  if (cleanType.includes('number')) return 'number'
+  if (cleanType.includes('boolean')) return 'boolean'
+  if (cleanType.includes('object')) return 'object'
+  if (cleanType.includes('array')) return 'array'
+
   return 'string'
 }
 

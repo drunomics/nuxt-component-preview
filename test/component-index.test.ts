@@ -150,14 +150,21 @@ describe('Component Index Generation', () => {
   })
 
   describe('Step 3: Server Route Integration', () => {
-    it('serves component-index.json via public route', async () => {
+    it('generates component-index.json in build output', async () => {
       const { readFile } = await import('fs/promises')
       const { resolve } = await import('path')
 
-      const publicPath = resolve(process.cwd(), 'playground/.nuxt/public/nuxt-component-preview/component-index.json')
-      const content = await readFile(publicPath, 'utf-8')
-      const data = JSON.parse(content)
+      // Check in .output/public (production) or playground/public (dev)
+      let content: string
+      try {
+        const prodPath = resolve(process.cwd(), 'playground/.output/public/nuxt-component-preview/component-index.json')
+        content = await readFile(prodPath, 'utf-8')
+      } catch {
+        const devPath = resolve(process.cwd(), 'playground/public/nuxt-component-preview/component-index.json')
+        content = await readFile(devPath, 'utf-8')
+      }
 
+      const data = JSON.parse(content)
       expect(data.version).toBe('1.0')
       expect(Array.isArray(data.components)).toBe(true)
       expect(data.components.length).toBeGreaterThan(0)
@@ -310,6 +317,113 @@ describe('Component Index Generation', () => {
 
       expect(result.components[0].status).toBe('experimental')
       expect(result.components[0].category).toBe('Test')
+    })
+  })
+
+  describe('@example Tag Extraction', () => {
+    it('extracts @example tags to examples field', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('path')
+
+      const mockComponents = [{
+        pascalName: 'TestButton',
+        kebabName: 'test-button',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+        shortPath: 'components/global/TestButton.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as any,
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' }
+      )
+
+      const labelProp = result.components[0].props.properties.label
+      expect(labelProp.examples).toEqual(['Submit', 'Cancel', 'Learn More'])
+
+      const variantProp = result.components[0].props.properties.variant
+      expect(variantProp.examples).toEqual(['primary', 'success'])
+    })
+  })
+
+  describe('Enum Extraction from TypeScript Unions', () => {
+    it('extracts enum values from TypeScript union types', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('path')
+
+      const mockComponents = [{
+        pascalName: 'TestButton',
+        kebabName: 'test-button',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+        shortPath: 'components/global/TestButton.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as any,
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' }
+      )
+
+      const variantProp = result.components[0].props.properties.variant
+      expect(variantProp.enum).toBeDefined()
+      expect(variantProp.enum).toContain('primary')
+      expect(variantProp.enum).toContain('secondary')
+      expect(variantProp.enum).toContain('success')
+      expect(variantProp.enum).toContain('danger')
+      expect(variantProp.type).toBe('string')
+    })
+
+    it('generates meta:enum for enum values', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('path')
+
+      const mockComponents = [{
+        pascalName: 'TestButton',
+        kebabName: 'test-button',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+        shortPath: 'components/global/TestButton.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as any,
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' }
+      )
+
+      const variantProp = result.components[0].props.properties.variant
+      expect(variantProp['meta:enum']).toBeDefined()
+      expect(variantProp['meta:enum'].primary).toBe('Primary')
+      expect(variantProp['meta:enum'].secondary).toBe('Secondary')
+    })
+  })
+
+  describe('Slot Extraction', () => {
+    it('extracts named slots from template', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('path')
+
+      const mockComponents = [{
+        pascalName: 'TwoColumnLayout',
+        kebabName: 'two-column-layout',
+        filePath: resolve(process.cwd(), 'playground/components/global/TwoColumnLayout.vue'),
+        shortPath: 'components/global/TwoColumnLayout.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as any,
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' }
+      )
+
+      const component = result.components[0]
+      expect(component.slots).toBeDefined()
+      expect(component.slots['column-one']).toBeDefined()
+      expect(component.slots['column-one'].title).toBeDefined()
+      expect(component.slots['column-two']).toBeDefined()
     })
   })
 })
