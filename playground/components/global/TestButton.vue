@@ -27,6 +27,7 @@ withDefaults(defineProps<{
   /**
    * Button size
    * @example medium
+   * @enumLabels {"large": "Extra Large (XL)"}
    */
   size?: 'small' | 'medium' | 'large'
   /**

@@ -424,6 +424,32 @@ describe('Component Index Generation', () => {
       expect(widthProp['meta:enum']['50']).toBe('50% / 50%')
       expect(widthProp['meta:enum']['75']).toBe('75% / 25%')
     })
+
+    it('supports partial @enumLabels (only some values labeled)', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestButton',
+        kebabName: 'test-button',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+        shortPath: 'components/global/TestButton.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as any,
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const sizeProp = result.components[0].props.properties.size
+      expect(sizeProp['meta:enum']).toBeDefined()
+      expect(sizeProp['meta:enum'].large).toBe('Extra Large (XL)')
+      // Partial labels: other values not specified in @enumLabels
+      expect(sizeProp['meta:enum'].small).toBeUndefined()
+      expect(sizeProp['meta:enum'].medium).toBeUndefined()
+    })
   })
 
   describe('Slot Extraction', () => {

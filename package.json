@@ -45,8 +45,6 @@
     "@nuxt/test-utils": "^3.19.1",
     "@types/node": "latest",
     "@vue/test-utils": "^2.4.6",
-    "ajv": "^8.17.1",
-    "ajv-draft-04": "^1.0.0",
     "changelogen": "^0.6.1",
     "eslint": "^9.28.0",
     "happy-dom": "^15.11.7",

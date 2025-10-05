@@ -243,21 +243,36 @@ export default defineNuxtConfig({
 
 ### Requirements for Component Index
 
-- Components must be **global** (in `components/global/` directory)
-- Add JSDoc descriptions and `@example` tags to props for better metadata:
+- Components must be **global** (registered with `global: true` in Nuxt)
+  - Components in `components/global/` directory are automatically global
+  - Nuxt modules can also register global components
+- Use TypeScript inline syntax with JSDoc for best metadata extraction:
 
 ```vue
-<script setup>
-defineProps({
+<script setup lang="ts">
+withDefaults(defineProps<{
   /**
    * Button label text
    * @example Submit
    * @example Cancel
    */
-  label: { type: String, default: 'Click me' }
+  label?: string
+  /**
+   * Button variant
+   * @example primary
+   * @enumLabels {"large": "Extra Large (XL)"}
+   */
+  variant?: 'primary' | 'secondary' | 'large'
+}>(), {
+  label: 'Click me',
+  variant: 'primary'
 })
 </script>
 ```
+
+**Supported JSDoc tags:**
+- `@example` - Adds to `examples` field
+- `@enumLabels` - Custom labels for `meta:enum` (full or partial)
 
 ## Testing
 
