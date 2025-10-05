@@ -146,18 +146,6 @@ export default defineNuxtModule<ModuleOptions>({
         route: '/nuxt-component-preview/component-index.json',
         handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/component-index.json.get'),
       })
-
-      // Also write to build output for production
-      nuxt.hook('nitro:build:public-assets', async (nitro) => {
-        if (componentIndexData) {
-          const { writeFile, mkdir } = await import('node:fs/promises')
-          const { resolve: resolvePath } = await import('node:path')
-
-          const outputPath = resolvePath(nitro.options.output.publicDir, 'nuxt-component-preview/component-index.json')
-          await mkdir(resolvePath(nitro.options.output.publicDir, 'nuxt-component-preview'), { recursive: true })
-          await writeFile(outputPath, JSON.stringify(componentIndexData, null, 2))
-        }
-      })
     }
   },
 })

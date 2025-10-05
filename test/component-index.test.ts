@@ -132,7 +132,7 @@ describe('Component Index Generation', () => {
       expect(result.components[0].status).toBe('experimental')
     })
 
-    it('generates valid component index that passes schema validation', async () => {
+    it('generates valid component index structure', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
       const { resolve } = await import('node:path')
 
@@ -154,20 +154,7 @@ describe('Component Index Generation', () => {
     })
   })
 
-  describe('Step 3: Server Route Integration', () => {
-    it('generates component-index.json in production build output', async () => {
-      const { readFile } = await import('node:fs/promises')
-      const { resolve } = await import('node:path')
-
-      const prodPath = resolve(process.cwd(), 'playground/.output/public/nuxt-component-preview/component-index.json')
-      const content = await readFile(prodPath, 'utf-8')
-      const data = JSON.parse(content)
-
-      expect(data.version).toBe('1.0')
-      expect(Array.isArray(data.components)).toBe(true)
-      expect(data.components.length).toBeGreaterThan(0)
-    })
-  })
+  // Step 3 removed - virtual route serving verified via browser tests
 
   describe('Step 4: Directory Exclusions', () => {
     it('excludes components from specified directories', async () => {
