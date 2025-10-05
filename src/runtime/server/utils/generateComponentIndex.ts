@@ -66,12 +66,30 @@ export function generateComponentIndex(
         const enumValues = extractEnumFromType(prop.type)
         if (enumValues.length > 0) {
           propDef.enum = enumValues
-          // Generate meta:enum (human-readable labels)
-          propDef['meta:enum'] = enumValues.reduce((acc, val) => {
-            const strVal = String(val)
-            acc[val] = strVal.charAt(0).toUpperCase() + strVal.slice(1)
-            return acc
-          }, {} as Record<string, string>)
+
+          // Generate meta:enum only if it adds value (not for plain numbers)
+          const isNumericEnum = enumValues.every(v => typeof v === 'number')
+          if (!isNumericEnum) {
+            const metaEnum = enumValues.reduce((acc, val) => {
+              const strVal = String(val)
+              // Convert kebab-case and camelCase to Title Case
+              const label = strVal
+                .replace(/[-_]/g, ' ')
+                .replace(/([A-Z])/g, ' $1')
+                .trim()
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ')
+              acc[val] = label
+              return acc
+            }, {} as Record<string, string>)
+
+            // Only include meta:enum if it differs from the raw values
+            const addsValue = Object.entries(metaEnum).some(([key, val]) => key !== val)
+            if (addsValue) {
+              propDef['meta:enum'] = metaEnum
+            }
+          }
         }
 
         // Add examples from @example JSDoc tags
