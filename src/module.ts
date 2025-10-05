@@ -110,8 +110,7 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Generate component index if enabled
     if (options.componentIndex!.enabled) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let componentIndexData: any = null
+      let componentIndexData: import('./runtime/server/utils/generateComponentIndex').ComponentIndexData | null = null
 
       nuxt.hook('app:templatesGenerated', async () => {
         const { generateComponentIndex } = await import('./runtime/server/utils/generateComponentIndex')

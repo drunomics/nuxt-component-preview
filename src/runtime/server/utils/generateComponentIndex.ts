@@ -13,10 +13,36 @@ export interface ComponentIndexOptions {
   }>
 }
 
+interface PropDefinition {
+  'type': string
+  'title': string
+  'description'?: string
+  'default'?: string | number | boolean
+  'enum'?: (string | number)[]
+  'meta:enum'?: Record<string, string>
+  'examples'?: (string | number | boolean)[]
+}
+
+interface SlotDefinition {
+  title: string
+  description?: string
+}
+
+interface ComponentDefinition {
+  id: string
+  name: string
+  category: string
+  status: string
+  props: {
+    type: 'object'
+    properties: Record<string, PropDefinition>
+  }
+  slots?: Record<string, SlotDefinition>
+}
+
 export interface ComponentIndexData {
   version: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  components: any[]
+  components: ComponentDefinition[]
 }
 
 export function generateComponentIndex(
@@ -55,8 +81,7 @@ export function generateComponentIndex(
     const props = meta.props
       .filter(p => !vueInternalProps.includes(p.name))
       .reduce((acc, prop) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const propDef: any = {
+        const propDef: Partial<PropDefinition> = {
           type: mapVueTypeToJsonSchema(prop.type),
           title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
         }
@@ -72,7 +97,7 @@ export function generateComponentIndex(
           // Check for custom @enumLabels JSDoc tag
           let metaEnum: Record<string, string> | undefined
           if (prop.tags) {
-            const enumLabelsTag = prop.tags.find((t: any) => t.name === 'enumLabels')
+            const enumLabelsTag = prop.tags.find((t: { name: string, text?: string }) => t.name === 'enumLabels')
             if (enumLabelsTag?.text) {
               try {
                 metaEnum = JSON.parse(enumLabelsTag.text)
@@ -116,15 +141,15 @@ export function generateComponentIndex(
 
         // Add examples from @example JSDoc tags
         if (prop.tags) {
-          const exampleTags = prop.tags.filter((t: any) => t.name === 'example')
+          const exampleTags = prop.tags.filter((t: { name: string, text?: string }) => t.name === 'example')
           if (exampleTags.length > 0) {
-            propDef.examples = exampleTags.map((t: any) => parseDefaultValue(t.text))
+            propDef.examples = exampleTags.map((t: { text?: string }) => parseDefaultValue(t.text || ''))
           }
         }
 
-        acc[prop.name] = propDef
+        acc[prop.name] = propDef as PropDefinition
         return acc
-      }, {} as Record<string, any>)
+      }, {} as Record<string, PropDefinition>)
 
     // Extract slots (excluding default)
     const slots = meta.slots
@@ -135,13 +160,12 @@ export function generateComponentIndex(
           description: slot.description || undefined,
         }
         return acc
-      }, {} as Record<string, any>)
+      }, {} as Record<string, SlotDefinition>)
 
     // Apply overrides if present
     const override = options.overrides?.[component.pascalName]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = {
+    return {
       id: component.pascalName,
       name: component.pascalName.replace(/([A-Z])/g, ' $1').trim(),
       category: override?.category || options.category,
@@ -150,13 +174,8 @@ export function generateComponentIndex(
         type: 'object',
         properties: props,
       },
+      ...(Object.keys(slots).length > 0 && { slots }),
     }
-
-    if (Object.keys(slots).length > 0) {
-      result.slots = slots
-    }
-
-    return result
   })
 
   return {
@@ -173,9 +192,9 @@ function extractEnumFromType(type: string): string[] {
   }
 
   // Also try numeric unions: 25 | 33 | 50
-  const numMatch = type.match(/\b(\d+)\b(?=\s*\||\s*$)/g)
+  const numMatch = type.match(/(?:^|\s)(\d+)(?=\s*\||$)/g)
   if (numMatch) {
-    return numMatch.map(m => Number.parseInt(m))
+    return numMatch.map(m => Number.parseInt(m.trim()))
   }
 
   return []
@@ -189,7 +208,7 @@ function mapVueTypeToJsonSchema(vueType: string): string {
   if (cleanType.match(/"[^"]+"/)) return 'string'
 
   // Check for numeric literals
-  if (/^\d+(\s*\|\s*\d+)*/.test(cleanType)) return 'integer'
+  if (/^\d+(?:\s*\|\s*\d+)*/.test(cleanType)) return 'integer'
 
   // Check base types
   if (cleanType.includes('string')) return 'string'
@@ -201,13 +220,13 @@ function mapVueTypeToJsonSchema(vueType: string): string {
   return 'string'
 }
 
-function parseDefaultValue(defaultStr: string): any {
+function parseDefaultValue(defaultStr: string): string | number | boolean {
   // Remove quotes
   const cleaned = defaultStr.replace(/^["']|["']$/g, '')
 
   if (cleaned === 'true') return true
   if (cleaned === 'false') return false
-  if (!isNaN(Number(cleaned))) return Number(cleaned)
+  if (!Number.isNaN(Number(cleaned)) && cleaned !== '') return Number(cleaned)
 
   return cleaned
 }
