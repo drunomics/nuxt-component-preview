@@ -137,7 +137,7 @@ export default defineNuxtModule<ModuleOptions>({
       // Serve via Nitro route (both dev and production)
       nuxt.hook('nitro:config', (nitroConfig) => {
         nitroConfig.virtual = nitroConfig.virtual || {}
-        nitroConfig.virtual['#component-index-data'] = () => {
+        nitroConfig.virtual['#nuxt-component-preview-index-data'] = () => {
           return `export default ${JSON.stringify(componentIndexData)}`
         }
       })

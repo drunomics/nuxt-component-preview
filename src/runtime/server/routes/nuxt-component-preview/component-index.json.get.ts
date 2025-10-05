@@ -1,5 +1,5 @@
 // @ts-expect-error - virtual module
-import componentIndexData from '#component-index-data'
+import componentIndexData from '#nuxt-component-preview-index-data'
 
 export default defineEventHandler((event) => {
   if (!componentIndexData) {
@@ -10,7 +10,8 @@ export default defineEventHandler((event) => {
   }
 
   setHeader(event, 'Content-Type', 'application/json')
-  setHeader(event, 'Cache-Control', 'public, max-age=3600')
+  // Private cache only, revalidate on each request, no proxy caching
+  setHeader(event, 'Cache-Control', 'private, must-revalidate, no-store, max-age=0')
 
   return componentIndexData
 })
