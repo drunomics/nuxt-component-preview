@@ -1,13 +1,18 @@
 import { describe, it, expect } from 'vitest'
+import type { Component } from '@nuxt/schema'
+
+// Mock component type for tests
+type MockComponent = Pick<Component, 'pascalName' | 'kebabName' | 'filePath' | 'shortPath' | 'global'>
 
 // Simple structure validator (full schema validation happens on PHP side)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function validateComponentIndex(data: any) {
   const errors: string[] = []
 
   if (!data.version) errors.push('Missing required field: version')
   if (!Array.isArray(data.components)) errors.push('Missing or invalid field: components')
 
-  data.components?.forEach((comp: any, idx: number) => {
+  data.components?.forEach((comp: { id?: string, name?: string, category?: string }, idx: number) => {
     if (!comp.id) errors.push(`Component ${idx}: missing required field 'id'`)
     if (!comp.name) errors.push(`Component ${idx}: missing required field 'name'`)
     if (!comp.category) errors.push(`Component ${idx}: missing required field 'category'`)
@@ -69,7 +74,7 @@ describe('Component Index Generation', () => {
       ]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Nuxt Components', status: 'stable' },
       )
@@ -91,7 +96,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Test', status: 'stable' },
       )
@@ -118,7 +123,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'My Category', status: 'experimental' },
       )
@@ -138,7 +143,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Test', status: 'stable' },
       )
@@ -195,7 +200,7 @@ describe('Component Index Generation', () => {
       ]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         {
           category: 'Test',
@@ -232,7 +237,7 @@ describe('Component Index Generation', () => {
       ]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         {
           category: 'Test',
@@ -256,7 +261,7 @@ describe('Component Index Generation', () => {
       ]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         {
           category: 'Test',
@@ -280,7 +285,7 @@ describe('Component Index Generation', () => {
       ]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         {
           category: 'Default Category',
@@ -305,7 +310,7 @@ describe('Component Index Generation', () => {
       ]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         {
           category: 'Test',
@@ -335,7 +340,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Test', status: 'stable' },
       )
@@ -362,7 +367,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Test', status: 'stable' },
       )
@@ -389,7 +394,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Test', status: 'stable' },
       )
@@ -413,7 +418,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Test', status: 'stable' },
       )
@@ -438,7 +443,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Test', status: 'stable' },
       )
@@ -466,7 +471,7 @@ describe('Component Index Generation', () => {
       }]
 
       const result = generateComponentIndex(
-        mockComponents as any,
+        mockComponents as MockComponent[],
         resolve(process.cwd(), 'playground/tsconfig.json'),
         { category: 'Test', status: 'stable' },
       )
