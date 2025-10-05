@@ -5,13 +5,6 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
-  vite: {
-    server: {
-      cors: {
-        origin: ['https://xb-dev.ddev.site'],
-      },
-    },
-  },
   nitro: {
     routeRules: {
       '/nuxt-component-preview/*.js': {
@@ -27,6 +20,13 @@ export default defineNuxtConfig({
           'Access-Control-Allow-Origin': 'https://xb-dev.ddev.site',
           'Access-Control-Allow-Methods': 'GET',
         },
+      },
+    },
+  },
+  vite: {
+    server: {
+      cors: {
+        origin: ['https://xb-dev.ddev.site'],
       },
     },
   },

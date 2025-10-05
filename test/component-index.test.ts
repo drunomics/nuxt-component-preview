@@ -21,7 +21,7 @@ describe('Component Index Generation', () => {
     it('validates minimal valid component index', () => {
       const minimalIndex = {
         version: '1.0',
-        components: []
+        components: [],
       }
       const result = validateComponentIndex(minimalIndex)
       expect(result.valid).toBe(true)
@@ -45,18 +45,18 @@ describe('Component Index Generation', () => {
     it('rejects component missing required id', () => {
       const invalid = {
         version: '1.0',
-        components: [{ name: 'Test', category: 'Test' }]
+        components: [{ name: 'Test', category: 'Test' }],
       }
       const result = validateComponentIndex(invalid)
       expect(result.valid).toBe(false)
-      expect(result.errors[0]).toContain("missing required field 'id'")
+      expect(result.errors[0]).toContain('missing required field \'id\'')
     })
   })
 
   describe('Step 1: Basic Generation + Metadata Extraction', () => {
     it('generates component index from mock components', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [
         {
@@ -71,7 +71,7 @@ describe('Component Index Generation', () => {
       const result = generateComponentIndex(
         mockComponents as any,
         resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Nuxt Components', status: 'stable' }
+        { category: 'Nuxt Components', status: 'stable' },
       )
 
       expect(result.version).toBe('1.0')
@@ -82,7 +82,7 @@ describe('Component Index Generation', () => {
 
     it('extracts prop metadata from vue-component-meta', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [{
         pascalName: 'TestButton',
@@ -93,7 +93,7 @@ describe('Component Index Generation', () => {
       const result = generateComponentIndex(
         mockComponents as any,
         resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' }
+        { category: 'Test', status: 'stable' },
       )
 
       const component = result.components[0]
@@ -109,7 +109,7 @@ describe('Component Index Generation', () => {
   describe('Step 2: Default Category/Status + Validation', () => {
     it('applies default category and status', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [{
         pascalName: 'TestButton',
@@ -120,7 +120,7 @@ describe('Component Index Generation', () => {
       const result = generateComponentIndex(
         mockComponents as any,
         resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'My Category', status: 'experimental' }
+        { category: 'My Category', status: 'experimental' },
       )
 
       expect(result.components[0].category).toBe('My Category')
@@ -129,7 +129,7 @@ describe('Component Index Generation', () => {
 
     it('generates valid component index that passes schema validation', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [{
         pascalName: 'TestCard',
@@ -140,7 +140,7 @@ describe('Component Index Generation', () => {
       const result = generateComponentIndex(
         mockComponents as any,
         resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' }
+        { category: 'Test', status: 'stable' },
       )
 
       const validation = validateComponentIndex(result)
@@ -151,15 +151,16 @@ describe('Component Index Generation', () => {
 
   describe('Step 3: Server Route Integration', () => {
     it('generates component-index.json in build output', async () => {
-      const { readFile } = await import('fs/promises')
-      const { resolve } = await import('path')
+      const { readFile } = await import('node:fs/promises')
+      const { resolve } = await import('node:path')
 
       // Check in .output/public (production) or playground/public (dev)
       let content: string
       try {
         const prodPath = resolve(process.cwd(), 'playground/.output/public/nuxt-component-preview/component-index.json')
         content = await readFile(prodPath, 'utf-8')
-      } catch {
+      }
+      catch {
         const devPath = resolve(process.cwd(), 'playground/public/nuxt-component-preview/component-index.json')
         content = await readFile(devPath, 'utf-8')
       }
@@ -174,7 +175,7 @@ describe('Component Index Generation', () => {
   describe('Step 4: Directory Exclusions', () => {
     it('excludes components from specified directories', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [
         {
@@ -199,8 +200,8 @@ describe('Component Index Generation', () => {
         {
           category: 'Test',
           status: 'stable',
-          excludeDirectories: ['global/internal']
-        }
+          excludeDirectories: ['global/internal'],
+        },
       )
 
       expect(result.components).toHaveLength(1)
@@ -211,7 +212,7 @@ describe('Component Index Generation', () => {
   describe('Step 5: Component Name Exclusions', () => {
     it('excludes components by name pattern', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [
         {
@@ -236,8 +237,8 @@ describe('Component Index Generation', () => {
         {
           category: 'Test',
           status: 'stable',
-          excludeComponents: ['*--default']
-        }
+          excludeComponents: ['*--default'],
+        },
       )
 
       expect(result.components).toHaveLength(1)
@@ -246,7 +247,7 @@ describe('Component Index Generation', () => {
 
     it('supports glob patterns for component exclusions', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [
         { pascalName: 'TestButton', kebabName: 'test-button', filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'), shortPath: 'components/global/TestButton.vue', global: true },
@@ -260,8 +261,8 @@ describe('Component Index Generation', () => {
         {
           category: 'Test',
           status: 'stable',
-          excludeComponents: ['test-*', 'debug-*']
-        }
+          excludeComponents: ['test-*', 'debug-*'],
+        },
       )
 
       expect(result.components).toHaveLength(0)
@@ -271,7 +272,7 @@ describe('Component Index Generation', () => {
   describe('Step 6: Per-Component Overrides', () => {
     it('overrides category for specific component', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [
         { pascalName: 'TestButton', kebabName: 'test-button', filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'), shortPath: 'components/global/TestButton.vue', global: true },
@@ -285,9 +286,9 @@ describe('Component Index Generation', () => {
           category: 'Default Category',
           status: 'stable',
           overrides: {
-            TestButton: { category: 'Forms' }
-          }
-        }
+            TestButton: { category: 'Forms' },
+          },
+        },
       )
 
       expect(result.components[0].category).toBe('Forms')
@@ -297,7 +298,7 @@ describe('Component Index Generation', () => {
 
     it('overrides status for specific component', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [
         { pascalName: 'TestButton', kebabName: 'test-button', filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'), shortPath: 'components/global/TestButton.vue', global: true },
@@ -310,9 +311,9 @@ describe('Component Index Generation', () => {
           category: 'Test',
           status: 'stable',
           overrides: {
-            TestButton: { status: 'experimental' }
-          }
-        }
+            TestButton: { status: 'experimental' },
+          },
+        },
       )
 
       expect(result.components[0].status).toBe('experimental')
@@ -323,7 +324,7 @@ describe('Component Index Generation', () => {
   describe('@example Tag Extraction', () => {
     it('extracts @example tags to examples field', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [{
         pascalName: 'TestButton',
@@ -336,7 +337,7 @@ describe('Component Index Generation', () => {
       const result = generateComponentIndex(
         mockComponents as any,
         resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' }
+        { category: 'Test', status: 'stable' },
       )
 
       const labelProp = result.components[0].props.properties.label
@@ -350,7 +351,7 @@ describe('Component Index Generation', () => {
   describe('Enum Extraction from TypeScript Unions', () => {
     it('extracts enum values from TypeScript union types', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [{
         pascalName: 'TestButton',
@@ -363,7 +364,7 @@ describe('Component Index Generation', () => {
       const result = generateComponentIndex(
         mockComponents as any,
         resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' }
+        { category: 'Test', status: 'stable' },
       )
 
       const variantProp = result.components[0].props.properties.variant
@@ -377,7 +378,7 @@ describe('Component Index Generation', () => {
 
     it('generates meta:enum for enum values', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [{
         pascalName: 'TestButton',
@@ -390,7 +391,7 @@ describe('Component Index Generation', () => {
       const result = generateComponentIndex(
         mockComponents as any,
         resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' }
+        { category: 'Test', status: 'stable' },
       )
 
       const variantProp = result.components[0].props.properties.variant
@@ -398,12 +399,10 @@ describe('Component Index Generation', () => {
       expect(variantProp['meta:enum'].primary).toBe('Primary')
       expect(variantProp['meta:enum'].secondary).toBe('Secondary')
     })
-  })
 
-  describe('Slot Extraction', () => {
-    it('extracts named slots from template', async () => {
+    it('uses custom @enumLabels from JSDoc', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('path')
+      const { resolve } = await import('node:path')
 
       const mockComponents = [{
         pascalName: 'TwoColumnLayout',
@@ -416,7 +415,34 @@ describe('Component Index Generation', () => {
       const result = generateComponentIndex(
         mockComponents as any,
         resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' }
+        { category: 'Test', status: 'stable' },
+      )
+
+      const widthProp = result.components[0].props.properties.width
+      expect(widthProp['meta:enum']).toBeDefined()
+      expect(widthProp['meta:enum']['25']).toBe('25% / 75%')
+      expect(widthProp['meta:enum']['50']).toBe('50% / 50%')
+      expect(widthProp['meta:enum']['75']).toBe('75% / 25%')
+    })
+  })
+
+  describe('Slot Extraction', () => {
+    it('extracts named slots from template', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TwoColumnLayout',
+        kebabName: 'two-column-layout',
+        filePath: resolve(process.cwd(), 'playground/components/global/TwoColumnLayout.vue'),
+        shortPath: 'components/global/TwoColumnLayout.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as any,
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
       )
 
       const component = result.components[0]

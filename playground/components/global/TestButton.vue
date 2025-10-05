@@ -37,7 +37,7 @@ withDefaults(defineProps<{
   label: 'Click me',
   variant: 'primary',
   size: 'medium',
-  disabled: false
+  disabled: false,
 })
 
 const emit = defineEmits(['click'])

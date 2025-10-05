@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import { resolve } from 'node:path'
-import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler, addTemplate } from '@nuxt/kit'
+import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
@@ -110,11 +110,12 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Generate component index if enabled
     if (options.componentIndex!.enabled) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let componentIndexData: any = null
 
       nuxt.hook('app:templatesGenerated', async () => {
         const { generateComponentIndex } = await import('./runtime/server/utils/generateComponentIndex')
-        const { resolve: resolvePath } = await import('path')
+        const { resolve: resolvePath } = await import('node:path')
 
         const globalComponents = nuxt.apps.default.components.filter(c => c.global)
 
@@ -129,11 +130,11 @@ export default defineNuxtModule<ModuleOptions>({
               excludeDirectories: options.componentIndex!.exclude!.directories,
               excludeComponents: options.componentIndex!.exclude!.components,
               overrides: options.componentIndex!.overrides,
-            }
+            },
           )
 
           // Write to source public directory for dev mode
-          const { writeFile, mkdir } = await import('fs/promises')
+          const { writeFile, mkdir } = await import('node:fs/promises')
           const publicDir = resolvePath(nuxt.options.rootDir, nuxt.options.dir?.public || 'public')
           const devOutputPath = resolvePath(publicDir, 'nuxt-component-preview/component-index.json')
           await mkdir(resolvePath(publicDir, 'nuxt-component-preview'), { recursive: true })
@@ -144,8 +145,8 @@ export default defineNuxtModule<ModuleOptions>({
       // Add as Nitro public asset
       nuxt.hook('nitro:build:public-assets', async (nitro) => {
         if (componentIndexData) {
-          const { writeFile, mkdir } = await import('fs/promises')
-          const { resolve: resolvePath } = await import('path')
+          const { writeFile, mkdir } = await import('node:fs/promises')
+          const { resolve: resolvePath } = await import('node:path')
 
           const outputPath = resolvePath(nitro.options.output.publicDir, 'nuxt-component-preview/component-index.json')
           await mkdir(resolvePath(nitro.options.output.publicDir, 'nuxt-component-preview'), { recursive: true })

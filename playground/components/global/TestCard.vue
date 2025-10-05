@@ -21,7 +21,7 @@ withDefaults(defineProps<{
   description?: string
 }>(), {
   title: 'Default Title',
-  description: 'Default description'
+  description: 'Default description',
 })
 </script>
 

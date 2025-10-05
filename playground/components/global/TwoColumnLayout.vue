@@ -23,10 +23,13 @@ const props = withDefaults(defineProps<{
   /**
    * First column width as percentage
    * @example 33
+   * @example 50
+   * @example 66
+   * @enumLabels {"25": "25% / 75%", "33": "33% / 67%", "34": "34% / 66%", "50": "50% / 50%", "66": "66% / 34%", "67": "67% / 33%", "75": "75% / 25%"}
    */
   width?: 25 | 33 | 34 | 50 | 66 | 67 | 75
 }>(), {
-  width: 50
+  width: 50,
 })
 
 defineSlots<{

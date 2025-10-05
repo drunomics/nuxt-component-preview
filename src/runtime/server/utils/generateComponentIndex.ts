@@ -15,20 +15,21 @@ export interface ComponentIndexOptions {
 
 export interface ComponentIndexData {
   version: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   components: any[]
 }
 
 export function generateComponentIndex(
   components: Component[],
   tsconfigPath: string,
-  options: ComponentIndexOptions
+  options: ComponentIndexOptions,
 ): ComponentIndexData {
   // Filter components
   const filtered = components.filter((c) => {
     // Check directory exclusions
     if (options.excludeDirectories) {
       const excluded = options.excludeDirectories.some(pattern =>
-        minimatch(c.shortPath, `**/${pattern}/**`)
+        minimatch(c.shortPath, `**/${pattern}/**`),
       )
       if (excluded) return false
     }
@@ -36,7 +37,7 @@ export function generateComponentIndex(
     // Check component name exclusions
     if (options.excludeComponents) {
       const excluded = options.excludeComponents.some(pattern =>
-        minimatch(c.kebabName, pattern)
+        minimatch(c.kebabName, pattern),
       )
       if (excluded) return false
     }
@@ -54,6 +55,7 @@ export function generateComponentIndex(
     const props = meta.props
       .filter(p => !vueInternalProps.includes(p.name))
       .reduce((acc, prop) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const propDef: any = {
           type: mapVueTypeToJsonSchema(prop.type),
           title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
@@ -67,28 +69,48 @@ export function generateComponentIndex(
         if (enumValues.length > 0) {
           propDef.enum = enumValues
 
-          // Generate meta:enum only if it adds value (not for plain numbers)
-          const isNumericEnum = enumValues.every(v => typeof v === 'number')
-          if (!isNumericEnum) {
-            const metaEnum = enumValues.reduce((acc, val) => {
-              const strVal = String(val)
-              // Convert kebab-case and camelCase to Title Case
-              const label = strVal
-                .replace(/[-_]/g, ' ')
-                .replace(/([A-Z])/g, ' $1')
-                .trim()
-                .split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ')
-              acc[val] = label
-              return acc
-            }, {} as Record<string, string>)
-
-            // Only include meta:enum if it differs from the raw values
-            const addsValue = Object.entries(metaEnum).some(([key, val]) => key !== val)
-            if (addsValue) {
-              propDef['meta:enum'] = metaEnum
+          // Check for custom @enumLabels JSDoc tag
+          let metaEnum: Record<string, string> | undefined
+          if (prop.tags) {
+            const enumLabelsTag = prop.tags.find((t: any) => t.name === 'enumLabels')
+            if (enumLabelsTag?.text) {
+              try {
+                metaEnum = JSON.parse(enumLabelsTag.text)
+              }
+              catch {
+                console.warn(`Invalid @enumLabels JSON for ${prop.name}:`, enumLabelsTag.text)
+              }
             }
+          }
+
+          // Generate meta:enum only if custom labels provided or auto-generation adds value
+          if (!metaEnum) {
+            const isNumericEnum = enumValues.every(v => typeof v === 'number')
+            if (!isNumericEnum) {
+              metaEnum = enumValues.reduce((acc, val) => {
+                const strVal = String(val)
+                // Convert kebab-case and camelCase to Title Case
+                const label = strVal
+                  .replace(/[-_]/g, ' ')
+                  .replace(/([A-Z])/g, ' $1')
+                  .trim()
+                  .split(' ')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')
+                acc[val] = label
+                return acc
+              }, {} as Record<string, string>)
+
+              // Only include if it differs from raw values
+              const addsValue = Object.entries(metaEnum).some(([key, val]) => key !== val)
+              if (!addsValue) {
+                metaEnum = undefined
+              }
+            }
+          }
+
+          if (metaEnum) {
+            propDef['meta:enum'] = metaEnum
           }
         }
 
@@ -118,6 +140,7 @@ export function generateComponentIndex(
     // Apply overrides if present
     const override = options.overrides?.[component.pascalName]
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: any = {
       id: component.pascalName,
       name: component.pascalName.replace(/([A-Z])/g, ' $1').trim(),
@@ -152,7 +175,7 @@ function extractEnumFromType(type: string): string[] {
   // Also try numeric unions: 25 | 33 | 50
   const numMatch = type.match(/\b(\d+)\b(?=\s*\||\s*$)/g)
   if (numMatch) {
-    return numMatch.map(m => parseInt(m))
+    return numMatch.map(m => Number.parseInt(m))
   }
 
   return []

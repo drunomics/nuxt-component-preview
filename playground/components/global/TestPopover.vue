@@ -65,7 +65,7 @@ const props = withDefaults(defineProps<{
   offset: 8,
   showArrow: true,
   closeOnClickOutside: true,
-  delay: 0
+  delay: 0,
 })
 
 const isOpen = ref(false)

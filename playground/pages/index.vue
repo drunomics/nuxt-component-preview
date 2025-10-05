@@ -49,10 +49,16 @@
       <p>Component metadata is automatically generated for all global components.</p>
       <div style="margin: 1rem 0; padding: 1rem; background: #f0f0f0; border-radius: 4px;">
         <strong>Component Index URL:</strong><br>
-        <code v-if="fullUrl" style="display: block; margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 3px; user-select: all;">
+        <code
+          v-if="fullUrl"
+          style="display: block; margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 3px; user-select: all;"
+        >
           {{ fullUrl }}
         </code>
-        <code v-else style="display: block; margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 3px;">
+        <code
+          v-else
+          style="display: block; margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 3px;"
+        >
           Loading...
         </code>
         <a

@@ -8,7 +8,7 @@ withDefaults(defineProps<{
   /** HTML content to render */
   content?: string
 }>(), {
-  content: ''
+  content: '',
 })
 </script>
 
