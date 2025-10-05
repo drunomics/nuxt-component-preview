@@ -131,17 +131,23 @@ export default defineNuxtModule<ModuleOptions>({
               overrides: options.componentIndex!.overrides,
             },
           )
-
-          // Write to source public directory for dev mode
-          const { writeFile, mkdir } = await import('node:fs/promises')
-          const publicDir = resolvePath(nuxt.options.rootDir, nuxt.options.dir?.public || 'public')
-          const devOutputPath = resolvePath(publicDir, 'nuxt-component-preview/component-index.json')
-          await mkdir(resolvePath(publicDir, 'nuxt-component-preview'), { recursive: true })
-          await writeFile(devOutputPath, JSON.stringify(componentIndexData, null, 2))
         }
       })
 
-      // Add as Nitro public asset
+      // Serve via Nitro route (both dev and production)
+      nuxt.hook('nitro:config', (nitroConfig) => {
+        nitroConfig.virtual = nitroConfig.virtual || {}
+        nitroConfig.virtual['#component-index-data'] = () => {
+          return `export default ${JSON.stringify(componentIndexData)}`
+        }
+      })
+
+      addServerHandler({
+        route: '/nuxt-component-preview/component-index.json',
+        handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/component-index.json.get'),
+      })
+
+      // Also write to build output for production
       nuxt.hook('nitro:build:public-assets', async (nitro) => {
         if (componentIndexData) {
           const { writeFile, mkdir } = await import('node:fs/promises')

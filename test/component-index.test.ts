@@ -5,7 +5,7 @@ import type { Component } from '@nuxt/schema'
 type MockComponent = Pick<Component, 'pascalName' | 'kebabName' | 'filePath' | 'shortPath' | 'global'>
 
 // Simple structure validator (full schema validation happens on PHP side)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 function validateComponentIndex(data: any) {
   const errors: string[] = []
 
@@ -155,22 +155,14 @@ describe('Component Index Generation', () => {
   })
 
   describe('Step 3: Server Route Integration', () => {
-    it('generates component-index.json in build output', async () => {
+    it('generates component-index.json in production build output', async () => {
       const { readFile } = await import('node:fs/promises')
       const { resolve } = await import('node:path')
 
-      // Check in .output/public (production) or playground/public (dev)
-      let content: string
-      try {
-        const prodPath = resolve(process.cwd(), 'playground/.output/public/nuxt-component-preview/component-index.json')
-        content = await readFile(prodPath, 'utf-8')
-      }
-      catch {
-        const devPath = resolve(process.cwd(), 'playground/public/nuxt-component-preview/component-index.json')
-        content = await readFile(devPath, 'utf-8')
-      }
-
+      const prodPath = resolve(process.cwd(), 'playground/.output/public/nuxt-component-preview/component-index.json')
+      const content = await readFile(prodPath, 'utf-8')
       const data = JSON.parse(content)
+
       expect(data.version).toBe('1.0')
       expect(Array.isArray(data.components)).toBe(true)
       expect(data.components.length).toBeGreaterThan(0)
