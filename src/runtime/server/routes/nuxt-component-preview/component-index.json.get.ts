@@ -1,5 +1,6 @@
 // @ts-expect-error - virtual module
 import componentIndexData from '#nuxt-component-preview-index-data'
+import { defineEventHandler, setHeader, createError } from 'h3'
 
 export default defineEventHandler((event) => {
   if (!componentIndexData) {
