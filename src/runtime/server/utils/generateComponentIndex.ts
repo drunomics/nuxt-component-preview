@@ -151,9 +151,8 @@ export function generateComponentIndex(
         return acc
       }, {} as Record<string, PropDefinition>)
 
-    // Extract slots (excluding default)
+    // Extract slots
     const slots = meta.slots
-      .filter(slot => slot.name !== 'default')
       .reduce((acc, slot) => {
         acc[slot.name] = {
           title: slot.name.charAt(0).toUpperCase() + slot.name.slice(1).replace(/([A-Z])/g, ' $1'),

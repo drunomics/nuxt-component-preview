@@ -457,9 +457,37 @@ describe('Component Index Generation', () => {
 
       const component = result.components[0]
       expect(component.slots).toBeDefined()
+      expect(Object.keys(component.slots)).toHaveLength(2)
       expect(component.slots['column-one']).toBeDefined()
       expect(component.slots['column-one'].title).toBeDefined()
       expect(component.slots['column-two']).toBeDefined()
+      expect(component.slots.default).toBeUndefined()
+    })
+
+    it('extracts default slot from component', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestPopover',
+        kebabName: 'test-popover',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestPopover.vue'),
+        shortPath: 'components/global/TestPopover.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const component = result.components[0]
+      expect(component.slots).toBeDefined()
+      expect(component.slots.default).toBeDefined()
+      expect(component.slots.default.title).toBe('Default')
+      expect(component.slots.trigger).toBeDefined()
+      expect(component.slots.trigger.title).toBe('Trigger')
     })
   })
 })
