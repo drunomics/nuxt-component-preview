@@ -1,10 +1,21 @@
+import { existsSync, statSync } from 'node:fs'
 import type { Component } from '@nuxt/schema'
 import { createChecker } from 'vue-component-meta'
 import { minimatch } from 'minimatch'
 
+/**
+ * Extract package name from a file path in node_modules
+ * Handles scoped packages (@org/package) and regular packages
+ */
+function extractPackageName(filePath: string): string | null {
+  const match = filePath.match(/[/\\]node_modules[/\\](@[^/\\]+[/\\][^/\\]+|[^/\\]+)/)
+  return match ? match[1].replace(/\\/g, '/') : null // Normalize to forward slashes
+}
+
 export interface ComponentIndexOptions {
   category: string
   status: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
+  includePackages?: boolean | string[] // false = exclude all packages, array = include only these
   excludeDirectories?: string[]
   excludeComponents?: string[]
   overrides?: Record<string, {
@@ -52,7 +63,44 @@ export function generateComponentIndex(
 ): ComponentIndexData {
   // Filter components
   const filtered = components.filter((c) => {
-    // Check directory exclusions
+    // First check if the path exists
+    if (!existsSync(c.filePath)) {
+      console.warn(`[nuxt-component-preview] Component file not found: ${c.filePath}`)
+      return false
+    }
+
+    // Check if it's actually a file (not a directory)
+    try {
+      const stats = statSync(c.filePath)
+      if (stats.isDirectory()) {
+        console.log(`[nuxt-component-preview] Skipping directory: ${c.filePath}`)
+        return false
+      }
+    }
+    catch (error) {
+      console.warn(`[nuxt-component-preview] Error checking file stats for ${c.filePath}:`, error)
+      return false
+    }
+
+    // Handle package filtering
+    const isInNodeModules = c.filePath.includes('/node_modules/') || c.filePath.includes('\\node_modules\\')
+    if (isInNodeModules) {
+      // Default: exclude all packages (includePackages === false or undefined)
+      if (options.includePackages === false || options.includePackages === undefined) {
+        return false
+      }
+
+      // If includePackages is an array, only include packages in that list
+      if (Array.isArray(options.includePackages)) {
+        const packageName = extractPackageName(c.filePath)
+        if (!packageName || !options.includePackages.includes(packageName)) {
+          return false
+        }
+      }
+      // If includePackages === true, include all packages (no filtering)
+    }
+
+    // Check directory exclusions (path patterns only)
     if (options.excludeDirectories) {
       const excluded = options.excludeDirectories.some(pattern =>
         minimatch(c.shortPath, `**/${pattern}/**`),
@@ -74,108 +122,122 @@ export function generateComponentIndex(
   const checker = createChecker(tsconfigPath, { printer: { newLine: 1 } })
 
   const componentData = filtered.map((component) => {
-    const meta = checker.getComponentMeta(component.filePath)
+    try {
+      const meta = checker.getComponentMeta(component.filePath)
 
-    // Extract props, filtering out Vue internals
-    const vueInternalProps = ['key', 'ref', 'ref_for', 'ref_key', 'class', 'style']
-    const props = meta.props
-      .filter(p => !vueInternalProps.includes(p.name))
-      .reduce((acc, prop) => {
-        const propDef: Partial<PropDefinition> = {
-          type: mapVueTypeToJsonSchema(prop.type),
-          title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
-        }
+      // Extract props, filtering out Vue internals
+      const vueInternalProps = ['key', 'ref', 'ref_for', 'ref_key', 'class', 'style']
+      const props = meta.props
+        .filter(p => !vueInternalProps.includes(p.name))
+        .reduce((acc, prop) => {
+          const propDef: Partial<PropDefinition> = {
+            type: mapVueTypeToJsonSchema(prop.type),
+            title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
+          }
 
-        if (prop.description) propDef.description = prop.description
-        if (prop.default !== undefined) propDef.default = parseDefaultValue(prop.default)
+          if (prop.description) propDef.description = prop.description
+          if (prop.default !== undefined) propDef.default = parseDefaultValue(prop.default)
 
-        // Extract enum from TypeScript union types
-        const enumValues = extractEnumFromType(prop.type)
-        if (enumValues.length > 0) {
-          propDef.enum = enumValues
+          // Extract enum from TypeScript union types
+          const enumValues = extractEnumFromType(prop.type)
+          if (enumValues.length > 0) {
+            propDef.enum = enumValues
 
-          // Check for custom @enumLabels JSDoc tag
-          let metaEnum: Record<string, string> | undefined
+            // Check for custom @enumLabels JSDoc tag
+            let metaEnum: Record<string, string> | undefined
+            if (prop.tags) {
+              const enumLabelsTag = prop.tags.find((t: { name: string, text?: string }) => t.name === 'enumLabels')
+              if (enumLabelsTag?.text) {
+                try {
+                  metaEnum = JSON.parse(enumLabelsTag.text)
+                }
+                catch {
+                  console.warn(`Invalid @enumLabels JSON for ${prop.name}:`, enumLabelsTag.text)
+                }
+              }
+            }
+
+            // Generate meta:enum only if custom labels provided or auto-generation adds value
+            if (!metaEnum) {
+              const isNumericEnum = enumValues.every(v => typeof v === 'number')
+              if (!isNumericEnum) {
+                metaEnum = enumValues.reduce((acc, val) => {
+                  const strVal = String(val)
+                  // Convert kebab-case and camelCase to Title Case
+                  const label = strVal
+                    .replace(/[-_]/g, ' ')
+                    .replace(/([A-Z])/g, ' $1')
+                    .trim()
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ')
+                  acc[val] = label
+                  return acc
+                }, {} as Record<string, string>)
+
+                // Only include if it differs from raw values
+                const addsValue = Object.entries(metaEnum).some(([key, val]) => key !== val)
+                if (!addsValue) {
+                  metaEnum = undefined
+                }
+              }
+            }
+
+            if (metaEnum) {
+              propDef['meta:enum'] = metaEnum
+            }
+          }
+
+          // Add examples from @example JSDoc tags
           if (prop.tags) {
-            const enumLabelsTag = prop.tags.find((t: { name: string, text?: string }) => t.name === 'enumLabels')
-            if (enumLabelsTag?.text) {
-              try {
-                metaEnum = JSON.parse(enumLabelsTag.text)
-              }
-              catch {
-                console.warn(`Invalid @enumLabels JSON for ${prop.name}:`, enumLabelsTag.text)
-              }
+            const exampleTags = prop.tags.filter((t: { name: string, text?: string }) => t.name === 'example')
+            if (exampleTags.length > 0) {
+              propDef.examples = exampleTags.map((t: { text?: string }) => parseDefaultValue(t.text || ''))
             }
           }
 
-          // Generate meta:enum only if custom labels provided or auto-generation adds value
-          if (!metaEnum) {
-            const isNumericEnum = enumValues.every(v => typeof v === 'number')
-            if (!isNumericEnum) {
-              metaEnum = enumValues.reduce((acc, val) => {
-                const strVal = String(val)
-                // Convert kebab-case and camelCase to Title Case
-                const label = strVal
-                  .replace(/[-_]/g, ' ')
-                  .replace(/([A-Z])/g, ' $1')
-                  .trim()
-                  .split(' ')
-                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ')
-                acc[val] = label
-                return acc
-              }, {} as Record<string, string>)
+          acc[prop.name] = propDef as PropDefinition
+          return acc
+        }, {} as Record<string, PropDefinition>)
 
-              // Only include if it differs from raw values
-              const addsValue = Object.entries(metaEnum).some(([key, val]) => key !== val)
-              if (!addsValue) {
-                metaEnum = undefined
-              }
-            }
+      // Extract slots
+      const slots = meta.slots
+        .reduce((acc, slot) => {
+          acc[slot.name] = {
+            title: slot.name.charAt(0).toUpperCase() + slot.name.slice(1).replace(/([A-Z])/g, ' $1'),
+            description: slot.description || undefined,
           }
+          return acc
+        }, {} as Record<string, SlotDefinition>)
 
-          if (metaEnum) {
-            propDef['meta:enum'] = metaEnum
-          }
-        }
+      // Apply overrides if present
+      const override = options.overrides?.[component.pascalName]
 
-        // Add examples from @example JSDoc tags
-        if (prop.tags) {
-          const exampleTags = prop.tags.filter((t: { name: string, text?: string }) => t.name === 'example')
-          if (exampleTags.length > 0) {
-            propDef.examples = exampleTags.map((t: { text?: string }) => parseDefaultValue(t.text || ''))
-          }
-        }
-
-        acc[prop.name] = propDef as PropDefinition
-        return acc
-      }, {} as Record<string, PropDefinition>)
-
-    // Extract slots
-    const slots = meta.slots
-      .reduce((acc, slot) => {
-        acc[slot.name] = {
-          title: slot.name.charAt(0).toUpperCase() + slot.name.slice(1).replace(/([A-Z])/g, ' $1'),
-          description: slot.description || undefined,
-        }
-        return acc
-      }, {} as Record<string, SlotDefinition>)
-
-    // Apply overrides if present
-    const override = options.overrides?.[component.pascalName]
-
-    return {
-      id: component.pascalName,
-      name: component.pascalName.replace(/([A-Z])/g, ' $1').trim(),
-      category: override?.category || options.category,
-      status: override?.status || options.status,
-      props: {
-        type: 'object',
-        properties: props,
-      },
-      ...(Object.keys(slots).length > 0 && { slots }),
+      return {
+        id: component.pascalName,
+        name: component.pascalName.replace(/([A-Z])/g, ' $1').trim(),
+        category: override?.category || options.category,
+        status: override?.status || options.status,
+        props: {
+          type: 'object',
+          properties: props,
+        },
+        ...(Object.keys(slots).length > 0 && { slots }),
+      }
     }
-  })
+    catch (error) {
+      // Log different message based on file type to help debugging
+      const fileExt = component.filePath.split('.').pop()
+      if (fileExt !== 'vue') {
+        console.warn(`[nuxt-component-preview] Could not extract metadata from ${fileExt} file: ${component.filePath}`)
+      }
+      else {
+        console.error(`[nuxt-component-preview] Error processing component ${component.filePath}:`, error)
+      }
+      // Return null to filter out components that can't be processed
+      return null
+    }
+  }).filter(Boolean) as ComponentDefinition[]
 
   return {
     version: '1.0',
