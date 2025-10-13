@@ -226,16 +226,16 @@ export default defineNuxtConfig({
       category: 'Nuxt Components', // default category
       status: 'stable', // default: stable, experimental, deprecated, obsolete
 
-      // Package filtering for component index (default: false = exclude all packages)
-      includePackages: false,           // Exclude all package components from node_modules
-      // includePackages: true,          // Include all package components (not recommended)
-      // includePackages: ['shadcn-vue'], // Include only components from specific packages
-
       // Exclude components (overwrites defaults)
       exclude: {
         components: ['*--default'], // default: excludes *--default pattern
         directories: [] // exclude by directory pattern
       },
+
+      // Package filtering for component index (default: false = exclude all packages)
+      includePackages: false,           // Exclude all package components from node_modules
+      // includePackages: true,          // Include all package components (not recommended)
+      // includePackages: ['my-package'], // Include only components from specific packages
 
       // Override metadata for specific components
       overrides: {
@@ -254,7 +254,7 @@ The `includePackages` option controls which npm package components are included 
 - `true`: All package components are processed (may cause warnings for incompatible packages)
 - `['package-name', '@org/package']`: Only components from specified packages are processed
 
-This prevents warnings from packages that don't contain Vue components or have incompatible metadata. Only affects components registered globally by Nuxt from npm packages.
+Only affects components registered globally by Nuxt from npm packages.
 
 ### Requirements for Component Index
 

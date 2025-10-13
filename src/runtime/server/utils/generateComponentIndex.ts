@@ -7,7 +7,7 @@ import { minimatch } from 'minimatch'
  * Extract package name from a file path in node_modules
  * Handles scoped packages (@org/package) and regular packages
  */
-function extractPackageName(filePath: string): string | null {
+export function extractPackageName(filePath: string): string | null {
   const match = filePath.match(/[/\\]node_modules[/\\](@[^/\\]+[/\\][^/\\]+|[^/\\]+)/)
   return match ? match[1].replace(/\\/g, '/') : null // Normalize to forward slashes
 }

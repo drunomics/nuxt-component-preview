@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-
-// Test the extractPackageName function logic
-function extractPackageName(filePath: string): string | null {
-  const match = filePath.match(/[/\\]node_modules[/\\](@[^/\\]+[/\\][^/\\]+|[^/\\]+)/)
-  return match ? match[1].replace(/\\/g, '/') : null // Normalize backslashes to forward slashes
-}
+import { extractPackageName } from '../src/runtime/server/utils/generateComponentIndex'
 
 describe('includePackages feature', () => {
   describe('extractPackageName', () => {
