@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['../src/module'],
+  modules: ['../src/module', 'nuxtjs-drupal-ce'],
   devtools: { enabled: true },
   sourcemap: true,
   experimental: {
@@ -29,5 +29,8 @@ export default defineNuxtConfig({
         origin: ['https://xb-dev.ddev.site'],
       },
     },
+  },
+  drupalCe: {
+    drupalBaseUrl: 'http://example.com',
   },
 })
