@@ -1,7 +1,7 @@
+import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import type { Component } from '@nuxt/schema'
 import { extractPackageName, generateComponentIndex } from '../src/runtime/server/utils/generateComponentIndex'
-import { resolve } from 'node:path'
 
 describe('includePackages feature', () => {
   describe('extractPackageName', () => {
