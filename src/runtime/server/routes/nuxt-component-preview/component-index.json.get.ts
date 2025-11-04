@@ -5,8 +5,8 @@ import componentIndexData from '#nuxt-component-preview-index-data'
 export default defineEventHandler((event) => {
   if (!componentIndexData) {
     throw createError({
-      statusCode: 404,
-      message: 'Component index not generated. Ensure componentIndex is enabled.',
+      statusCode: 500,
+      message: 'Component index generation failed.',
     })
   }
 
