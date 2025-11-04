@@ -20,6 +20,7 @@ onBeforeMount(() => {
   }
 })
 
+// Helper function to render components using Vue's h() function
 function renderComponent(preview) {
   const { element, props = {}, slots = {} } = preview.content
 

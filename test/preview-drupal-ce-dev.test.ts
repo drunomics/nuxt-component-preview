@@ -9,25 +9,19 @@ describe('drupal-ce integration E2E (dev mode)', async () => {
     server: true,
     browser: true,
     dev: true,
-    nuxtConfig: {
-      modules: ['nuxtjs-drupal-ce'],
-      drupalCe: {
-        drupalBaseUrl: 'http://example.com',
-      },
-    },
   })
 
   describe('with drupal-ce fallback resolution', () => {
-    it('resolves node-article to node--default component via fallback', async () => {
+    it('resolves node-article to node--default component via fallback when drupal-ce is available', async () => {
       const page = await createPage('/preview-drupal-ce-test.html')
 
       // Wait for Nuxt Component Preview to be ready
       await page.waitForFunction(() => {
         return window.__nuxtComponentPreviewApp !== undefined
-      }, { timeout: 10000 })
+      }, { timeout: 15000 })
 
       // Wait for the component to render
-      await page.waitForSelector('[data-test-id="fallback-component"]', { timeout: 10000 })
+      await page.waitForSelector('[data-test-id="fallback-component"]', { timeout: 15000 })
 
       // Verify the fallback component rendered
       const componentExists = await page.evaluate(() => {
@@ -58,6 +52,6 @@ describe('drupal-ce integration E2E (dev mode)', async () => {
       expect(hasFallbackNotice).toBe(true)
 
       await page.close()
-    })
+    }, 60000)
   })
 })

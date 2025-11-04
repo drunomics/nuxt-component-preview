@@ -28,12 +28,9 @@
 
   <!-- Test script that runs when Nuxt is ready -->
   <script>
-    // Helper function to handle both sync and async cases
-    const onNuxtComponentPreviewReady = (callback) => window.__nuxtComponentPreviewApp ? callback(window.__nuxtComponentPreviewApp) : window.addEventListener('nuxt-component-preview:ready', event => callback(event.detail.nuxtApp), { once: true })
-
-    // Use the helper
-    onNuxtComponentPreviewReady((nuxtApp) => {
-      console.log('Nuxt Component Preview is ready!');
+    window.addEventListener('nuxt-component-preview:ready', event => {
+      const nuxtApp = event.detail.nuxtApp
+      console.log('Nuxt Component Preview is ready!')
 
       // Preview node-article component (should fall back to node--default)
       nuxtApp.$previewComponent(
@@ -44,8 +41,8 @@
         },
         {},
         '#preview-target-1'
-      );
-    });
+      )
+    }, { once: true })
   </script>
 </body>
 </html>
