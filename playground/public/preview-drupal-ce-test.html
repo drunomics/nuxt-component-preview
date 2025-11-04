@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drupal Custom Element Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .preview-target {
+      border: 2px dashed #ccc;
+      min-height: 200px;
+      padding: 20px;
+      margin: 20px 0;
+      background: #fafafa;
+    }
+  </style>
+  <!-- Single script to initialize Nuxt app with component preview enabled -->
+  <script src="/nuxt-component-preview/app-loader.js"></script>
+</head>
+<body>
+  <h1>Drupal Custom Element Fallback Test</h1>
+
+  <!-- Preview target -->
+  <div id="preview-target-1" class="preview-target"></div>
+
+  <!-- Test script that runs when Nuxt is ready -->
+  <script>
+    window.addEventListener('nuxt-component-preview:ready', event => {
+      const nuxtApp = event.detail.nuxtApp
+      console.log('Nuxt Component Preview is ready!')
+
+      // Preview node-article component (should fall back to node--default)
+      nuxtApp.$previewComponent(
+        'node-article',
+        {
+          title: 'Test Article',
+          body: 'This should be rendered via node--default fallback component'
+        },
+        {},
+        '#preview-target-1'
+      )
+    }, { once: true })
+  </script>
+</body>
+</html>
