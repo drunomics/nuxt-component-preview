@@ -34,6 +34,7 @@ function renderComponent(preview) {
     return h('div', { class: 'preview-error' }, `Component "${element}" not found`)
   }
 
+  // Convert HTML strings to VNodes for slots
   const slotContent = {}
   for (const [slotName, htmlContent] of Object.entries(slots)) {
     if (htmlContent) {
