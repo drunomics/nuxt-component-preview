@@ -49,8 +49,10 @@ describe('preview E2E (dev mode)', async () => {
 
       // Wait for components to render
       await page.waitForFunction(() => {
-        const target = document.getElementById('preview-buttons')
-        return target && target.children.length > 0
+        const buttonTarget = document.getElementById('preview-buttons')
+        const layoutTarget = document.getElementById('preview-layout')
+        return buttonTarget && buttonTarget.children.length > 0
+          && layoutTarget && layoutTarget.children.length > 0
       }, { timeout: 15000 })
 
       // Check for specific Vue component HTML content

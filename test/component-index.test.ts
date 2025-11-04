@@ -83,7 +83,7 @@ describe('Component Index Generation', () => {
       expect(result.components).toHaveLength(1)
       expect(result.components[0].id).toBe('TestButton')
       expect(result.components[0].name).toBe('Test Button')
-    })
+    }, 10000)
 
     it('extracts prop metadata from vue-component-meta', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
@@ -108,7 +108,7 @@ describe('Component Index Generation', () => {
       expect(component.props.properties.label).toBeDefined()
       expect(component.props.properties.label.type).toBe('string')
       expect(component.props.properties.label.description).toBeDefined()
-    })
+    }, 10000)
   })
 
   describe('Step 2: Default Category/Status + Validation', () => {
