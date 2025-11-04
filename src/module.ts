@@ -139,8 +139,7 @@ export default defineNuxtModule<ModuleOptions>({
         }
         catch (error) {
           console.error('[nuxt-component-preview] Error generating component index:', error)
-          // Continue without component index if it fails
-          componentIndexData = { version: '1.0', components: [] }
+          throw error
         }
       })
 
