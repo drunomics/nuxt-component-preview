@@ -1,29 +1,44 @@
 <script setup>
-import { h, resolveComponent } from 'vue'
-import { useState } from '#imports'
+import { h, resolveComponent, onBeforeMount } from 'vue'
+import { useState, useNuxtApp } from '#imports'
 
 const previews = useState('componentPreviews', () => [])
+let resolveCustomElement = null
 
-// Helper function to render components using Vue's h() function
+// Initialize resolveCustomElement if drupal-ce is configured
+onBeforeMount(() => {
+  if (useNuxtApp().$config?.public?.drupalCe) {
+    try {
+      // Try to use useDrupalCe if available (from nuxtjs-drupal-ce module)
+      // @ts-expect-error - useDrupalCe is optionally available from #imports
+      const { resolveCustomElement: resolveFromDrupalCe } = useDrupalCe()
+      resolveCustomElement = resolveFromDrupalCe
+    }
+    catch {
+      // drupal-ce not available, will use standard resolution
+    }
+  }
+})
+
 function renderComponent(preview) {
   const { element, props = {}, slots = {} } = preview.content
 
-  // Resolve the component - it should be globally available
-  const component = resolveComponent(element)
+  // Use custom element resolution with fallback if drupal-ce is configured
+  const component = resolveCustomElement
+    ? resolveCustomElement(element)
+    : resolveComponent(element)
 
-  if (!component) {
+  if (!component || typeof component === 'string') {
     console.warn(`Component "${element}" not found for preview`)
     return h('div', { class: 'preview-error' }, `Component "${element}" not found`)
   }
 
-  // Convert HTML strings to VNodes for slots
   const slotContent = {}
   for (const [slotName, htmlContent] of Object.entries(slots)) {
     if (htmlContent) {
       slotContent[slotName] = () => h('div', { innerHTML: htmlContent, style: { display: 'contents' } })
     }
   }
-
   return h(component, props, slotContent)
 }
 </script>
