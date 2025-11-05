@@ -8,9 +8,10 @@ export interface ModuleOptions {
     enabled?: boolean
     category?: string
     status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
+    includePackages?: boolean | string[] // false = exclude all (default), array = include only these
     exclude?: {
       components?: string[]
-      directories?: string[]
+      directories?: string[] // Path patterns only (not packages)
     }
     overrides?: Record<string, {
       category?: string
@@ -29,9 +30,10 @@ export default defineNuxtModule<ModuleOptions>({
       enabled: true,
       category: 'Nuxt Components',
       status: 'stable',
+      includePackages: false, // By default, exclude all packages from node_modules
       exclude: {
         components: ['*--default'],
-        directories: [],
+        directories: [], // Path patterns only
       },
       overrides: {},
     },
@@ -113,24 +115,32 @@ export default defineNuxtModule<ModuleOptions>({
       let componentIndexData: import('./runtime/server/utils/generateComponentIndex').ComponentIndexData | null = null
 
       nuxt.hook('app:templatesGenerated', async () => {
-        const { generateComponentIndex } = await import('./runtime/server/utils/generateComponentIndex')
-        const { resolve: resolvePath } = await import('node:path')
+        try {
+          const { generateComponentIndex } = await import('./runtime/server/utils/generateComponentIndex')
+          const { resolve: resolvePath } = await import('node:path')
 
-        const globalComponents = nuxt.apps.default.components.filter(c => c.global)
+          const globalComponents = nuxt.apps.default.components.filter(c => c.global)
 
-        if (globalComponents.length > 0) {
-          const tsconfigPath = resolvePath(nuxt.options.rootDir, 'tsconfig.json')
-          componentIndexData = generateComponentIndex(
-            globalComponents,
-            tsconfigPath,
-            {
-              category: options.componentIndex!.category,
-              status: options.componentIndex!.status,
-              excludeDirectories: options.componentIndex!.exclude!.directories,
-              excludeComponents: options.componentIndex!.exclude!.components,
-              overrides: options.componentIndex!.overrides,
-            },
-          )
+          if (globalComponents.length > 0) {
+            const tsconfigPath = resolvePath(nuxt.options.rootDir, 'tsconfig.json')
+            componentIndexData = generateComponentIndex(
+              globalComponents,
+              tsconfigPath,
+              {
+                category: options.componentIndex!.category,
+                status: options.componentIndex!.status,
+                includePackages: options.componentIndex!.includePackages,
+                excludeDirectories: options.componentIndex!.exclude!.directories,
+                excludeComponents: options.componentIndex!.exclude!.components,
+                overrides: options.componentIndex!.overrides,
+              },
+            )
+          }
+        }
+        catch (error) {
+          console.error('[nuxt-component-preview] Error generating component index:', error)
+          // Set to null so HTTP endpoint returns error status code
+          componentIndexData = null
         }
       })
 

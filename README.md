@@ -232,6 +232,11 @@ export default defineNuxtConfig({
         directories: [] // exclude by directory pattern
       },
 
+      // Package filtering for component index (default: false = exclude all packages)
+      includePackages: false,           // Exclude all package components from node_modules
+      // includePackages: true,          // Include all package components (not recommended)
+      // includePackages: ['my-package'], // Include only components from specific packages
+
       // Override metadata for specific components
       overrides: {
         TestButton: { category: 'Forms', status: 'experimental' }
@@ -240,6 +245,16 @@ export default defineNuxtConfig({
   }
 })
 ```
+
+#### Package Filtering
+
+The `includePackages` option controls which npm package components are included in the component index:
+
+- `false` (default): No components from node_modules packages are processed
+- `true`: All package components are processed (may cause warnings for incompatible packages)
+- `['package-name', '@org/package']`: Only components from specified packages are processed
+
+Only affects components registered globally by Nuxt from npm packages.
 
 ### Requirements for Component Index
 
