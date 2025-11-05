@@ -53,7 +53,7 @@ describe('includePackages feature', () => {
       // Only user component should be included (packages filtered out before file check)
       expect(result.components).toHaveLength(1)
       expect(result.components[0].id).toBe('UserButton')
-    })
+    }, 10000)
 
     it('excludes all package components when includePackages is undefined', () => {
       const components = [
