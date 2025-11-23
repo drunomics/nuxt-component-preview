@@ -34,11 +34,34 @@ function renderComponent(preview) {
     return h('div', { class: 'preview-error' }, `Component "${element}" not found`)
   }
 
-  // Convert HTML strings to VNodes for slots
+  // Convert slots to VNodes (supports both HTML strings and DOM elements)
   const slotContent = {}
-  for (const [slotName, htmlContent] of Object.entries(slots)) {
-    if (htmlContent) {
-      slotContent[slotName] = () => h('div', { innerHTML: htmlContent, style: { display: 'contents' } })
+  for (const [slotName, content] of Object.entries(slots)) {
+    if (content) {
+      slotContent[slotName] = () => {
+        // Check if slot content is a pre-existing DOM element that needs to be moved
+        if (content instanceof HTMLElement) {
+          // Use ref callback to move children from the container into the Vue slot.
+          // Vue calls this function with the mounted DOM element, allowing us to
+          // imperatively move existing DOM nodes without recreating them.
+          // This preserves event listeners and JavaScript references.
+          return h('div', {
+            ref: (el) => {
+              if (el && content.childNodes.length > 0) {
+                // Move all children from the slot container to this Vue slot element
+                while (content.firstChild) {
+                  el.appendChild(content.firstChild)
+                }
+                // Remove the now-empty wrapper
+                content.remove()
+              }
+            },
+            style: { display: 'contents' },
+          })
+        }
+        // Fallback: Handle HTML string slots (backward compatibility)
+        return h('div', { innerHTML: content, style: { display: 'contents' } })
+      }
     }
   }
   return h(component, props, slotContent)

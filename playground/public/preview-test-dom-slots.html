@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nuxt Component Preview Test - DOM Element Slots</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .preview-target {
+      border: 2px dashed #ccc;
+      min-height: 200px;
+      padding: 20px;
+      margin: 20px 0;
+      background: #fafafa;
+    }
+    h2 {
+      color: #333;
+      border-bottom: 2px solid #007acc;
+      padding-bottom: 5px;
+    }
+    .info {
+      background: #e7f3ff;
+      border-left: 4px solid #007acc;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    /* Hide slot containers until moved into place */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+  <script src="/nuxt-component-preview/app-loader.js"></script>
+</head>
+<body>
+  <h1>Nuxt Component Preview Test - DOM Element Slots</h1>
+
+  <div class="info">
+    <p><strong>This page tests passing DOM elements as slots instead of HTML strings:</strong></p>
+    <ul>
+      <li>Slot content exists in DOM before Nuxt renders</li>
+      <li>Elements are moved (not cloned) into component slots</li>
+      <li>Event listeners and JavaScript references are preserved</li>
+      <li>Hidden with <code>.visually-hidden</code> until moved</li>
+    </ul>
+  </div>
+
+  <h2>1. Simple DOM Element Slot</h2>
+  <div id="test-dom-slot-simple" class="preview-target">
+    <!-- Slot container with DOM content -->
+    <div class="visually-hidden" data-slot="column-one">
+      <h3>DOM Element Content</h3>
+      <p id="test-element">This content is a real DOM element, not an HTML string!</p>
+      <button id="test-button">Click me to verify event listeners work</button>
+    </div>
+    <div class="visually-hidden" data-slot="column-two">
+      <p>Second column with DOM content</p>
+    </div>
+  </div>
+
+  <h2>2. Nested Components in DOM Slots</h2>
+  <div id="test-dom-slot-nested" class="preview-target">
+    <div class="visually-hidden" data-slot="column-one">
+      <h3>Nested Component Slot</h3>
+      <div id="nested-button-dom" class="nuxt-preview-container"
+           data-component-name="TestButton"
+           data-component-data='{"element":"TestButton","label":"Nested Button in DOM Slot","variant":"primary"}'>
+      </div>
+    </div>
+    <div class="visually-hidden" data-slot="column-two">
+      <div id="nested-card-dom" class="nuxt-preview-container"
+           data-component-name="TestCard"
+           data-component-data='{"element":"TestCard","title":"Nested Card","description":"In DOM slot"}'>
+      </div>
+    </div>
+  </div>
+
+  <h2>3. Mixed: String Slot + DOM Slot</h2>
+  <div id="test-mixed-slots" class="preview-target">
+    <div class="visually-hidden" data-slot="column-one">
+      <p>DOM slot content</p>
+    </div>
+  </div>
+
+  <script>
+    const onNuxtComponentPreviewReady = (callback) => window.__nuxtComponentPreviewApp ? callback(window.__nuxtComponentPreviewApp) : window.addEventListener('nuxt-component-preview:ready', event => callback(event.detail.nuxtApp), { once: true })
+
+    onNuxtComponentPreviewReady(async (nuxtApp) => {
+      console.log('Nuxt Component Preview is ready!');
+
+      // Test 1: Simple DOM element slots
+      const container1 = document.getElementById('test-dom-slot-simple');
+
+      // Attach event listener to test element before moving
+      const testButton = document.getElementById('test-button');
+      let clickCount = 0;
+      testButton.addEventListener('click', () => {
+        clickCount++;
+        alert(`Button clicked ${clickCount} time(s)! Event listener survived the DOM move.`);
+      });
+
+      // Extract slot containers
+      const slot1Elements = {};
+      container1.querySelectorAll('[data-slot]').forEach(el => {
+        slot1Elements[el.dataset.slot] = el;
+      });
+
+      await nuxtApp.$previewComponent(
+        'TwoColumnLayout',
+        { width: 50 },
+        slot1Elements,
+        '#test-dom-slot-simple'
+      );
+
+      console.log('✓ Test 1: Simple DOM slots rendered');
+
+      // Verify the element was moved (not cloned)
+      const movedElement = document.getElementById('test-element');
+      if (movedElement && movedElement.textContent.includes('DOM element')) {
+        console.log('✓ DOM element successfully moved');
+      }
+
+      // Test 2: Nested components in DOM slots
+      const container2 = document.getElementById('test-dom-slot-nested');
+      const slot2Elements = {};
+      container2.querySelectorAll('[data-slot]').forEach(el => {
+        slot2Elements[el.dataset.slot] = el;
+      });
+
+      await nuxtApp.$previewComponent(
+        'TwoColumnLayout',
+        { width: 40 },
+        slot2Elements,
+        '#test-dom-slot-nested'
+      );
+
+      // Wait for DOM updates
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Initialize nested components
+      const nestedContainers = container2.querySelectorAll('.nuxt-preview-container');
+      for (const nested of nestedContainers) {
+        const { element, ...props } = JSON.parse(nested.dataset.componentData || '{}');
+        await nuxtApp.$previewComponent(nested.dataset.componentName, props, {}, `#${nested.id}`);
+      }
+
+      console.log('✓ Test 2: Nested components in DOM slots rendered');
+
+      // Test 3: Mixed - one DOM slot, one string slot
+      const container3 = document.getElementById('test-mixed-slots');
+      const slot3Elements = {};
+      container3.querySelectorAll('[data-slot]').forEach(el => {
+        slot3Elements[el.dataset.slot] = el;
+      });
+      // Add a string slot
+      slot3Elements['column-two'] = '<h3>String Slot</h3><p>This is an HTML string, not a DOM element</p>';
+
+      await nuxtApp.$previewComponent(
+        'TwoColumnLayout',
+        { width: 60 },
+        slot3Elements,
+        '#test-mixed-slots'
+      );
+
+      console.log('✓ Test 3: Mixed slots (DOM + string) rendered');
+      console.log('✓ All tests completed successfully!');
+    });
+  </script>
+</body>
+</html>

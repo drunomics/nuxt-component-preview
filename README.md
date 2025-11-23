@@ -179,11 +179,12 @@ Renders a Vue component to a target element. **Returns a Promise** that resolves
 **Parameters (in order):**
 - **componentName** (string): Name of the registered Vue component
 - **props** (object, optional): Props to pass to the component (default: `{}`)
-- **slots** (object, optional): Slot content as HTML strings, keyed by slot name (default: `{}`)
+- **slots** (object, optional): Slot content as HTML strings OR DOM elements, keyed by slot name (default: `{}`)
 - **targetSelector** (string | Element): CSS selector or DOM element where component will be rendered
 
 **Returns:** `Promise<{unmount: Function}>`
 
+**Basic Example (HTML strings):**
 ```javascript
 // Simple component
 await nuxtApp.$previewComponent('TestCard', { title: 'My Card' }, {}, '#preview-target');
@@ -199,6 +200,29 @@ await nuxtApp.$previewComponent(
   '#preview-target'
 );
 ```
+
+**Pass pre-exsiting DOM elements to slots**
+
+Slots can also accept pre-existing DOM elements instead of HTML strings. This is useful when:
+- Slot content already exists in the DOM (e.g., server-rendered content)
+- Processing needs to happen on slot content before Nuxt renders
+
+```javascript
+// Extract existing DOM elements to use as slots
+const container = document.getElementById('preview-target');
+const slotElements = {};
+container.querySelectorAll('[data-slot]').forEach(el => {
+  slotElements[el.dataset.slot] = el; // Pass the element directly
+});
+
+await nuxtApp.$previewComponent(
+  'TwoColumnLayout',
+  { width: 50 },
+  slotElements, // DOM elements instead of strings
+  '#preview-target'
+);
+```
+See [playground/public/preview-test-dom-slots.html](./playground/public/preview-test-dom-slots.html) for a complete working example.
 
 **Nested Components:** Slots can contain additional preview containers. An example implementing rendering with an
 arbitrary depth can be found at the [example](./playground/public/preview-test-loader.html), which can be tested via `npm run dev`.
