@@ -48,7 +48,7 @@
     "@vue/test-utils": "^2.4.6",
     "changelogen": "^0.6.1",
     "eslint": "^9.28.0",
-    "happy-dom": "^15.11.7",
+    "happy-dom": "^20.0.10",
     "minimatch": "^10.0.3",
     "nuxt": "^4.1.1",
     "nuxtjs-drupal-ce": "^2.5.0-rc.2",
