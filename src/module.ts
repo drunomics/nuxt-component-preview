@@ -79,21 +79,42 @@ export default defineNuxtModule<ModuleOptions>({
 
       nuxt.hook('nitro:build:public-assets', async (nitro) => {
         if (!nuxt.options.dev) {
-          try {
-            const manifestPath = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.json')
-            const manifestContent = await fs.promises.readFile(manifestPath, 'utf-8')
-            const manifest = JSON.parse(manifestContent)
-            const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
-            if (!entryKey || !manifest[entryKey]) {
-              console.error('Entry file not found in client manifest')
-              throw new Error('Entry file not found in client manifest')
+          // Nuxt >=4.2 uses client.manifest.mjs, Nuxt <4.2 uses client.manifest.json
+          const manifestPathMjs = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.mjs')
+          const manifestPathJson = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.json')
+          let manifest = null
+
+          if (fs.existsSync(manifestPathMjs)) {
+            try {
+              const manifestModule = await import(manifestPathMjs)
+              manifest = manifestModule.default || manifestModule
             }
-            resolvedEntryPath = `/_nuxt/${manifest[entryKey].file}`
-            nitro.options.virtual['#nuxt-entry-path'] = () => `export default '${resolvedEntryPath}'`
+            catch (error) {
+              console.error('[nuxt-component-preview] Failed to load client.manifest.mjs:', error)
+            }
           }
-          catch (error) {
-            console.error('CRITICAL: Failed to resolve Nuxt entry path:', error)
-            throw error
+          else if (fs.existsSync(manifestPathJson)) {
+            try {
+              const manifestContent = await fs.promises.readFile(manifestPathJson, 'utf-8')
+              manifest = JSON.parse(manifestContent)
+            }
+            catch (error) {
+              console.error('[nuxt-component-preview] Failed to load client.manifest.json:', error)
+            }
+          }
+          else {
+            console.error('[nuxt-component-preview] Client manifest not found. Component preview will not work in production.')
+          }
+
+          if (manifest) {
+            const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
+            if (entryKey && manifest[entryKey]) {
+              resolvedEntryPath = `/_nuxt/${manifest[entryKey].file}`
+              nitro.options.virtual['#nuxt-entry-path'] = () => `export default '${resolvedEntryPath}'`
+            }
+            else {
+              console.error('[nuxt-component-preview] Entry file not found in client manifest')
+            }
           }
         }
       })
