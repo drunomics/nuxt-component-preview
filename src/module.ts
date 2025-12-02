@@ -32,7 +32,7 @@ export default defineNuxtModule<ModuleOptions>({
       status: 'stable',
       includePackages: false, // By default, exclude all packages from node_modules
       exclude: {
-        components: ['*--default'],
+        components: ['*--default', 'drupal-*'],
         directories: [], // Path patterns only
       },
       overrides: {},

@@ -119,17 +119,21 @@ describe('preview DOM element slots', async () => {
   it('removes visually-hidden class from slot containers', async () => {
     const page = await createPage('/preview-test-dom-slots.html')
 
-    // Wait for rendering
+    // Wait for rendering and container removal
     await page.waitForFunction(() => {
-      return document.getElementById('test-element') !== null
+      const container = document.getElementById('test-dom-slot-simple')
+      if (!container) return false
+      const hiddenDivs = container.querySelectorAll('.visually-hidden[data-slot]')
+      return hiddenDivs.length === 0
     }, { timeout: 15000 })
 
     // Check that slot containers with visually-hidden were removed
     const hiddenContainersRemaining = await page.evaluate(() => {
       // After slots are moved, the original containers should be removed
       const container = document.getElementById('test-dom-slot-simple')
-      const hiddenDivs = container?.querySelectorAll('.visually-hidden[data-slot]')
-      return hiddenDivs?.length || 0
+      if (!container) return -1 // Fail if container not found
+      const hiddenDivs = container.querySelectorAll('.visually-hidden[data-slot]')
+      return hiddenDivs.length
     })
 
     // Should be 0 because containers are removed after moving children
