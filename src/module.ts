@@ -42,10 +42,17 @@ export default defineNuxtModule<ModuleOptions>({
     const resolver = createResolver(import.meta.url)
     let resolvedEntryPath = ''
 
-    // Add the component preview area component
+    // Check if nuxtjs-drupal-ce module is installed
+    const hasDrupalCe = nuxt.options.modules?.some(m =>
+      typeof m === 'string' && m.includes('nuxtjs-drupal-ce'),
+    )
+
+    // Add the appropriate component preview area component variant
     addComponent({
       name: 'ComponentPreviewArea',
-      filePath: resolver.resolve('./runtime/components/ComponentPreviewArea.vue'),
+      filePath: hasDrupalCe
+        ? resolver.resolve('./runtime/components/ComponentPreviewAreaDrupalCe.vue')
+        : resolver.resolve('./runtime/components/ComponentPreviewAreaVanilla.vue'),
     })
 
     // Add the client-side plugin for component preview functionality
