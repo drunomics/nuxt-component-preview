@@ -90,6 +90,14 @@ export default defineNuxtConfig({
 })
 ```
 
+### Reverse Proxy / CDN Configuration
+
+When Nuxt runs behind a reverse proxy, be sure to configure the Nuxt CDN URL so component preview generates correct absolute URLs for loading assets:
+
+```bash
+export NUXT_APP_CDN_URL=https://your-frontend-url.com
+```
+
 ## Usage
 
 ### Rendering Component Previews
