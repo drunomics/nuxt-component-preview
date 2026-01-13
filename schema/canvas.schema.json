@@ -1,0 +1,301 @@
+{
+  "$defs": {
+    "heading-element": {
+      "title": "Heading element",
+      "type": "string",
+      "enum": ["div", "h1", "h2", "h3", "h4", "h5", "h6"],
+      "meta:enum": {
+        "div": "Container",
+        "h1": "Header 1",
+        "h2": "Header 2",
+        "h3": "Header 3",
+        "h4": "Header 4",
+        "h5": "Header 5",
+        "h6": "Header 6"
+      }
+    },
+    "column-width": {
+      "title": "Column Width",
+      "type": "integer",
+      "enum": [25, 33, 50, 66, 75],
+      "meta:enum": {
+        "25": "25%",
+        "33": "33%",
+        "50": "50%",
+        "66": "66%",
+        "75": "75%"
+      }
+    },
+    "background-color": {
+      "title": "Background Color",
+      "type": "string",
+      "enum": ["", "primary", "secondary", "white"],
+      "meta:enum": {
+        "": "None",
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "white": "White"
+      }
+    },
+    "date-range": {
+      "title": "date range",
+      "type":  "object",
+      "required": ["from", "to"],
+      "properties": {
+        "from": {
+          "title": "Start date",
+          "type": "string",
+          "format": "date"
+        },
+        "to": {
+          "title": "End date",
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "stream-wrapper-uri": {
+      "title": "Stream wrapper URI",
+      "type": "string",
+      "format": "uri",
+      "x-allowed-schemes": ["public"]
+    },
+    "stream-wrapper-image-uri": {
+      "title": "Stream wrapper image URI",
+      "type": "string",
+      "format": "uri",
+      "contentMediaType": "image/*",
+      "x-allowed-schemes": ["public"]
+    },
+    "image-uri": {
+      "title": "Image URL",
+      "type": "string",
+      "format": "uri-reference",
+      "contentMediaType": "image/*",
+      "x-allowed-schemes": ["http", "https"]
+    },
+    "heading": {
+      "title": "Heading",
+      "type": "object",
+      "required": ["text", "element"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "title": "Text",
+          "description": "The heading text.",
+          "examples": ["A heading element"]
+        },
+        "style": {
+          "type": "string",
+          "title": "Style",
+          "description": "The heading style to use.",
+          "enum": ["primary", "secondary"],
+          "meta:enum": {
+            "primary": "Primary",
+            "secondary": "Secondary"
+          },
+          "examples": ["primary", "secondary"]
+        },
+        "element": {
+          "type": "string",
+          "title": "Element",
+          "description": "The HTML element to use.",
+          "enum": ["div", "h1", "h2", "h3", "h4", "h5", "h6"],
+          "meta:enum": {
+            "div": "Container",
+            "h1": "Header 1",
+            "h2": "Header 2",
+            "h3": "Header 3",
+            "h4": "Header 4",
+            "h5": "Header 5",
+            "h6": "Header 6"
+          },
+          "examples": ["h1", "h2", "h3", "h4", "h5", "h6", "div"]
+        }
+      }
+    },
+    "text": {
+      "title": "Text",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "title": "Text",
+          "description": "The text to display.",
+          "examples": ["This is some text"]
+        }
+      }
+    },
+    "shoe-icon": {
+      "title": "Icon",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Name",
+          "description": "The badge’s theme variant.",
+          "default": "moon-stars-fill",
+          "enum": [
+            "moon-stars-fill",
+            "moon-stars",
+            "star-fill",
+            "star",
+            "stars",
+            "rocket-fill",
+            "rocket-takeoff-fill",
+            "rocket-takeoff",
+            "rocket"
+          ],
+          "meta:enum": {
+            "moon-stars-fill": "Moon Stars (Filled)",
+            "moon-stars": "Moon Stars",
+            "star-fill": "Star (Filled)",
+            "star": "Star",
+            "stars": "Stars",
+            "rocket-fill": "Rocket (Filled)",
+            "rocket-takeoff-fill": "Rocket Takeoff (Filled)",
+            "rocket-takeoff": "Rocket Takeoff",
+            "rocket": "Rocket"
+          },
+          "examples": [
+            "moon-stars-fill",
+            "moon-stars",
+            "star-fill",
+            "star",
+            "stars",
+            "rocket-fill",
+            "rocket-takeoff-fill",
+            "rocket-takeoff",
+            "rocket"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "title": "Label",
+          "description": "An alternate description to use for assistive devices. If omitted, the icon will be considered presentational and ignored by assistive devices.",
+          "default": "This is an icon",
+          "examples": ["This is an icon"]
+        },
+        "size": {
+          "type": "string",
+          "title": "Size",
+          "description": "The icon size.",
+          "default": "",
+          "enum": ["", "base", "l", "s", "xs", "xxs"],
+          "meta:enum": {
+            "": "None",
+            "base": "Base",
+            "l": "Large",
+            "s": "Small",
+            "xs": "Extra-Small",
+            "xxs": "Extra-Extra-Small"
+          },
+          "examples": ["", "base", "l", "s", "xs", "xxs"]
+        },
+        "color": {
+          "type": "string",
+          "title": "Color",
+          "description": "The icon color",
+          "default": "",
+          "enum": [
+            "",
+            "gray",
+            "primary",
+            "neutral-soft",
+            "neutral-medium",
+            "neutral-loud",
+            "primary-medium",
+            "primary-loud",
+            "black",
+            "white",
+            "red",
+            "gold",
+            "green"
+          ],
+          "meta:enum": {
+            "": "None",
+            "gray": "Gray",
+            "primary": "Primary",
+            "neutral-soft": "Neutral Soft",
+            "neutral-medium": "Neutral Medium",
+            "neutral-loud": "Neutral Loud",
+            "primary-medium": "Primary Medium",
+            "primary-loud": "Primary Loud",
+            "black": "Black",
+            "white": "White",
+            "red": "Red",
+            "gold": "Gold",
+            "green": "Green"
+          },
+          "examples": [
+            "",
+            "gray",
+            "primary",
+            "neutral-soft",
+            "neutral-medium",
+            "neutral-loud",
+            "primary-medium",
+            "primary-loud",
+            "black",
+            "white",
+            "red",
+            "gold",
+            "green"
+          ]
+        },
+        "slot": {
+          "type": "string",
+          "title": "Slot",
+          "description": "The slot the icon should appear in",
+          "examples": []
+        }
+      }
+    },
+    "image": {
+      "title": "image",
+      "type":  "object",
+      "required": ["src"],
+      "properties": {
+        "src": {
+          "title": "Image URL",
+          "$ref": "json-schema-definitions://canvas.module/image-uri"
+        },
+        "alt": {
+          "title": "Alternative text",
+          "type": "string"
+        },
+        "width": {
+          "title": "Image width",
+          "type": "integer"
+        },
+        "height": {
+          "title": "Image height",
+          "type": "integer"
+        }
+      }
+    },
+    "video": {
+      "title": "video",
+      "type":  "object",
+      "required": ["src"],
+      "properties": {
+        "src": {
+          "title": "Video URL",
+          "type": "string",
+          "format": "uri-reference",
+          "contentMediaType": "video/*",
+          "x-allowed-schemes": ["http", "https"]
+        },
+        "poster": {
+          "title": "Poster image URL",
+          "$ref": "json-schema-definitions://canvas.module/image-uri"
+        }
+      }
+    },
+    "config-entity-id": {
+      "title": "config entity id",
+      "type": "string",
+      "pattern": "^[a-z0-9_\\.]+$"
+    }
+  }
+}
