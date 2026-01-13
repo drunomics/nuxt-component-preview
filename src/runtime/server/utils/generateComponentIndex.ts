@@ -51,6 +51,65 @@ function generateTitle(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1).replace(/([A-Z])/g, ' $1')
 }
 
+const TITLE_MAX_LENGTH = 24
+
+/**
+ * Extract title and description from JSDoc comments.
+ * Priority:
+ * 1. @title tag if present
+ * 2. First line of description if short enough (≤50 chars)
+ * 3. Fallback to name-based generation
+ *
+ * Supports standard JSDoc format:
+ *   Short summary line (becomes title)
+ *
+ *   Extended description continues here.
+ */
+function extractTitleFromJSDoc(
+  prop: { name: string, description?: string, tags?: Array<{ name: string, text?: string }> },
+): { title: string, description?: string } {
+  // 1. Check for @title tag (only use first line)
+  const titleTag = prop.tags?.find(t => t.name === 'title')
+  if (titleTag?.text?.trim()) {
+    const titleText = titleTag.text.split('\n')[0].trim()
+    if (titleText) {
+      return {
+        title: titleText,
+        description: prop.description,
+      }
+    }
+  }
+
+  // 2. Check description first line
+  if (prop.description) {
+    const lines = prop.description.split('\n')
+    const firstLine = lines[0].trim()
+
+    if (firstLine.length > 0 && firstLine.length <= TITLE_MAX_LENGTH) {
+      // Determine remaining description
+      let remainingLines = lines.slice(1)
+
+      // Remove leading empty line (JSDoc summary/description separator)
+      if (remainingLines.length > 0 && remainingLines[0].trim() === '') {
+        remainingLines = remainingLines.slice(1)
+      }
+
+      const remainingDescription = remainingLines.join('\n').trim() || undefined
+
+      return {
+        title: firstLine,
+        description: remainingDescription,
+      }
+    }
+  }
+
+  // 3. Fallback to name-based generation
+  return {
+    title: generateTitle(prop.name),
+    description: prop.description,
+  }
+}
+
 /**
  * Detect if a Vue type is a Canvas type (CanvasImage, CanvasVideo)
  * Handles various type formats from vue-component-meta:
@@ -96,14 +155,15 @@ function buildFormattedTextPropDefinition(
   prop: { name: string, description?: string, default?: string, tags?: Array<{ name: string, text?: string }> },
   formattedTextInfo: { contentMediaType: string, formattingContext: 'block' | 'inline' },
 ): PropDefinition {
+  const { title, description } = extractTitleFromJSDoc(prop)
   const propDef: PropDefinition = {
     'type': 'string',
-    'title': generateTitle(prop.name),
+    'title': title,
     'contentMediaType': formattedTextInfo.contentMediaType,
     'x-formatting-context': formattedTextInfo.formattingContext,
   }
 
-  if (prop.description) propDef.description = prop.description
+  if (description) propDef.description = description
 
   // Extract examples from @example tags
   if (prop.tags) {
@@ -201,13 +261,14 @@ function buildCanvasPropDefinition(
   prop: { name: string, description?: string, default?: string, tags?: Array<{ name: string, text?: string }> },
   refValue: string,
 ): PropDefinition {
+  const { title, description } = extractTitleFromJSDoc(prop)
   const propDef: PropDefinition = {
     type: 'object',
     $ref: refValue,
-    title: generateTitle(prop.name),
+    title,
   }
 
-  if (prop.description) propDef.description = prop.description
+  if (description) propDef.description = description
 
   // Extract examples from @example tags
   // Supports: JSON, JS object literal, key-value pairs
@@ -362,12 +423,13 @@ export function generateComponentIndex(
           }
 
           // Regular prop processing
+          const { title, description } = extractTitleFromJSDoc(prop)
           const propDef: Partial<PropDefinition> = {
             type: mapVueTypeToJsonSchema(prop.type),
-            title: generateTitle(prop.name),
+            title,
           }
 
-          if (prop.description) propDef.description = prop.description
+          if (description) propDef.description = description
           if (prop.default !== undefined) propDef.default = parseDefaultValue(prop.default)
 
           // Extract enum from TypeScript union types
