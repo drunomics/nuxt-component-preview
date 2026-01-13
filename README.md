@@ -323,68 +323,27 @@ withDefaults(defineProps<{
 
 ### Drupal Canvas Types
 
-For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special prop types generate JSON schema matching [Canvas JSON-Schema definitions](https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json), enabling UI features like media library selection.
+For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special prop types generate JSON schema matching [Canvas JSON-Schema definitions](https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json), enabling UI features like media library selection. See [Canvas prop types documentation](https://project.pages.drupalcode.org/canvas/sdc-components/props/#prop-types-and-examples) for details.
 
-**Available types:**
+**Available types** (auto-imported by Nuxt):
 - `CanvasImage` - Image with media library integration
 - `CanvasVideo` - Video with poster support
 
-**Usage:**
+**`@example` formats** for Canvas types:
+- Key-value: `src=https://... alt="text" width=800 height=600`
+- JS object: `{ src: 'https://...', alt: 'text', width: 800 }`
 
-```vue
-<script setup lang="ts">
-defineProps<{
-  /**
-   * Hero image
-   * @example src=https://placehold.co/800x600 alt="Hero" width=800 height=600
-   */
-  image?: CanvasImage
-  /**
-   * Background video
-   * @example src=https://example.com/video.mp4 poster=https://example.com/poster.jpg
-   */
-  video?: CanvasVideo
-}>()
-</script>
-```
-
-Types are auto-imported by Nuxt. The `@example` tag supports two formats:
-- **Key-value**: `src=https://... alt="text" width=800 height=600`
-- **JS object**: `{ src: 'https://...', alt: 'text', width: 800 }`
-
-Generated schema includes `$ref` to Canvas definitions (e.g., `json-schema-definitions://canvas.module/image`).
+See [TestHero.vue](./playground/components/global/TestHero.vue) and [TestBanner.vue](./playground/components/global/TestBanner.vue) for usage examples.
 
 ### Formatted Text (HTML)
 
-For rich text props that should use CKEditor in Canvas, use JSDoc tags:
-
-```vue
-<script setup lang="ts">
-defineProps<{
-  /**
-   * Article content with full formatting
-   * @contentMediaType text/html
-   * @example <p>Rich text with <strong>formatting</strong>.</p>
-   */
-  content?: string
-  /**
-   * Summary with inline formatting only
-   * @contentMediaType text/html
-   * @formattingContext inline
-   * @example This is <em>important</em> text
-   */
-  summary?: string
-}>()
-</script>
-```
-
-**Tags:**
+For rich text props (CKEditor in Canvas), use JSDoc tags:
 - `@contentMediaType text/html` - Enables rich text editing (required)
-- `@formattingContext block|inline` - Controls allowed formatting (default: `block`)
+- `@formattingContext block|inline` - Controls formatting (default: `block`)
+  - `block` - Full formatting: paragraphs, lists, headings
+  - `inline` - Limited: bold, italic, links (no block elements)
 
-**Formatting contexts:**
-- `block` - Full formatting: paragraphs, lists, headings, etc.
-- `inline` - Limited formatting: bold, italic, links (no block elements)
+See [TestArticle.vue](./playground/components/global/TestArticle.vue) for usage examples.
 
 ## Testing
 
