@@ -7,17 +7,18 @@ export default defineNuxtConfig({
   },
   nitro: {
     routeRules: {
-      '/nuxt-component-preview/*.js': {
+      // Allow CORS from anywhere for playground/development.
+      '/nuxt-component-preview/**': {
         cors: true,
         headers: {
-          'Access-Control-Allow-Origin': 'https://xb-dev.ddev.site',
+          'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
         },
       },
       '/_nuxt/**': {
         cors: true,
         headers: {
-          'Access-Control-Allow-Origin': 'https://xb-dev.ddev.site',
+          'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
         },
       },
@@ -25,9 +26,7 @@ export default defineNuxtConfig({
   },
   vite: {
     server: {
-      cors: {
-        origin: ['https://xb-dev.ddev.site'],
-      },
+      cors: true,
     },
   },
   drupalCe: {
