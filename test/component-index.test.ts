@@ -673,4 +673,114 @@ describe('Component Index Generation', () => {
       expect(titleProp.type).toBe('string')
     }, 10000)
   })
+
+  describe('Formatted Text Detection', () => {
+    it('detects @contentMediaType text/html and defaults to block context', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArticle',
+        kebabName: 'test-article',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArticle.vue'),
+        shortPath: 'components/global/TestArticle.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      // content prop has @contentMediaType but no @formattingContext, should default to block
+      const contentProp = result.components[0].props.properties.content
+
+      expect(contentProp.type).toBe('string')
+      expect(contentProp.contentMediaType).toBe('text/html')
+      expect(contentProp['x-formatting-context']).toBe('block')
+    }, 10000)
+
+    it('respects @formattingContext inline when specified', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArticle',
+        kebabName: 'test-article',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArticle.vue'),
+        shortPath: 'components/global/TestArticle.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      // summary prop has @formattingContext inline
+      const summaryProp = result.components[0].props.properties.summary
+
+      expect(summaryProp.type).toBe('string')
+      expect(summaryProp.contentMediaType).toBe('text/html')
+      expect(summaryProp['x-formatting-context']).toBe('inline')
+    }, 10000)
+
+    it('extracts @example tags for formatted text props', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArticle',
+        kebabName: 'test-article',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArticle.vue'),
+        shortPath: 'components/global/TestArticle.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const summaryProp = result.components[0].props.properties.summary
+      const contentProp = result.components[0].props.properties.content
+
+      expect(summaryProp.examples).toBeDefined()
+      expect(summaryProp.examples).toHaveLength(1)
+      expect(summaryProp.examples![0]).toBe('This is <strong>important</strong> news')
+
+      expect(contentProp.examples).toBeDefined()
+      expect(contentProp.examples).toHaveLength(1)
+      expect(contentProp.examples![0]).toContain('<p>First paragraph')
+    }, 10000)
+
+    it('does not add contentMediaType for regular string props', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArticle',
+        kebabName: 'test-article',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArticle.vue'),
+        shortPath: 'components/global/TestArticle.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      // title prop is a regular string, no @contentMediaType
+      const titleProp = result.components[0].props.properties.title
+
+      expect(titleProp.type).toBe('string')
+      expect(titleProp.contentMediaType).toBeUndefined()
+      expect(titleProp['x-formatting-context']).toBeUndefined()
+    }, 10000)
+  })
 })

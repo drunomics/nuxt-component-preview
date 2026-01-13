@@ -33,6 +33,8 @@ interface PropDefinition {
   'meta:enum'?: Record<string, string>
   'examples'?: (string | number | boolean | object)[]
   '$ref'?: string
+  'contentMediaType'?: string
+  'x-formatting-context'?: 'block' | 'inline'
 }
 
 // Canvas type mappings - maps TypeScript type names to Canvas $ref values
@@ -54,6 +56,56 @@ function detectCanvasType(vueType: string): string | null {
   // Remove "globalThis." prefix if present
   cleanType = cleanType.replace(/^globalThis\./, '')
   return CANVAS_TYPE_REFS[cleanType] || null
+}
+
+/**
+ * Detect formatted text from JSDoc @contentMediaType tag
+ * Returns formatting context info if prop has @contentMediaType text/html
+ */
+function detectFormattedText(tags?: Array<{ name: string, text?: string }>): { contentMediaType: string, formattingContext: 'block' | 'inline' } | null {
+  if (!tags) return null
+
+  const contentMediaTypeTag = tags.find(t => t.name === 'contentMediaType')
+  if (!contentMediaTypeTag?.text?.trim()) return null
+
+  const mediaType = contentMediaTypeTag.text.trim()
+  if (mediaType !== 'text/html') return null
+
+  // Check for @formattingContext tag, default to 'block'
+  const formattingContextTag = tags.find(t => t.name === 'formattingContext')
+  const formattingContext = formattingContextTag?.text?.trim() as 'block' | 'inline' | undefined
+
+  return {
+    contentMediaType: mediaType,
+    formattingContext: formattingContext === 'inline' ? 'inline' : 'block',
+  }
+}
+
+/**
+ * Build a formatted text prop definition with contentMediaType and x-formatting-context
+ */
+function buildFormattedTextPropDefinition(
+  prop: { name: string, description?: string, default?: string, tags?: Array<{ name: string, text?: string }> },
+  formattedTextInfo: { contentMediaType: string, formattingContext: 'block' | 'inline' },
+): PropDefinition {
+  const propDef: PropDefinition = {
+    'type': 'string',
+    'title': prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
+    'contentMediaType': formattedTextInfo.contentMediaType,
+    'x-formatting-context': formattedTextInfo.formattingContext,
+  }
+
+  if (prop.description) propDef.description = prop.description
+
+  // Extract examples from @example tags
+  if (prop.tags) {
+    const exampleTags = prop.tags.filter(t => t.name === 'example')
+    if (exampleTags.length > 0) {
+      propDef.examples = exampleTags.map(t => t.text?.trim() || '').filter(Boolean)
+    }
+  }
+
+  return propDef
 }
 
 /**
@@ -291,6 +343,13 @@ export function generateComponentIndex(
           const canvasRef = detectCanvasType(prop.type)
           if (canvasRef) {
             acc[prop.name] = buildCanvasPropDefinition(prop, canvasRef)
+            return acc
+          }
+
+          // Check for formatted text (@contentMediaType text/html)
+          const formattedTextInfo = detectFormattedText(prop.tags)
+          if (formattedTextInfo) {
+            acc[prop.name] = buildFormattedTextPropDefinition(prop, formattedTextInfo)
             return acc
           }
 

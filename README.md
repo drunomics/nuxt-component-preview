@@ -237,7 +237,7 @@ arbitrary depth can be found at the [example](./playground/public/preview-test-l
 
 ## Component Index
 
-This module automatically generates a component index JSON file containing metadata for all global components. This is particularly useful for integration with Drupal Canvas External JS module.
+This module automatically generates a component index JSON file containing metadata for all global components. This is particularly useful for integration with [Drupal Canvas External JS](https://www.drupal.org/project/canvas_extjs) module.
 
 ### Endpoint
 
@@ -321,9 +321,9 @@ withDefaults(defineProps<{
 - `@example` - Adds to `examples` field
 - `@enumLabels` - Custom labels for `meta:enum` (full or partial)
 
-### Canvas Types
+### Drupal Canvas Types
 
-The module provides special types for [Drupal Canvas](https://www.drupal.org/project/canvas) integration. These types generate JSON schema with `$ref` references, enabling Canvas UI features like media library selection.
+For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special prop types generate JSON schema matching [Canvas JSON-Schema definitions](https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json), enabling UI features like media library selection.
 
 **Available types:**
 - `CanvasImage` - Image with media library integration
@@ -354,7 +354,37 @@ Types are auto-imported by Nuxt. The `@example` tag supports two formats:
 
 Generated schema includes `$ref` to Canvas definitions (e.g., `json-schema-definitions://canvas.module/image`).
 
-See [Canvas schema](https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json) for full type definitions.
+### Formatted Text (HTML)
+
+For rich text props that should use CKEditor in Canvas, use JSDoc tags:
+
+```vue
+<script setup lang="ts">
+defineProps<{
+  /**
+   * Article content with full formatting
+   * @contentMediaType text/html
+   * @example <p>Rich text with <strong>formatting</strong>.</p>
+   */
+  content?: string
+  /**
+   * Summary with inline formatting only
+   * @contentMediaType text/html
+   * @formattingContext inline
+   * @example This is <em>important</em> text
+   */
+  summary?: string
+}>()
+</script>
+```
+
+**Tags:**
+- `@contentMediaType text/html` - Enables rich text editing (required)
+- `@formattingContext block|inline` - Controls allowed formatting (default: `block`)
+
+**Formatting contexts:**
+- `block` - Full formatting: paragraphs, lists, headings, etc.
+- `inline` - Limited formatting: bold, italic, links (no block elements)
 
 ## Testing
 
