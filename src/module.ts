@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import { resolve } from 'node:path'
-import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler } from '@nuxt/kit'
+import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler, addImports } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
@@ -41,6 +41,20 @@ export default defineNuxtModule<ModuleOptions>({
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
     let resolvedEntryPath = ''
+
+    // Auto-import Canvas types for component props
+    addImports([
+      {
+        name: 'CanvasImage',
+        from: resolver.resolve('./types/canvas'),
+        type: true,
+      },
+      {
+        name: 'CanvasVideo',
+        from: resolver.resolve('./types/canvas'),
+        type: true,
+      },
+    ])
 
     // Check if nuxtjs-drupal-ce module is installed
     const hasDrupalCe = nuxt.options.modules?.some(m =>

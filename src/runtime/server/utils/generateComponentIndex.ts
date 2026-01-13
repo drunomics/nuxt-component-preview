@@ -31,7 +31,164 @@ interface PropDefinition {
   'default'?: string | number | boolean
   'enum'?: (string | number)[]
   'meta:enum'?: Record<string, string>
-  'examples'?: (string | number | boolean)[]
+  'examples'?: (string | number | boolean | object)[]
+  '$ref'?: string
+}
+
+// Canvas type mappings - maps TypeScript type names to Canvas $ref values
+const CANVAS_TYPE_REFS: Record<string, string> = {
+  CanvasImage: 'json-schema-definitions://canvas.module/image',
+  CanvasVideo: 'json-schema-definitions://canvas.module/video',
+}
+
+/**
+ * Detect if a Vue type is a Canvas type (CanvasImage, CanvasVideo)
+ * Handles various type formats from vue-component-meta:
+ * - "CanvasImage"
+ * - "CanvasImage | undefined"
+ * - "globalThis.CanvasImage | undefined"
+ */
+function detectCanvasType(vueType: string): string | null {
+  // Remove " | undefined" suffix and trim
+  let cleanType = vueType.replace(/\s*\|\s*undefined/g, '').trim()
+  // Remove "globalThis." prefix if present
+  cleanType = cleanType.replace(/^globalThis\./, '')
+  return CANVAS_TYPE_REFS[cleanType] || null
+}
+
+/**
+ * Parse key-value pair syntax into an object
+ * Format: key=value key2="value with spaces" key3=123
+ * - Unquoted values end at whitespace
+ * - Quoted values (single or double) can contain spaces
+ * - Numbers are parsed as numbers
+ */
+function parseKeyValueExample(str: string): object | null {
+  const trimmed = str.trim()
+  // Must contain at least one key=value pattern
+  if (!trimmed.includes('=')) return null
+  // Should not look like JSON or JS object
+  if (trimmed.startsWith('{')) return null
+
+  const result: Record<string, string | number | boolean> = {}
+  // Match: key=value, key="quoted value", key='quoted value'
+  const pattern = /(\w+)=(?:"([^"]*)"|'([^']*)'|(\S+))/g
+  let match
+
+  while ((match = pattern.exec(trimmed)) !== null) {
+    const key = match[1]
+    const value = match[2] ?? match[3] ?? match[4]
+
+    // Try to parse as number
+    if (/^-?\d+(?:\.\d+)?$/.test(value)) {
+      result[key] = Number(value)
+    }
+    // Parse booleans
+    else if (value === 'true') {
+      result[key] = true
+    }
+    else if (value === 'false') {
+      result[key] = false
+    }
+    else {
+      result[key] = value
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : null
+}
+
+/**
+ * Parse Canvas default value into an object
+ * Handles formats from vue-component-meta:
+ * - Object literal: "{ src: \"...\", alt: \"...\", ... }"
+ * - Factory function: "() => ({ src: \"...\", ... })"
+ */
+function parseCanvasDefault(defaultStr: string): object | null {
+  let objectStr = defaultStr.trim()
+
+  // Handle factory function: () => ({ ... }) or () => { ... }
+  const factoryMatch = objectStr.match(/\(\)\s*=>\s*\(?(\{[\s\S]+\})\)?/)
+  if (factoryMatch) {
+    objectStr = factoryMatch[1]
+  }
+
+  // Check if it looks like an object literal
+  if (!objectStr.startsWith('{') || !objectStr.endsWith('}')) {
+    return null
+  }
+
+  try {
+    // Convert JS object literal to JSON:
+    // - Quote unquoted keys: src: -> "src":
+    // - Single to double quotes: 'value' -> "value"
+    // - Remove trailing commas: ,} -> }
+    const jsonStr = objectStr
+      .replace(/(\w+)\s*:/g, '"$1":') // quote keys
+      .replace(/'/g, '"') // single to double quotes
+      .replace(/,(\s*[}\]])/g, '$1') // remove trailing commas
+    return JSON.parse(jsonStr)
+  }
+  catch {
+    return null
+  }
+}
+
+/**
+ * Build a Canvas-compatible prop definition with $ref
+ */
+function buildCanvasPropDefinition(
+  prop: { name: string, description?: string, default?: string, tags?: Array<{ name: string, text?: string }> },
+  refValue: string,
+): PropDefinition {
+  const propDef: PropDefinition = {
+    type: 'object',
+    $ref: refValue,
+    title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
+  }
+
+  if (prop.description) propDef.description = prop.description
+
+  // Extract examples from @example tags
+  // Supports: JSON, JS object literal, key-value pairs
+  if (prop.tags) {
+    const exampleTags = prop.tags.filter(t => t.name === 'example')
+    if (exampleTags.length > 0) {
+      const examples = exampleTags.map((t) => {
+        const text = t.text?.trim() || ''
+        if (!text) return null
+
+        // Try JSON first
+        try {
+          return JSON.parse(text)
+        }
+        catch {
+          // Not valid JSON, continue
+        }
+
+        // Try JS object literal syntax
+        const jsObj = parseCanvasDefault(text)
+        if (jsObj) return jsObj
+
+        // Try key-value pairs syntax
+        const kvObj = parseKeyValueExample(text)
+        if (kvObj) return kvObj
+
+        return null
+      }).filter(Boolean)
+      if (examples.length > 0) {
+        propDef.examples = examples
+      }
+    }
+  }
+
+  // Use default as example if no @example tags
+  if ((!propDef.examples || propDef.examples.length === 0) && prop.default) {
+    const defaultObj = parseCanvasDefault(prop.default)
+    if (defaultObj) propDef.examples = [defaultObj]
+  }
+
+  return propDef
 }
 
 interface SlotDefinition {
@@ -130,6 +287,14 @@ export function generateComponentIndex(
       const props = meta.props
         .filter(p => !vueInternalProps.includes(p.name))
         .reduce((acc, prop) => {
+          // Check for Canvas types first (CanvasImage, CanvasVideo)
+          const canvasRef = detectCanvasType(prop.type)
+          if (canvasRef) {
+            acc[prop.name] = buildCanvasPropDefinition(prop, canvasRef)
+            return acc
+          }
+
+          // Regular prop processing
           const propDef: Partial<PropDefinition> = {
             type: mapVueTypeToJsonSchema(prop.type),
             title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),

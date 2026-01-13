@@ -490,4 +490,187 @@ describe('Component Index Generation', () => {
       expect(component.slots.trigger.title).toBe('Trigger')
     })
   })
+
+  describe('Canvas Type Detection', () => {
+    it('generates Canvas-compatible schema for CanvasImage props', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestHero',
+        kebabName: 'test-hero',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
+        shortPath: 'components/global/TestHero.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imageProp = result.components[0].props.properties.image
+
+      // Validate Canvas schema format
+      expect(imageProp.type).toBe('object')
+      expect(imageProp['$ref']).toBe('json-schema-definitions://canvas.module/image')
+      expect(imageProp.title).toBe('Image')
+    }, 10000)
+
+    it('extracts @example JSON for CanvasImage props', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestHero',
+        kebabName: 'test-hero',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
+        shortPath: 'components/global/TestHero.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imageProp = result.components[0].props.properties.image
+
+      expect(imageProp.examples).toBeDefined()
+      expect(imageProp.examples).toHaveLength(1)
+      expect(imageProp.examples![0]).toMatchObject({
+        src: 'https://placehold.co/800x600',
+        alt: 'Example image',
+        width: 800,
+        height: 600,
+      })
+    }, 10000)
+
+    it('validates CanvasImage examples match Canvas schema structure', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+      const canvasSchema = await import('../schema/canvas.schema.json')
+
+      const mockComponents = [{
+        pascalName: 'TestHero',
+        kebabName: 'test-hero',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
+        shortPath: 'components/global/TestHero.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imageProp = result.components[0].props.properties.image
+      const canvasImageDef = canvasSchema.$defs.image
+
+      // Verify the prop has correct Canvas $ref
+      expect(imageProp['$ref']).toBe('json-schema-definitions://canvas.module/image')
+
+      // Verify examples match Canvas image structure (has required 'src' and optional alt, width, height)
+      imageProp.examples.forEach((example: Record<string, unknown>) => {
+        // 'src' is required per Canvas schema
+        expect(example).toHaveProperty('src')
+        expect(typeof example.src).toBe('string')
+
+        // Verify structure matches Canvas image $defs
+        const canvasImageProps = Object.keys(canvasImageDef.properties)
+        Object.keys(example).forEach((key) => {
+          expect(canvasImageProps).toContain(key)
+        })
+      })
+    }, 10000)
+
+    it('parses @example with key-value syntax', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestBanner',
+        kebabName: 'test-banner',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestBanner.vue'),
+        shortPath: 'components/global/TestBanner.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imageProp = result.components[0].props.properties.image
+
+      // Should have $ref for Canvas type
+      expect(imageProp['$ref']).toBe('json-schema-definitions://canvas.module/image')
+
+      // Should parse key-value @example into object
+      expect(imageProp.examples).toBeDefined()
+      expect(imageProp.examples).toHaveLength(1)
+      expect(imageProp.examples![0]).toMatchObject({
+        src: 'https://placehold.co/600x400',
+        alt: 'Banner image',
+        width: 600,
+        height: 400,
+      })
+    }, 10000)
+
+    it('parses numbers and booleans in key-value syntax', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestBanner',
+        kebabName: 'test-banner',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestBanner.vue'),
+        shortPath: 'components/global/TestBanner.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imageProp = result.components[0].props.properties.image
+
+      // Numbers should be parsed as numbers, not strings
+      expect(typeof imageProp.examples![0].width).toBe('number')
+      expect(typeof imageProp.examples![0].height).toBe('number')
+      expect(imageProp.examples![0].width).toBe(600)
+      expect(imageProp.examples![0].height).toBe(400)
+    }, 10000)
+
+    it('does not add $ref for regular object props', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      // TestCard has regular string props, not Canvas types
+      const mockComponents = [{
+        pascalName: 'TestCard',
+        kebabName: 'test-card',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestCard.vue'),
+        shortPath: 'components/global/TestCard.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      // Regular string props should not have $ref
+      const titleProp = result.components[0].props.properties.title
+      expect(titleProp['$ref']).toBeUndefined()
+      expect(titleProp.type).toBe('string')
+    }, 10000)
+  })
 })
