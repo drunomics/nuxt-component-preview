@@ -587,6 +587,67 @@ describe('Component Index Generation', () => {
       })
     }, 10000)
 
+    it('parses @example with key-value syntax', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestBanner',
+        kebabName: 'test-banner',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestBanner.vue'),
+        shortPath: 'components/global/TestBanner.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imageProp = result.components[0].props.properties.image
+
+      // Should have $ref for Canvas type
+      expect(imageProp['$ref']).toBe('json-schema-definitions://canvas.module/image')
+
+      // Should parse key-value @example into object
+      expect(imageProp.examples).toBeDefined()
+      expect(imageProp.examples).toHaveLength(1)
+      expect(imageProp.examples![0]).toMatchObject({
+        src: 'https://placehold.co/600x400',
+        alt: 'Banner image',
+        width: 600,
+        height: 400,
+      })
+    }, 10000)
+
+    it('parses numbers and booleans in key-value syntax', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestBanner',
+        kebabName: 'test-banner',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestBanner.vue'),
+        shortPath: 'components/global/TestBanner.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imageProp = result.components[0].props.properties.image
+
+      // Numbers should be parsed as numbers, not strings
+      expect(typeof imageProp.examples![0].width).toBe('number')
+      expect(typeof imageProp.examples![0].height).toBe('number')
+      expect(imageProp.examples![0].width).toBe(600)
+      expect(imageProp.examples![0].height).toBe(400)
+    }, 10000)
+
     it('does not add $ref for regular object props', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
       const { resolve } = await import('node:path')

@@ -1,4 +1,13 @@
 /**
+ * Canvas type definitions for Drupal Canvas integration.
+ *
+ * These types generate JSON schema with $ref to Canvas schema definitions,
+ * enabling Canvas UI features like media library selection.
+ *
+ * @see https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json
+ */
+
+/**
  * Image type compatible with Drupal Canvas.
  *
  * When used as a component prop type, generates JSON schema with:

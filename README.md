@@ -321,6 +321,41 @@ withDefaults(defineProps<{
 - `@example` - Adds to `examples` field
 - `@enumLabels` - Custom labels for `meta:enum` (full or partial)
 
+### Canvas Types
+
+The module provides special types for [Drupal Canvas](https://www.drupal.org/project/canvas) integration. These types generate JSON schema with `$ref` references, enabling Canvas UI features like media library selection.
+
+**Available types:**
+- `CanvasImage` - Image with media library integration
+- `CanvasVideo` - Video with poster support
+
+**Usage:**
+
+```vue
+<script setup lang="ts">
+defineProps<{
+  /**
+   * Hero image
+   * @example src=https://placehold.co/800x600 alt="Hero" width=800 height=600
+   */
+  image?: CanvasImage
+  /**
+   * Background video
+   * @example src=https://example.com/video.mp4 poster=https://example.com/poster.jpg
+   */
+  video?: CanvasVideo
+}>()
+</script>
+```
+
+Types are auto-imported by Nuxt. The `@example` tag supports two formats:
+- **Key-value**: `src=https://... alt="text" width=800 height=600`
+- **JS object**: `{ src: 'https://...', alt: 'text', width: 800 }`
+
+Generated schema includes `$ref` to Canvas definitions (e.g., `json-schema-definitions://canvas.module/image`).
+
+See [Canvas schema](https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json) for full type definitions.
+
 ## Testing
 
 This module includes comprehensive tests. To run them:

@@ -57,6 +57,48 @@ function detectCanvasType(vueType: string): string | null {
 }
 
 /**
+ * Parse key-value pair syntax into an object
+ * Format: key=value key2="value with spaces" key3=123
+ * - Unquoted values end at whitespace
+ * - Quoted values (single or double) can contain spaces
+ * - Numbers are parsed as numbers
+ */
+function parseKeyValueExample(str: string): object | null {
+  const trimmed = str.trim()
+  // Must contain at least one key=value pattern
+  if (!trimmed.includes('=')) return null
+  // Should not look like JSON or JS object
+  if (trimmed.startsWith('{')) return null
+
+  const result: Record<string, string | number | boolean> = {}
+  // Match: key=value, key="quoted value", key='quoted value'
+  const pattern = /(\w+)=(?:"([^"]*)"|'([^']*)'|(\S+))/g
+  let match
+
+  while ((match = pattern.exec(trimmed)) !== null) {
+    const key = match[1]
+    const value = match[2] ?? match[3] ?? match[4]
+
+    // Try to parse as number
+    if (/^-?\d+(?:\.\d+)?$/.test(value)) {
+      result[key] = Number(value)
+    }
+    // Parse booleans
+    else if (value === 'true') {
+      result[key] = true
+    }
+    else if (value === 'false') {
+      result[key] = false
+    }
+    else {
+      result[key] = value
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : null
+}
+
+/**
  * Parse Canvas default value into an object
  * Handles formats from vue-component-meta:
  * - Object literal: "{ src: \"...\", alt: \"...\", ... }"
@@ -107,17 +149,32 @@ function buildCanvasPropDefinition(
 
   if (prop.description) propDef.description = prop.description
 
-  // Extract examples from @example tags (parse as JSON objects)
+  // Extract examples from @example tags
+  // Supports: JSON, JS object literal, key-value pairs
   if (prop.tags) {
     const exampleTags = prop.tags.filter(t => t.name === 'example')
     if (exampleTags.length > 0) {
       const examples = exampleTags.map((t) => {
+        const text = t.text?.trim() || ''
+        if (!text) return null
+
+        // Try JSON first
         try {
-          return JSON.parse(t.text || '{}')
+          return JSON.parse(text)
         }
         catch {
-          return null
+          // Not valid JSON, continue
         }
+
+        // Try JS object literal syntax
+        const jsObj = parseCanvasDefault(text)
+        if (jsObj) return jsObj
+
+        // Try key-value pairs syntax
+        const kvObj = parseKeyValueExample(text)
+        if (kvObj) return kvObj
+
+        return null
       }).filter(Boolean)
       if (examples.length > 0) {
         propDef.examples = examples
