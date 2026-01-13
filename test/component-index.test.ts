@@ -783,4 +783,157 @@ describe('Component Index Generation', () => {
       expect(titleProp['x-formatting-context']).toBeUndefined()
     }, 10000)
   })
+
+  describe('Prop Title Extraction from JSDoc', () => {
+    it('uses @title tag when present', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestPropTitles',
+        kebabName: 'test-prop-titles',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
+        shortPath: 'components/global/TestPropTitles.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const explicitTitleProp = result.components[0].props.properties.explicitTitle
+
+      expect(explicitTitleProp.title).toBe('Custom Title Override')
+      // @title doesn't affect description - it stays as-is
+      expect(explicitTitleProp.description).toBe('Description for this prop')
+    }, 10000)
+
+    it('extracts title from first line of description', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestPropTitles',
+        kebabName: 'test-prop-titles',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
+        shortPath: 'components/global/TestPropTitles.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const inferredTitleProp = result.components[0].props.properties.inferredTitle
+
+      expect(inferredTitleProp.title).toBe('Short JSDoc summary')
+    }, 10000)
+
+    it('removes first line and empty separator from description', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestPropTitles',
+        kebabName: 'test-prop-titles',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
+        shortPath: 'components/global/TestPropTitles.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const inferredTitleProp = result.components[0].props.properties.inferredTitle
+
+      // Description should be remaining text after title and empty line
+      expect(inferredTitleProp.description).toContain('This is the longer description')
+      expect(inferredTitleProp.description).toContain('spans multiple lines')
+      // Should not start with empty line or contain the title
+      expect(inferredTitleProp.description).not.toContain('Short JSDoc summary')
+    }, 10000)
+
+    it('falls back to name-based title for long descriptions', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestPropTitles',
+        kebabName: 'test-prop-titles',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
+        shortPath: 'components/global/TestPropTitles.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const fallbackTitleProp = result.components[0].props.properties.fallbackTitle
+
+      // First line is > 50 chars, should fall back to name-based title
+      expect(fallbackTitleProp.title).toBe('Fallback Title')
+      // Description should remain intact
+      expect(fallbackTitleProp.description).toContain('way too long')
+    }, 10000)
+
+    it('handles single-line JSDoc without separator', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestPropTitles',
+        kebabName: 'test-prop-titles',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
+        shortPath: 'components/global/TestPropTitles.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const singleLineProp = result.components[0].props.properties.singleLine
+
+      // Single line becomes title, no description remains
+      expect(singleLineProp.title).toBe('No newlines, short enough')
+      expect(singleLineProp.description).toBeUndefined()
+    }, 10000)
+
+    it('handles props without JSDoc', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestPropTitles',
+        kebabName: 'test-prop-titles',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
+        shortPath: 'components/global/TestPropTitles.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const noJsDocProp = result.components[0].props.properties.noJsDoc
+
+      // Falls back to name-based title
+      expect(noJsDocProp.title).toBe('No Js Doc')
+      expect(noJsDocProp.description).toBeUndefined()
+    }, 10000)
+  })
 })

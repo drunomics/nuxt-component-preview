@@ -318,8 +318,14 @@ withDefaults(defineProps<{
 ```
 
 **Supported JSDoc tags:**
+- `@title` - Explicit prop title override
 - `@example` - Adds to `examples` field
 - `@enumLabels` - Custom labels for `meta:enum` (full or partial)
+
+**Title generation priority:**
+1. `@title` tag if present
+2. First line of JSDoc if ≤50 characters (becomes title, rest becomes description)
+3. Fallback to prop name converted to Title Case
 
 ### Drupal Canvas Types
 
