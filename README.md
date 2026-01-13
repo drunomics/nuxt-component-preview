@@ -237,7 +237,7 @@ arbitrary depth can be found at the [example](./playground/public/preview-test-l
 
 ## Component Index
 
-This module automatically generates a component index JSON file containing metadata for all global components. This is particularly useful for integration with Drupal Canvas External JS module.
+This module automatically generates a component index JSON file containing metadata for all global components. This is particularly useful for integration with [Drupal Canvas External JS](https://www.drupal.org/project/canvas_extjs) module.
 
 ### Endpoint
 
@@ -321,40 +321,29 @@ withDefaults(defineProps<{
 - `@example` - Adds to `examples` field
 - `@enumLabels` - Custom labels for `meta:enum` (full or partial)
 
-### Canvas Types
+### Drupal Canvas Types
 
-The module provides special types for [Drupal Canvas](https://www.drupal.org/project/canvas) integration. These types generate JSON schema with `$ref` references, enabling Canvas UI features like media library selection.
+For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special prop types generate JSON schema matching [Canvas JSON-Schema definitions](https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json), enabling UI features like media library selection. See [Canvas prop types documentation](https://project.pages.drupalcode.org/canvas/sdc-components/props/#prop-types-and-examples) for details.
 
-**Available types:**
+**Available types** (auto-imported by Nuxt):
 - `CanvasImage` - Image with media library integration
 - `CanvasVideo` - Video with poster support
 
-**Usage:**
+**`@example` formats** for Canvas types:
+- Key-value: `src=https://... alt="text" width=800 height=600`
+- JS object: `{ src: 'https://...', alt: 'text', width: 800 }`
 
-```vue
-<script setup lang="ts">
-defineProps<{
-  /**
-   * Hero image
-   * @example src=https://placehold.co/800x600 alt="Hero" width=800 height=600
-   */
-  image?: CanvasImage
-  /**
-   * Background video
-   * @example src=https://example.com/video.mp4 poster=https://example.com/poster.jpg
-   */
-  video?: CanvasVideo
-}>()
-</script>
-```
+See [TestHero.vue](./playground/components/global/TestHero.vue) and [TestBanner.vue](./playground/components/global/TestBanner.vue) for usage examples.
 
-Types are auto-imported by Nuxt. The `@example` tag supports two formats:
-- **Key-value**: `src=https://... alt="text" width=800 height=600`
-- **JS object**: `{ src: 'https://...', alt: 'text', width: 800 }`
+### Formatted Text (HTML)
 
-Generated schema includes `$ref` to Canvas definitions (e.g., `json-schema-definitions://canvas.module/image`).
+For rich text props (CKEditor in Canvas), use JSDoc tags:
+- `@contentMediaType text/html` - Enables rich text editing (required)
+- `@formattingContext block|inline` - Controls formatting (default: `block`)
+  - `block` - Full formatting: paragraphs, lists, headings
+  - `inline` - Limited: bold, italic, links (no block elements)
 
-See [Canvas schema](https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json) for full type definitions.
+See [TestArticle.vue](./playground/components/global/TestArticle.vue) for usage examples.
 
 ## Testing
 
