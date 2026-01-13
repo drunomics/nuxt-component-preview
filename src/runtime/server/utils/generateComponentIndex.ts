@@ -51,7 +51,7 @@ function generateTitle(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1).replace(/([A-Z])/g, ' $1')
 }
 
-const TITLE_MAX_LENGTH = 50
+const TITLE_MAX_LENGTH = 24
 
 /**
  * Extract title and description from JSDoc comments.

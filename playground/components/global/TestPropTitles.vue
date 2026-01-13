@@ -29,7 +29,7 @@ defineProps<{
    */
   fallbackTitle?: string
 
-  /** No newlines, short enough */
+  /** Single line title */
   singleLine?: string
 
   noJsDoc?: string

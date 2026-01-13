@@ -909,7 +909,7 @@ describe('Component Index Generation', () => {
       const singleLineProp = result.components[0].props.properties.singleLine
 
       // Single line becomes title, no description remains
-      expect(singleLineProp.title).toBe('No newlines, short enough')
+      expect(singleLineProp.title).toBe('Single line title')
       expect(singleLineProp.description).toBeUndefined()
     }, 10000)
 
