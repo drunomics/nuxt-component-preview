@@ -321,14 +321,18 @@ withDefaults(defineProps<{
 - `@title` - Explicit prop title override
 - `@example` - Adds to `examples` field
 - `@enumLabels` - Custom labels for `meta:enum` (full or partial)
+- `@contentMediaType text/html` - For string props: enables rich text editing in Canvas
+- `@formattingContext block|inline` - Controls formatting (default: `block`)
 
 Prop titles are auto-generated from the first line of JSDoc or prop name. Use `@title` to override.
+
+See [TestArticle.vue](./playground/components/global/TestArticle.vue) for formatted text examples.
 
 ### Drupal Canvas Types
 
 For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special prop types generate JSON schema matching [Canvas JSON-Schema definitions](https://git.drupalcode.org/project/canvas/-/blob/1.x/schema.json), enabling UI features like media library selection. See [Canvas prop types documentation](https://project.pages.drupalcode.org/canvas/sdc-components/props/#prop-types-and-examples) for details.
 
-**Available types** (auto-imported by Nuxt):
+**Available TypeScript types** (auto-imported by Nuxt):
 - `CanvasImage` - Image with media library integration
 - `CanvasVideo` - Video with poster support
 
@@ -337,16 +341,6 @@ For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special 
 - JS object: `{ src: 'https://...', alt: 'text', width: 800 }`
 
 See [TestHero.vue](./playground/components/global/TestHero.vue) and [TestBanner.vue](./playground/components/global/TestBanner.vue) for usage examples.
-
-### Formatted Text (HTML)
-
-For rich text props (CKEditor in Canvas), use JSDoc tags:
-- `@contentMediaType text/html` - Enables rich text editing (required)
-- `@formattingContext block|inline` - Controls formatting (default: `block`)
-  - `block` - Full formatting: paragraphs, lists, headings
-  - `inline` - Limited: bold, italic, links (no block elements)
-
-See [TestArticle.vue](./playground/components/global/TestArticle.vue) for usage examples.
 
 ## Testing
 
