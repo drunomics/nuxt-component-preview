@@ -44,6 +44,14 @@ const CANVAS_TYPE_REFS: Record<string, string> = {
 }
 
 /**
+ * Generate a human-readable title from a prop/slot name
+ * Converts camelCase to Title Case (e.g., "heroImage" -> "Hero Image")
+ */
+function generateTitle(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1).replace(/([A-Z])/g, ' $1')
+}
+
+/**
  * Detect if a Vue type is a Canvas type (CanvasImage, CanvasVideo)
  * Handles various type formats from vue-component-meta:
  * - "CanvasImage"
@@ -90,7 +98,7 @@ function buildFormattedTextPropDefinition(
 ): PropDefinition {
   const propDef: PropDefinition = {
     'type': 'string',
-    'title': prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
+    'title': generateTitle(prop.name),
     'contentMediaType': formattedTextInfo.contentMediaType,
     'x-formatting-context': formattedTextInfo.formattingContext,
   }
@@ -196,7 +204,7 @@ function buildCanvasPropDefinition(
   const propDef: PropDefinition = {
     type: 'object',
     $ref: refValue,
-    title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
+    title: generateTitle(prop.name),
   }
 
   if (prop.description) propDef.description = prop.description
@@ -356,7 +364,7 @@ export function generateComponentIndex(
           // Regular prop processing
           const propDef: Partial<PropDefinition> = {
             type: mapVueTypeToJsonSchema(prop.type),
-            title: prop.name.charAt(0).toUpperCase() + prop.name.slice(1).replace(/([A-Z])/g, ' $1'),
+            title: generateTitle(prop.name),
           }
 
           if (prop.description) propDef.description = prop.description
@@ -428,7 +436,7 @@ export function generateComponentIndex(
       const slots = meta.slots
         .reduce((acc, slot) => {
           acc[slot.name] = {
-            title: slot.name.charAt(0).toUpperCase() + slot.name.slice(1).replace(/([A-Z])/g, ' $1'),
+            title: generateTitle(slot.name),
             description: slot.description || undefined,
           }
           return acc
@@ -439,7 +447,7 @@ export function generateComponentIndex(
 
       return {
         id: component.pascalName,
-        name: component.pascalName.replace(/([A-Z])/g, ' $1').trim(),
+        name: generateTitle(component.pascalName),
         category: override?.category || options.category,
         status: override?.status || options.status,
         props: {
