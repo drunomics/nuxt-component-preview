@@ -11,8 +11,8 @@
 <script setup lang="ts">
 defineProps<{
   /**
-   * @title Custom Title Override
    * Description for this prop
+   * @title Custom Title Override
    */
   explicitTitle?: string
 

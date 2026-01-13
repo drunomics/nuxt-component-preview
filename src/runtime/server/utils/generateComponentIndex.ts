@@ -68,12 +68,15 @@ const TITLE_MAX_LENGTH = 50
 function extractTitleFromJSDoc(
   prop: { name: string, description?: string, tags?: Array<{ name: string, text?: string }> },
 ): { title: string, description?: string } {
-  // 1. Check for @title tag
+  // 1. Check for @title tag (only use first line)
   const titleTag = prop.tags?.find(t => t.name === 'title')
   if (titleTag?.text?.trim()) {
-    return {
-      title: titleTag.text.trim(),
-      description: prop.description,
+    const titleText = titleTag.text.split('\n')[0].trim()
+    if (titleText) {
+      return {
+        title: titleText,
+        description: prop.description,
+      }
     }
   }
 

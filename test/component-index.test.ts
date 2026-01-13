@@ -107,7 +107,8 @@ describe('Component Index Generation', () => {
       expect(component.props.properties).toBeDefined()
       expect(component.props.properties.label).toBeDefined()
       expect(component.props.properties.label.type).toBe('string')
-      expect(component.props.properties.label.description).toBeDefined()
+      // Title is extracted from JSDoc first line
+      expect(component.props.properties.label.title).toBe('Button label text')
     }, 10000)
   })
 
@@ -515,7 +516,8 @@ describe('Component Index Generation', () => {
       // Validate Canvas schema format
       expect(imageProp.type).toBe('object')
       expect(imageProp['$ref']).toBe('json-schema-definitions://canvas.module/image')
-      expect(imageProp.title).toBe('Image')
+      // Title is extracted from JSDoc first line
+      expect(imageProp.title).toBe('Hero image')
     }, 10000)
 
     it('extracts @example JSON for CanvasImage props', async () => {
