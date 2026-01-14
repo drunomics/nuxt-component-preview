@@ -186,13 +186,49 @@ export default defineNuxtModule<ModuleOptions>({
         }
       })
 
+      // Config for on-the-fly regeneration in dev mode (populated later)
+      let devConfig: {
+        components: Array<{ pascalName: string, kebabName: string, filePath: string, shortPath: string, global: boolean }>
+        tsconfigPath: string
+        options: Record<string, unknown>
+      } | null = null
+
       // Serve via Nitro route (both dev and production)
       nuxt.hook('nitro:config', (nitroConfig) => {
         nitroConfig.virtual = nitroConfig.virtual || {}
         nitroConfig.virtual['#nuxt-component-preview-index-data'] = () => {
           return `export default ${JSON.stringify(componentIndexData)}`
         }
+        // Dev config uses closure - populated by app:templatesGenerated hook
+        nitroConfig.virtual['#nuxt-component-preview-dev-config'] = () => {
+          return `export default ${JSON.stringify(devConfig)}`
+        }
       })
+
+      // In dev mode, populate config for on-the-fly regeneration
+      if (nuxt.options.dev) {
+        nuxt.hook('app:templatesGenerated', () => {
+          const globalComponents = nuxt.apps.default.components.filter(c => c.global)
+          devConfig = {
+            components: globalComponents.map(c => ({
+              pascalName: c.pascalName,
+              kebabName: c.kebabName,
+              filePath: c.filePath,
+              shortPath: c.shortPath,
+              global: c.global,
+            })),
+            tsconfigPath: resolve(nuxt.options.rootDir, 'tsconfig.json'),
+            options: {
+              category: options.componentIndex!.category,
+              status: options.componentIndex!.status,
+              includePackages: options.componentIndex!.includePackages,
+              excludeDirectories: options.componentIndex!.exclude!.directories,
+              excludeComponents: options.componentIndex!.exclude!.components,
+              overrides: options.componentIndex!.overrides,
+            },
+          }
+        })
+      }
 
       addServerHandler({
         route: '/nuxt-component-preview/component-index.json',
