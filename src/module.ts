@@ -159,6 +159,16 @@ export default defineNuxtModule<ModuleOptions>({
       // Shared config for component index preparation
       let indexConfig: import('./runtime/server/utils/prepareComponentIndex').PrepareComponentIndexConfig | null = null
 
+      // Build index options once from module config
+      const indexOptions = {
+        category: options.componentIndex!.category!,
+        status: options.componentIndex!.status!,
+        includePackages: options.componentIndex!.includePackages,
+        excludeDirectories: options.componentIndex!.exclude!.directories,
+        excludeComponents: options.componentIndex!.exclude!.components,
+        overrides: options.componentIndex!.overrides,
+      }
+
       nuxt.hook('app:templatesGenerated', async () => {
         const globalComponents = nuxt.apps.default.components.filter(c => c.global)
 
@@ -174,14 +184,7 @@ export default defineNuxtModule<ModuleOptions>({
         indexConfig = {
           componentDirs: Array.from(componentDirs),
           tsconfigPath: resolve(nuxt.options.rootDir, 'tsconfig.json'),
-          options: {
-            category: options.componentIndex!.category!,
-            status: options.componentIndex!.status!,
-            includePackages: options.componentIndex!.includePackages,
-            excludeDirectories: options.componentIndex!.exclude!.directories,
-            excludeComponents: options.componentIndex!.exclude!.components,
-            overrides: options.componentIndex!.overrides,
-          },
+          options: indexOptions,
         }
 
         // Generate index at build time (for production)
