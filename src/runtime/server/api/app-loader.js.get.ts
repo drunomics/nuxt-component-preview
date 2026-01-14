@@ -13,6 +13,7 @@ export default defineEventHandler((event) => {
   const buildAssetsDir = config.app.buildAssetsDir || '/_nuxt/'
 
   // Set cdnURL - use config if set, otherwise use the current request's origin.
+  // For static builds (nuxt generate), configure app.cdnURL in nuxt.config.
   let cdnURL = config.app.cdnURL
   if (!cdnURL) {
     const requestURL = getRequestURL(event)

@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import { resolve } from 'node:path'
 import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler, addImports } from '@nuxt/kit'
 
@@ -90,6 +89,18 @@ export default defineNuxtModule<ModuleOptions>({
         resolvedEntryPath = `/_nuxt${appDir}/entry.js`
       })
     }
+    else {
+      // For production builds, resolve entry path from manifest before Nitro build
+      nuxt.hook('build:manifest', (manifest) => {
+        const entryChunk = Object.values(manifest).find((chunk: { isEntry?: boolean }) => chunk.isEntry)
+        if (entryChunk && 'file' in entryChunk) {
+          resolvedEntryPath = `/_nuxt/${(entryChunk as { file: string }).file}`
+        }
+        else {
+          console.error('[nuxt-component-preview] Entry file not found in client manifest')
+        }
+      })
+    }
 
     // Configure Nitro
     nuxt.hook('nitro:config', (nitroConfig) => {
@@ -98,47 +109,10 @@ export default defineNuxtModule<ModuleOptions>({
         return `export default '${resolvedEntryPath}'`
       }
 
-      nuxt.hook('nitro:build:public-assets', async (nitro) => {
-        if (!nuxt.options.dev) {
-          // Nuxt >=4.2 uses client.manifest.mjs, Nuxt <4.2 uses client.manifest.json
-          const manifestPathMjs = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.mjs')
-          const manifestPathJson = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.json')
-          let manifest = null
-
-          if (fs.existsSync(manifestPathMjs)) {
-            try {
-              const manifestModule = await import(manifestPathMjs)
-              manifest = manifestModule.default || manifestModule
-            }
-            catch (error) {
-              console.error('[nuxt-component-preview] Failed to load client.manifest.mjs:', error)
-            }
-          }
-          else if (fs.existsSync(manifestPathJson)) {
-            try {
-              const manifestContent = await fs.promises.readFile(manifestPathJson, 'utf-8')
-              manifest = JSON.parse(manifestContent)
-            }
-            catch (error) {
-              console.error('[nuxt-component-preview] Failed to load client.manifest.json:', error)
-            }
-          }
-          else {
-            console.error('[nuxt-component-preview] Client manifest not found. Component preview will not work in production.')
-          }
-
-          if (manifest) {
-            const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
-            if (entryKey && manifest[entryKey]) {
-              resolvedEntryPath = `/_nuxt/${manifest[entryKey].file}`
-              nitro.options.virtual['#nuxt-entry-path'] = () => `export default '${resolvedEntryPath}'`
-            }
-            else {
-              console.error('[nuxt-component-preview] Entry file not found in client manifest')
-            }
-          }
-        }
-      })
+      // Prerender preview assets for static builds (nuxt generate)
+      nitroConfig.prerender = nitroConfig.prerender || {}
+      nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
+      nitroConfig.prerender.routes.push('/nuxt-component-preview/app-loader.js')
     })
 
     addServerHandler({
@@ -205,6 +179,10 @@ export default defineNuxtModule<ModuleOptions>({
         nitroConfig.virtual['#nuxt-component-preview-dev-config'] = () => {
           return `export default ${nuxt.options.dev ? JSON.stringify(indexConfig) : 'null'}`
         }
+        // Prerender component-index.json for static builds (nuxt generate)
+        nitroConfig.prerender = nitroConfig.prerender || {}
+        nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
+        nitroConfig.prerender.routes.push('/nuxt-component-preview/component-index.json')
       })
 
       addServerHandler({

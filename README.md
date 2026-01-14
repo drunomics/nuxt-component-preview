@@ -98,6 +98,10 @@ When Nuxt runs behind a reverse proxy, be sure to configure the Nuxt CDN URL so 
 export NUXT_APP_CDN_URL=https://your-frontend-url.com
 ```
 
+### Static Site Generation
+
+For static builds (`nuxt generate`), configuring [`app.cdnURL`](https://nuxt.com/docs/api/nuxt-config#cdnurl) is **required** for component previews to work.
+
 ## Usage
 
 ### Rendering Component Previews
