@@ -22,4 +22,11 @@ export default createConfigForNuxt({
         '@typescript-eslint/no-explicit-any': 'off',
       },
     },
+    {
+      // TestArticle tests formatted HTML content rendering - v-html is intentional
+      files: ['**/TestArticle.vue'],
+      rules: {
+        'vue/no-v-html': 'off',
+      },
+    },
   )
