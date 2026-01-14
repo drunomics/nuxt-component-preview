@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { resolve } from 'node:path'
 import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler, addImports } from '@nuxt/kit'
 
@@ -82,19 +83,21 @@ export default defineNuxtModule<ModuleOptions>({
       })
     })
 
-    // Resolve entry path for dev
+    // Resolve entry path based on build mode
     if (nuxt.options.dev) {
+      // Dev mode: use Vite dev server entry path
       nuxt.hook('ready', () => {
         const appDir = nuxt.options.appDir
         resolvedEntryPath = `/_nuxt${appDir}/entry.js`
       })
     }
-    else {
-      // For production builds, resolve entry path from manifest before Nitro build
+    else if (nuxt.options._generate) {
+      // Static generation (nuxt generate): capture entry path early from build:manifest
+      // This runs BEFORE prerendering, so the entry path is available when app-loader.js is prerendered
       nuxt.hook('build:manifest', (manifest) => {
         // Try isEntry property first (Vite manifest standard)
         let entryChunk = Object.values(manifest).find((chunk: { isEntry?: boolean }) => chunk.isEntry)
-        // Fallback: find by key name containing 'entry' (for older Nuxt versions)
+        // Fallback: find by key name containing 'entry' (Nuxt <4.2 compatibility)
         if (!entryChunk) {
           const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
           if (entryKey) {
@@ -104,8 +107,48 @@ export default defineNuxtModule<ModuleOptions>({
         if (entryChunk && 'file' in entryChunk) {
           resolvedEntryPath = `/_nuxt/${(entryChunk as { file: string }).file}`
         }
+      })
+    }
+    else {
+      // SSR build (nuxt build): resolve entry path from manifest after build
+      // This runs AFTER the build completes and updates the virtual module for runtime
+      nuxt.hook('nitro:build:public-assets', async (nitro) => {
+        // Nuxt >=4.2 uses client.manifest.mjs, Nuxt <4.2 uses client.manifest.json
+        const manifestPathMjs = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.mjs')
+        const manifestPathJson = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.json')
+        let manifest = null
+
+        if (fs.existsSync(manifestPathMjs)) {
+          try {
+            const manifestModule = await import(manifestPathMjs)
+            manifest = manifestModule.default || manifestModule
+          }
+          catch (error) {
+            console.error('[nuxt-component-preview] Failed to load client.manifest.mjs:', error)
+          }
+        }
+        else if (fs.existsSync(manifestPathJson)) {
+          try {
+            const manifestContent = await fs.promises.readFile(manifestPathJson, 'utf-8')
+            manifest = JSON.parse(manifestContent)
+          }
+          catch (error) {
+            console.error('[nuxt-component-preview] Failed to load client.manifest.json:', error)
+          }
+        }
         else {
-          console.error('[nuxt-component-preview] Entry file not found in client manifest')
+          console.error('[nuxt-component-preview] Client manifest not found. Component preview will not work in production.')
+        }
+
+        if (manifest) {
+          const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
+          if (entryKey && manifest[entryKey]) {
+            resolvedEntryPath = `/_nuxt/${manifest[entryKey].file}`
+            nitro.options.virtual['#nuxt-entry-path'] = () => `export default '${resolvedEntryPath}'`
+          }
+          else {
+            console.error('[nuxt-component-preview] Entry file not found in client manifest')
+          }
         }
       })
     }
