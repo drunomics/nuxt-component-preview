@@ -1067,4 +1067,67 @@ describe('Component Index Generation', () => {
       expect(captionProp.title).toBe('Regular text')
     }, 10000)
   })
+
+  describe('@format and @pattern JSDoc Tags', () => {
+    it('generates format for @format tag', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestFormatPattern',
+        kebabName: 'test-format-pattern',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestFormatPattern.vue'),
+        shortPath: 'components/global/TestFormatPattern.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const eventDateProp = result.components[0].props.properties.eventDate
+      const titleProp = result.components[0].props.properties.title
+
+      // @format date generates format property
+      expect(eventDateProp.type).toBe('string')
+      expect(eventDateProp.format).toBe('date')
+      expect(eventDateProp.title).toBe('Event date')
+
+      // Props without @format have no format property
+      expect(titleProp.format).toBeUndefined()
+    }, 10000)
+
+    it('generates pattern for @pattern tag', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestFormatPattern',
+        kebabName: 'test-format-pattern',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestFormatPattern.vue'),
+        shortPath: 'components/global/TestFormatPattern.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const descriptionProp = result.components[0].props.properties.description
+      const titleProp = result.components[0].props.properties.title
+
+      // @pattern generates pattern property (textarea pattern for multiline)
+      expect(descriptionProp.type).toBe('string')
+      // Note: backslashes must be escaped in JS strings
+      expect(descriptionProp.pattern).toBe('(.|\\r?\\n)*')
+      expect(descriptionProp.title).toBe('Description')
+
+      // Props without @pattern have no pattern property
+      expect(titleProp.pattern).toBeUndefined()
+    }, 10000)
+  })
 })
