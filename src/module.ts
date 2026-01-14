@@ -205,6 +205,10 @@ export default defineNuxtModule<ModuleOptions>({
         nitroConfig.virtual['#nuxt-component-preview-dev-config'] = () => {
           return `export default ${nuxt.options.dev ? JSON.stringify(indexConfig) : 'null'}`
         }
+        // Prerender component-index.json for static builds (nuxt generate)
+        nitroConfig.prerender = nitroConfig.prerender || {}
+        nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
+        nitroConfig.prerender.routes.push('/nuxt-component-preview/component-index.json')
       })
 
       addServerHandler({
