@@ -92,7 +92,15 @@ export default defineNuxtModule<ModuleOptions>({
     else {
       // For production builds, resolve entry path from manifest before Nitro build
       nuxt.hook('build:manifest', (manifest) => {
-        const entryChunk = Object.values(manifest).find((chunk: { isEntry?: boolean }) => chunk.isEntry)
+        // Try isEntry property first (Vite manifest standard)
+        let entryChunk = Object.values(manifest).find((chunk: { isEntry?: boolean }) => chunk.isEntry)
+        // Fallback: find by key name containing 'entry' (for older Nuxt versions)
+        if (!entryChunk) {
+          const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
+          if (entryKey) {
+            entryChunk = manifest[entryKey]
+          }
+        }
         if (entryChunk && 'file' in entryChunk) {
           resolvedEntryPath = `/_nuxt/${(entryChunk as { file: string }).file}`
         }
