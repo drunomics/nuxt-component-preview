@@ -29,10 +29,11 @@
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
     "release": "npm run lint && npm run test && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test": "vitest run --exclude 'test/e2e/**'",
+    "test:watch": "vitest watch --exclude 'test/e2e/**'",
+    "test:e2e": "vitest run test/e2e --pool=threads --poolOptions.threads.maxThreads=1",
+    "test:all": "npm run test && npm run test:e2e",
+    "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit"
   },
   "dependencies": {
     "vue-component-meta": "^3.1.0"

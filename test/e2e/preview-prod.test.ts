@@ -5,7 +5,7 @@ import { setup, createPage } from '@nuxt/test-utils/e2e'
 
 describe('preview E2E (production mode)', async () => {
   await setup({
-    rootDir: join(fileURLToPath(import.meta.url), '../../playground'),
+    rootDir: join(fileURLToPath(import.meta.url), '../../../playground'),
     server: true,
     browser: true,
     dev: false,
