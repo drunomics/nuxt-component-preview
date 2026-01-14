@@ -1130,4 +1130,159 @@ describe('Component Index Generation', () => {
       expect(titleProp.pattern).toBeUndefined()
     }, 10000)
   })
+
+  describe('Array Type Support', () => {
+    it('extracts string array type with items schema', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArrayTypes',
+        kebabName: 'test-array-types',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
+        shortPath: 'components/global/TestArrayTypes.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const tagsProp = result.components[0].props.properties.tags
+
+      expect(tagsProp.type).toBe('array')
+      expect(tagsProp.items).toEqual({ type: 'string' })
+      expect(tagsProp.title).toBe('List of tags')
+    }, 10000)
+
+    it('extracts number array type', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArrayTypes',
+        kebabName: 'test-array-types',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
+        shortPath: 'components/global/TestArrayTypes.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const numbersProp = result.components[0].props.properties.numbers
+
+      expect(numbersProp.type).toBe('array')
+      expect(numbersProp.items).toEqual({ type: 'number' })
+    }, 10000)
+
+    it('extracts @maxItems constraint', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArrayTypes',
+        kebabName: 'test-array-types',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
+        shortPath: 'components/global/TestArrayTypes.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const tagsProp = result.components[0].props.properties.tags
+      const numbersProp = result.components[0].props.properties.numbers
+
+      // tags has @maxItems 10
+      expect(tagsProp.maxItems).toBe(10)
+
+      // numbers has no @maxItems
+      expect(numbersProp.maxItems).toBeUndefined()
+    }, 10000)
+
+    it('extracts array examples', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArrayTypes',
+        kebabName: 'test-array-types',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
+        shortPath: 'components/global/TestArrayTypes.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const tagsProp = result.components[0].props.properties.tags
+
+      expect(tagsProp.examples).toBeDefined()
+      expect(tagsProp.examples).toHaveLength(1)
+      expect(tagsProp.examples![0]).toEqual(['foo', 'bar', 'baz'])
+    }, 10000)
+
+    it('extracts array default value', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArrayTypes',
+        kebabName: 'test-array-types',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
+        shortPath: 'components/global/TestArrayTypes.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const tagsProp = result.components[0].props.properties.tags
+
+      expect(tagsProp.default).toEqual(['default-tag'])
+    }, 10000)
+
+    it('extracts CanvasImage array with $ref in items', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestArrayTypes',
+        kebabName: 'test-array-types',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
+        shortPath: 'components/global/TestArrayTypes.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imagesProp = result.components[0].props.properties.images
+
+      expect(imagesProp.type).toBe('array')
+      expect(imagesProp.items).toEqual({
+        type: 'object',
+        $ref: 'json-schema-definitions://canvas.module/image',
+      })
+      expect(imagesProp.maxItems).toBe(20)
+    }, 10000)
+  })
 })
