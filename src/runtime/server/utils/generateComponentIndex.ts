@@ -177,6 +177,25 @@ function detectPatternTag(tags?: Array<{ name: string, text?: string }>): string
 }
 
 /**
+ * Detect @allowed-schemes JSDoc tag for URI scheme restrictions.
+ *
+ * @example
+ * // @allowed-schemes public
+ * fileUri?: string
+ *
+ * // @allowed-schemes http, https
+ * webUrl?: string
+ */
+function detectAllowedSchemesTag(tags?: Array<{ name: string, text?: string }>): string[] | null {
+  if (!tags) return null
+
+  const schemesTag = tags.find(t => t.name === 'allowed-schemes')
+  if (!schemesTag?.text?.trim()) return null
+
+  return schemesTag.text.trim().split(/[,\s]+/).filter(Boolean)
+}
+
+/**
  * Detect @maxItems JSDoc tag for array cardinality.
  *
  * @example
@@ -792,11 +811,15 @@ export function generateComponentIndex(
           // Check for @pattern JSDoc tag (e.g., @pattern (.|\r?\n)*)
           const pattern = detectPatternTag(prop.tags)
 
+          // Check for @allowed-schemes JSDoc tag (e.g., @allowed-schemes public)
+          const allowedSchemes = detectAllowedSchemesTag(prop.tags)
+
           // Regular prop processing - use buildPropDefinition for base, then add extras
           const propDef = buildPropDefinition(prop, {
-            type: mapVueTypeToJsonSchema(prop.type),
-            format,
-            pattern,
+            'type': mapVueTypeToJsonSchema(prop.type),
+            'format': format,
+            'pattern': pattern,
+            'x-allowed-schemes': allowedSchemes ?? undefined,
           })
 
           if (prop.default !== undefined) propDef.default = parseDefaultValue(prop.default)

@@ -1144,6 +1144,37 @@ describe('Component Index Generation', () => {
       // Props without @pattern have no pattern property
       expect(titleProp.pattern).toBeUndefined()
     }, 10000)
+
+    it('generates x-allowed-schemes for @allowed-schemes tag', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestFormatPattern',
+        kebabName: 'test-format-pattern',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestFormatPattern.vue'),
+        shortPath: 'components/global/TestFormatPattern.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const fileUrlProp = result.components[0].props.properties.fileUrl
+      const titleProp = result.components[0].props.properties.title
+
+      // @allowed-schemes generates x-allowed-schemes property
+      expect(fileUrlProp.type).toBe('string')
+      expect(fileUrlProp.format).toBe('uri')
+      expect(fileUrlProp['x-allowed-schemes']).toEqual(['http', 'https'])
+      expect(fileUrlProp.title).toBe('File URL')
+
+      // Props without @allowed-schemes have no x-allowed-schemes property
+      expect(titleProp['x-allowed-schemes']).toBeUndefined()
+    }, 10000)
   })
 
   describe('Array Type Support', () => {

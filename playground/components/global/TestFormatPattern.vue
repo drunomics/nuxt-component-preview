@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Test component for @format and @pattern JSDoc tag functionality.
+ * Test component for @format, @pattern, and @allowed-schemes JSDoc tag functionality.
  */
 defineProps<{
   /**
@@ -19,6 +19,15 @@ defineProps<{
    * @pattern (.|\r?\n)*
    */
   description?: string
+
+  /**
+   * File URL
+   *
+   * A URL pointing to a file with restricted schemes.
+   * @format uri
+   * @allowed-schemes http, https
+   */
+  fileUrl?: string
 
   /** Regular text without format or pattern */
   title?: string
