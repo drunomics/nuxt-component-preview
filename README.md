@@ -326,6 +326,7 @@ withDefaults(defineProps<{
 - `@schemaRef` - Reference Canvas JSON schema definitions (see below)
 - `@format` - JSON Schema format for semantic string validation and UI widgets (e.g., date picker). Supported: `date`, `date-time`, `time`, `duration`, `email`, `idn-email`, `hostname`, `idn-hostname`, `ipv4`, `ipv6`, `uuid`, `uri`, `uri-reference`, `iri`, `iri-reference`
 - `@pattern` - JSON Schema regex pattern for string validation (e.g., `(.|\r?\n)*` for multiline/textarea)
+- `@allowed-schemes` - Allowed URI schemes for Canvas field type determination (e.g., `public` or `http, https`)
 
 Prop titles are auto-generated from the first line of JSDoc or prop name. Use `@title` to override.
 

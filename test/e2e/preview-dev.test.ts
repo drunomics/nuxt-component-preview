@@ -5,7 +5,7 @@ import { setup, createPage } from '@nuxt/test-utils/e2e'
 
 describe('preview E2E (dev mode)', async () => {
   await setup({
-    rootDir: join(fileURLToPath(import.meta.url), '../../playground'),
+    rootDir: join(fileURLToPath(import.meta.url), '../../../playground'),
     server: true,
     browser: true,
     dev: true,
@@ -142,10 +142,10 @@ describe('preview E2E (dev mode)', async () => {
     it('renders Vue components with actual HTML content', async () => {
       const page = await createPage('/preview-test.html')
 
-      // Wait for components to render
+      // Wait for actual content to render (not just any children)
       await page.waitForFunction(() => {
         const target = document.getElementById('preview-target-1')
-        return target && target.children.length > 0
+        return target && target.innerHTML.includes('Rendered HTML Content')
       }, { timeout: 20000 })
 
       // Check for specific Vue component HTML content

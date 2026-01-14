@@ -1,9 +1,20 @@
 <script setup lang="ts">
 /**
- * Test component for @schemaRef JSDoc tag functionality.
- * Tests Canvas stream-wrapper URI schema references.
+ * Test fixture for @schemaRef JSDoc tag functionality.
+ * Tests all Canvas URI schema references including stream-wrapper-uri.
+ * NOTE: This is a test-only component - stream-wrapper-uri is not yet
+ * fully supported in Canvas (it falls back to Link field).
  */
 defineProps<{
+  /**
+   * File URI
+   *
+   * A file stored in Drupal's public files directory.
+   * @schemaRef canvas/stream-wrapper-uri
+   * @example public://documents/report.pdf
+   */
+  fileUri?: string
+
   /**
    * Image URI
    *
@@ -32,7 +43,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="stream-wrapper-test">
+  <div class="schema-ref-test">
     <img
       v-if="imageUri"
       :src="imageUri"
@@ -43,6 +54,10 @@ defineProps<{
       :src="webImageUrl"
       alt="Web image"
     >
+    <a
+      v-if="fileUri"
+      :href="fileUri"
+    >Download file</a>
     <p v-if="caption">
       {{ caption }}
     </p>
