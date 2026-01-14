@@ -156,41 +156,54 @@ export default defineNuxtModule<ModuleOptions>({
     if (options.componentIndex!.enabled) {
       let componentIndexData: import('./runtime/server/utils/generateComponentIndex').ComponentIndexData | null = null
 
+      // Shared config for component index preparation
+      let indexConfig: import('./runtime/server/utils/prepareComponentIndex').PrepareComponentIndexConfig | null = null
+
+      // Build index options once from module config
+      const indexOptions = {
+        category: options.componentIndex!.category!,
+        status: options.componentIndex!.status!,
+        includePackages: options.componentIndex!.includePackages,
+        excludeDirectories: options.componentIndex!.exclude!.directories,
+        excludeComponents: options.componentIndex!.exclude!.components,
+        overrides: options.componentIndex!.overrides,
+      }
+
       nuxt.hook('app:templatesGenerated', async () => {
-        try {
-          const { generateComponentIndex } = await import('./runtime/server/utils/generateComponentIndex')
-          const { resolve: resolvePath } = await import('node:path')
+        const globalComponents = nuxt.apps.default.components.filter(c => c.global)
 
-          const globalComponents = nuxt.apps.default.components.filter(c => c.global)
-
-          if (globalComponents.length > 0) {
-            const tsconfigPath = resolvePath(nuxt.options.rootDir, 'tsconfig.json')
-            componentIndexData = generateComponentIndex(
-              globalComponents,
-              tsconfigPath,
-              {
-                category: options.componentIndex!.category,
-                status: options.componentIndex!.status,
-                includePackages: options.componentIndex!.includePackages,
-                excludeDirectories: options.componentIndex!.exclude!.directories,
-                excludeComponents: options.componentIndex!.exclude!.components,
-                overrides: options.componentIndex!.overrides,
-              },
-            )
-          }
+        // Extract unique directories from global components
+        const componentDirs = new Set<string>()
+        for (const component of globalComponents) {
+          if (component.filePath.includes('node_modules')) continue
+          const dirPath = component.filePath.substring(0, component.filePath.lastIndexOf('/'))
+          componentDirs.add(dirPath)
         }
-        catch (error) {
-          console.error('[nuxt-component-preview] Error generating component index:', error)
-          // Set to null so HTTP endpoint returns error status code
-          componentIndexData = null
+
+        // Build shared config
+        indexConfig = {
+          componentDirs: Array.from(componentDirs),
+          tsconfigPath: resolve(nuxt.options.rootDir, 'tsconfig.json'),
+          options: indexOptions,
+        }
+
+        // Generate index at build time (for production)
+        if (!nuxt.options.dev) {
+          const { prepareComponentIndex } = await import('./runtime/server/utils/prepareComponentIndex')
+          componentIndexData = prepareComponentIndex(indexConfig)
         }
       })
 
       // Serve via Nitro route (both dev and production)
       nuxt.hook('nitro:config', (nitroConfig) => {
         nitroConfig.virtual = nitroConfig.virtual || {}
+        // Production: serve pre-generated index
         nitroConfig.virtual['#nuxt-component-preview-index-data'] = () => {
           return `export default ${JSON.stringify(componentIndexData)}`
+        }
+        // Dev mode: provide config for on-the-fly regeneration
+        nitroConfig.virtual['#nuxt-component-preview-dev-config'] = () => {
+          return `export default ${nuxt.options.dev ? JSON.stringify(indexConfig) : 'null'}`
         }
       })
 

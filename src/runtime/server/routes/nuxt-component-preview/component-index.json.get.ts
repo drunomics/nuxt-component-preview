@@ -1,8 +1,18 @@
 import { defineEventHandler, setHeader, createError } from 'h3'
 // @ts-expect-error - virtual module
-import componentIndexData from '#nuxt-component-preview-index-data'
+import cachedComponentIndexData from '#nuxt-component-preview-index-data'
+// @ts-expect-error - virtual module
+import devConfig from '#nuxt-component-preview-dev-config'
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
+  let componentIndexData = cachedComponentIndexData
+
+  // In dev mode, scan directories and regenerate on each request
+  if (devConfig) {
+    const { prepareComponentIndex } = await import('../../utils/prepareComponentIndex')
+    componentIndexData = prepareComponentIndex(devConfig)
+  }
+
   if (!componentIndexData) {
     throw createError({
       statusCode: 500,
