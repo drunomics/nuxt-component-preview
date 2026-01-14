@@ -42,9 +42,22 @@ defineProps<{
 
 <template>
   <div class="stream-wrapper-test">
-    <img v-if="imageUri" :src="imageUri" alt="Stream wrapper image">
-    <img v-if="webImageUrl" :src="webImageUrl" alt="Web image">
-    <a v-if="fileUri" :href="fileUri">Download file</a>
-    <p v-if="caption">{{ caption }}</p>
+    <img
+      v-if="imageUri"
+      :src="imageUri"
+      alt="Stream wrapper image"
+    >
+    <img
+      v-if="webImageUrl"
+      :src="webImageUrl"
+      alt="Web image"
+    >
+    <a
+      v-if="fileUri"
+      :href="fileUri"
+    >Download file</a>
+    <p v-if="caption">
+      {{ caption }}
+    </p>
   </div>
 </template>

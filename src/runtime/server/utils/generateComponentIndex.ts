@@ -330,7 +330,6 @@ function extractEnumLabels(
   return addsValue ? metaEnum : undefined
 }
 
-
 /**
  * Parse key-value pair syntax into an object
  * Format: key=value key2="value with spaces" key3=123
@@ -408,7 +407,6 @@ function parseCanvasDefault(defaultStr: string): object | null {
     return null
   }
 }
-
 
 interface SlotDefinition {
   title: string
