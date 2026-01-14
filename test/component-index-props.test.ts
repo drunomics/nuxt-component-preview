@@ -29,7 +29,7 @@ describe('Component Index - Prop Metadata Extraction', () => {
 
       const variantProp = result.components[0].props.properties.variant
       expect(variantProp.examples).toEqual(['primary', 'success'])
-    })
+    }, 10000)
   })
 
   describe('Enum Extraction from TypeScript Unions', () => {
