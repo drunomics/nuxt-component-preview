@@ -28,7 +28,7 @@ interface PropDefinition {
   'type': string
   'title': string
   'description'?: string
-  'default'?: string | number | boolean
+  'default'?: string | number | boolean | unknown[]
   'enum'?: (string | number)[]
   'meta:enum'?: Record<string, string>
   'examples'?: (string | number | boolean | object)[]
@@ -37,6 +37,9 @@ interface PropDefinition {
   'pattern'?: string
   'contentMediaType'?: string
   'x-formatting-context'?: 'block' | 'inline'
+  // Array support
+  'items'?: Partial<PropDefinition>
+  'maxItems'?: number
 }
 
 // Canvas type mappings - maps TypeScript type names to Canvas $ref values
@@ -119,6 +122,66 @@ function detectPatternTag(tags?: Array<{ name: string, text?: string }>): string
   if (!patternTag?.text?.trim()) return null
 
   return patternTag.text.trim()
+}
+
+/**
+ * Detect @maxItems JSDoc tag for array cardinality.
+ *
+ * @example
+ * // @maxItems 10
+ * tags?: string[]
+ */
+function detectMaxItemsTag(tags?: Array<{ name: string, text?: string }>): number | null {
+  if (!tags) return null
+
+  const maxItemsTag = tags.find(t => t.name === 'maxItems')
+  if (!maxItemsTag?.text?.trim()) return null
+
+  const num = Number.parseInt(maxItemsTag.text.trim(), 10)
+  return Number.isNaN(num) ? null : num
+}
+
+/**
+ * Schema type from vue-component-meta
+ */
+interface VueMetaSchema {
+  kind?: string
+  type?: string
+  schema?: (string | VueMetaSchema)[]
+}
+
+/**
+ * Detect array type from vue-component-meta schema.
+ * Returns the element type string or null if not an array.
+ *
+ * Handles:
+ * - Direct array: { kind: "array", schema: ["string"] }
+ * - Optional array: { kind: "enum", schema: ["undefined", { kind: "array", schema: ["string"] }] }
+ */
+function detectArrayFromSchema(schema: VueMetaSchema | undefined): { elementType: string, elementSchema?: VueMetaSchema } | null {
+  if (!schema) return null
+
+  // Direct array: { kind: "array", schema: ["string"] }
+  if (schema.kind === 'array' && Array.isArray(schema.schema) && schema.schema.length > 0) {
+    const firstElement = schema.schema[0]
+    if (typeof firstElement === 'string') {
+      return { elementType: firstElement }
+    }
+    if (typeof firstElement === 'object' && firstElement !== null) {
+      return { elementType: firstElement.type || 'unknown', elementSchema: firstElement }
+    }
+  }
+
+  // Optional array: { kind: "enum", schema: ["undefined", { kind: "array", ... }] }
+  if (schema.kind === 'enum' && Array.isArray(schema.schema)) {
+    for (const member of schema.schema) {
+      if (typeof member === 'object' && member !== null && member.kind === 'array') {
+        return detectArrayFromSchema(member)
+      }
+    }
+  }
+
+  return null
 }
 
 /**
@@ -551,6 +614,45 @@ export function generateComponentIndex(
       const props = meta.props
         .filter(p => !vueInternalProps.includes(p.name))
         .reduce((acc, prop) => {
+          // Check for array types first (string[], number[], CanvasImage[], etc.)
+          const arrayInfo = detectArrayFromSchema(prop.schema as VueMetaSchema | undefined)
+          if (arrayInfo) {
+            const { title, description } = extractTitleFromJSDoc(prop)
+            const propDef: PropDefinition = {
+              type: 'array',
+              title,
+            }
+            if (description) propDef.description = description
+
+            // Build items schema based on element type
+            const elementType = arrayInfo.elementType
+            const canvasRef = detectCanvasType(elementType)
+            if (canvasRef) {
+              // Array of Canvas types (CanvasImage[], CanvasVideo[])
+              propDef.items = { type: 'object', $ref: canvasRef }
+            }
+            else {
+              // Array of primitives (string[], number[], boolean[])
+              propDef.items = { type: mapVueTypeToJsonSchema(elementType) }
+            }
+
+            // Check for @maxItems
+            const maxItems = detectMaxItemsTag(prop.tags)
+            if (maxItems) propDef.maxItems = maxItems
+
+            // Extract examples (should be arrays)
+            const examples = extractExamples(prop, 'object')
+            if (examples) propDef.examples = examples
+
+            // Parse default value for arrays
+            if (prop.default !== undefined) {
+              propDef.default = parseArrayDefaultValue(prop.default)
+            }
+
+            acc[prop.name] = propDef
+            return acc
+          }
+
           // Check for Canvas types first (CanvasImage, CanvasVideo)
           const canvasRef = detectCanvasType(prop.type)
           if (canvasRef) {
@@ -702,4 +804,36 @@ function parseDefaultValue(defaultStr: string): string | number | boolean {
   if (!Number.isNaN(Number(cleaned)) && cleaned !== '') return Number(cleaned)
 
   return cleaned
+}
+
+/**
+ * Parse default value for array props.
+ * Handles formats from vue-component-meta:
+ * - Array literal: "[\"foo\", \"bar\"]"
+ * - Factory function: "() => [\"foo\", \"bar\"]"
+ */
+function parseArrayDefaultValue(defaultStr: string): unknown[] | undefined {
+  let arrayStr = defaultStr.trim()
+
+  // Handle factory function: () => [...]
+  const factoryMatch = arrayStr.match(/\(\)\s*=>\s*(\[[\s\S]*\])/)
+  if (factoryMatch) {
+    arrayStr = factoryMatch[1]
+  }
+
+  // Check if it looks like an array literal
+  if (!arrayStr.startsWith('[') || !arrayStr.endsWith(']')) {
+    return undefined
+  }
+
+  try {
+    // Convert JS array literal to JSON
+    const jsonStr = arrayStr
+      .replace(/'/g, '"') // single to double quotes
+      .replace(/,(\s*[\]])/g, '$1') // remove trailing commas
+    return JSON.parse(jsonStr)
+  }
+  catch {
+    return undefined
+  }
 }
