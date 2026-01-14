@@ -938,4 +938,133 @@ describe('Component Index Generation', () => {
       expect(noJsDocProp.description).toBeUndefined()
     }, 10000)
   })
+
+  describe('@schemaRef JSDoc Tag', () => {
+    it('generates $ref for @schemaRef canvas/stream-wrapper-uri', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestStreamWrapper',
+        kebabName: 'test-stream-wrapper',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
+        shortPath: 'components/global/TestStreamWrapper.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const fileUriProp = result.components[0].props.properties.fileUri
+
+      expect(fileUriProp.type).toBe('string')
+      expect(fileUriProp['$ref']).toBe('json-schema-definitions://canvas.module/stream-wrapper-uri')
+      expect(fileUriProp.title).toBe('File URI')
+      expect(fileUriProp.description).toBe('A file stored in Drupal\'s public files directory.')
+    }, 10000)
+
+    it('generates $ref for @schemaRef canvas/stream-wrapper-image-uri', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestStreamWrapper',
+        kebabName: 'test-stream-wrapper',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
+        shortPath: 'components/global/TestStreamWrapper.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const imageUriProp = result.components[0].props.properties.imageUri
+
+      expect(imageUriProp.type).toBe('string')
+      expect(imageUriProp['$ref']).toBe('json-schema-definitions://canvas.module/stream-wrapper-image-uri')
+      expect(imageUriProp.title).toBe('Image URI')
+    }, 10000)
+
+    it('generates $ref for @schemaRef canvas/image-uri', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestStreamWrapper',
+        kebabName: 'test-stream-wrapper',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
+        shortPath: 'components/global/TestStreamWrapper.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const webImageUrlProp = result.components[0].props.properties.webImageUrl
+
+      expect(webImageUrlProp.type).toBe('string')
+      expect(webImageUrlProp['$ref']).toBe('json-schema-definitions://canvas.module/image-uri')
+      expect(webImageUrlProp.title).toBe('Web image URL')
+    }, 10000)
+
+    it('extracts @example for @schemaRef props', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestStreamWrapper',
+        kebabName: 'test-stream-wrapper',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
+        shortPath: 'components/global/TestStreamWrapper.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const fileUriProp = result.components[0].props.properties.fileUri
+      const imageUriProp = result.components[0].props.properties.imageUri
+
+      expect(fileUriProp.examples).toContain('public://documents/report.pdf')
+      expect(imageUriProp.examples).toContain('public://images/hero.jpg')
+    }, 10000)
+
+    it('does not add $ref for props without @schemaRef', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestStreamWrapper',
+        kebabName: 'test-stream-wrapper',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
+        shortPath: 'components/global/TestStreamWrapper.vue',
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      // caption is a regular string prop without @schemaRef
+      const captionProp = result.components[0].props.properties.caption
+
+      expect(captionProp.type).toBe('string')
+      expect(captionProp['$ref']).toBeUndefined()
+      expect(captionProp.title).toBe('Regular text')
+    }, 10000)
+  })
 })
