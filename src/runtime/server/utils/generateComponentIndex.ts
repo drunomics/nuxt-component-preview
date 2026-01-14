@@ -33,6 +33,8 @@ interface PropDefinition {
   'meta:enum'?: Record<string, string>
   'examples'?: (string | number | boolean | object)[]
   '$ref'?: string
+  'format'?: string
+  'pattern'?: string
   'contentMediaType'?: string
   'x-formatting-context'?: 'block' | 'inline'
 }
@@ -76,6 +78,47 @@ function detectSchemaRefTag(tags?: Array<{ name: string, text?: string }>): stri
 
   console.warn(`[nuxt-component-preview] Invalid @schemaRef value: ${refValue}`)
   return null
+}
+
+/**
+ * Detect @format JSDoc tag for JSON Schema string format.
+ *
+ * Canvas-supported formats with widgets:
+ * - date: Date picker (YYYY-MM-DD)
+ * - date-time: DateTime picker
+ * - email: Email input
+ * - uri / uri-reference: Link field
+ *
+ * @example
+ * // @format date
+ * eventDate?: string
+ */
+function detectFormatTag(tags?: Array<{ name: string, text?: string }>): string | null {
+  if (!tags) return null
+
+  const formatTag = tags.find(t => t.name === 'format')
+  if (!formatTag?.text?.trim()) return null
+
+  return formatTag.text.trim()
+}
+
+/**
+ * Detect @pattern JSDoc tag for JSON Schema regex pattern.
+ *
+ * Useful for textarea (multiline text):
+ *   @pattern (.|\r?\n)*
+ *
+ * @example
+ * // @pattern (.|\r?\n)*
+ * description?: string
+ */
+function detectPatternTag(tags?: Array<{ name: string, text?: string }>): string | null {
+  if (!tags) return null
+
+  const patternTag = tags.find(t => t.name === 'pattern')
+  if (!patternTag?.text?.trim()) return null
+
+  return patternTag.text.trim()
 }
 
 /**
@@ -148,6 +191,8 @@ function extractExamples(
 interface PropDefinitionOptions {
   type: string
   $ref?: string
+  format?: string
+  pattern?: string
   contentMediaType?: string
   formattingContext?: 'block' | 'inline'
   exampleType?: 'string' | 'object'
@@ -169,6 +214,8 @@ function buildPropDefinition(
 
   if (description) propDef.description = description
   if (options.$ref) propDef.$ref = options.$ref
+  if (options.format) propDef.format = options.format
+  if (options.pattern) propDef.pattern = options.pattern
   if (options.contentMediaType) propDef.contentMediaType = options.contentMediaType
   if (options.formattingContext) propDef['x-formatting-context'] = options.formattingContext
 
@@ -536,9 +583,17 @@ export function generateComponentIndex(
             return acc
           }
 
+          // Check for @format JSDoc tag (e.g., @format date)
+          const format = detectFormatTag(prop.tags)
+
+          // Check for @pattern JSDoc tag (e.g., @pattern (.|\r?\n)*)
+          const pattern = detectPatternTag(prop.tags)
+
           // Regular prop processing - use buildPropDefinition for base, then add extras
           const propDef = buildPropDefinition(prop, {
             type: mapVueTypeToJsonSchema(prop.type),
+            format,
+            pattern,
           })
 
           if (prop.default !== undefined) propDef.default = parseDefaultValue(prop.default)
