@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CanvasImage } from '../../types/canvas'
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   /**
    * List of tags
    * @example ["foo", "bar", "baz"]
@@ -25,13 +25,25 @@ const props = withDefaults(defineProps<{
 <template>
   <div class="test-array-types">
     <div class="tags">
-      <span v-for="tag in tags" :key="tag" class="tag">{{ tag }}</span>
+      <span
+        v-for="tag in tags"
+        :key="tag"
+        class="tag"
+      >{{ tag }}</span>
     </div>
     <div class="numbers">
-      <span v-for="num in numbers" :key="num">{{ num }}</span>
+      <span
+        v-for="num in numbers"
+        :key="num"
+      >{{ num }}</span>
     </div>
     <div class="images">
-      <img v-for="img in images" :key="img.src" :src="img.src" :alt="img.alt">
+      <img
+        v-for="img in images"
+        :key="img.src"
+        :src="img.src"
+        :alt="img.alt"
+      >
     </div>
   </div>
 </template>

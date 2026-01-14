@@ -830,7 +830,7 @@ function parseArrayDefaultValue(defaultStr: string): unknown[] | undefined {
     // Convert JS array literal to JSON
     const jsonStr = arrayStr
       .replace(/'/g, '"') // single to double quotes
-      .replace(/,(\s*[\]])/g, '$1') // remove trailing commas
+      .replace(/,(\s*\])/g, '$1') // remove trailing commas
     return JSON.parse(jsonStr)
   }
   catch {

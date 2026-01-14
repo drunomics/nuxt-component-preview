@@ -1280,7 +1280,7 @@ describe('Component Index Generation', () => {
       expect(imagesProp.type).toBe('array')
       expect(imagesProp.items).toEqual({
         type: 'object',
-        '$ref': 'json-schema-definitions://canvas.module/image',
+        $ref: 'json-schema-definitions://canvas.module/image',
       })
       expect(imagesProp.maxItems).toBe(20)
     }, 10000)
