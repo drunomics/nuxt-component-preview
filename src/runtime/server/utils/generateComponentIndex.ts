@@ -151,15 +151,49 @@ interface VueMetaSchema {
 }
 
 /**
- * Detect array type from vue-component-meta schema.
+ * Detect array type from TypeScript type string.
+ * Handles: string[], number[], Array<string>, Type[] | undefined
+ * Returns the element type or null if not an array.
+ */
+function detectArrayFromTypeString(typeStr: string): string | null {
+  // Remove " | undefined" suffix
+  const cleanType = typeStr.replace(/\s*\|\s*undefined/g, '').trim()
+
+  // Handle T[] syntax: string[], number[], CanvasImage[]
+  const bracketMatch = cleanType.match(/^(.+)\[\]$/)
+  if (bracketMatch) {
+    return bracketMatch[1]
+  }
+
+  // Handle Array<T> syntax
+  const genericMatch = cleanType.match(/^Array<(.+)>$/i)
+  if (genericMatch) {
+    return genericMatch[1]
+  }
+
+  return null
+}
+
+/**
+ * Detect array type from vue-component-meta schema or type string.
  * Returns the element type string or null if not an array.
  *
  * Handles:
- * - Direct array: { kind: "array", schema: ["string"] }
- * - Optional array: { kind: "enum", schema: ["undefined", { kind: "array", schema: ["string"] }] }
+ * - Structured schema: { kind: "array", schema: ["string"] }
+ * - Optional array schema: { kind: "enum", schema: ["undefined", { kind: "array", ... }] }
+ * - Type string fallback: "string[]", "Array<number>"
  */
-function detectArrayFromSchema(schema: VueMetaSchema | undefined): { elementType: string, elementSchema?: VueMetaSchema } | null {
-  if (!schema) return null
+function detectArrayFromSchema(schema: string | VueMetaSchema | undefined, typeString?: string): { elementType: string, elementSchema?: VueMetaSchema } | null {
+  // If schema is a string, try to parse array from type string
+  if (typeof schema === 'string' || !schema) {
+    if (typeString) {
+      const elementType = detectArrayFromTypeString(typeString)
+      if (elementType) {
+        return { elementType }
+      }
+    }
+    return null
+  }
 
   // Direct array: { kind: "array", schema: ["string"] }
   if (schema.kind === 'array' && Array.isArray(schema.schema) && schema.schema.length > 0) {
@@ -176,8 +210,16 @@ function detectArrayFromSchema(schema: VueMetaSchema | undefined): { elementType
   if (schema.kind === 'enum' && Array.isArray(schema.schema)) {
     for (const member of schema.schema) {
       if (typeof member === 'object' && member !== null && member.kind === 'array') {
-        return detectArrayFromSchema(member)
+        return detectArrayFromSchema(member, typeString)
       }
+    }
+  }
+
+  // Fallback: try parsing from type string if schema didn't have array info
+  if (typeString) {
+    const elementType = detectArrayFromTypeString(typeString)
+    if (elementType) {
+      return { elementType }
     }
   }
 
@@ -615,7 +657,7 @@ export function generateComponentIndex(
         .filter(p => !vueInternalProps.includes(p.name))
         .reduce((acc, prop) => {
           // Check for array types first (string[], number[], CanvasImage[], etc.)
-          const arrayInfo = detectArrayFromSchema(prop.schema as VueMetaSchema | undefined)
+          const arrayInfo = detectArrayFromSchema(prop.schema as string | VueMetaSchema | undefined, prop.type)
           if (arrayInfo) {
             const { title, description } = extractTitleFromJSDoc(prop)
             const propDef: PropDefinition = {
