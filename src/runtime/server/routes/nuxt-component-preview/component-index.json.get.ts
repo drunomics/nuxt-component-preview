@@ -7,20 +7,10 @@ import devConfig from '#nuxt-component-preview-dev-config'
 export default defineEventHandler(async (event) => {
   let componentIndexData = cachedComponentIndexData
 
-  // In dev mode, regenerate on each request for fresh data
+  // In dev mode, scan directories and regenerate on each request
   if (devConfig) {
-    try {
-      const { generateComponentIndex } = await import('../../utils/generateComponentIndex')
-      componentIndexData = generateComponentIndex(
-        devConfig.components,
-        devConfig.tsconfigPath,
-        devConfig.options,
-      )
-    }
-    catch (error) {
-      console.error('[nuxt-component-preview] Error generating component index:', error)
-      componentIndexData = null
-    }
+    const { prepareComponentIndex } = await import('../../utils/prepareComponentIndex')
+    componentIndexData = prepareComponentIndex(devConfig)
   }
 
   if (!componentIndexData) {
