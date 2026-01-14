@@ -37,6 +37,8 @@ interface PropDefinition {
   'pattern'?: string
   'contentMediaType'?: string
   'x-formatting-context'?: 'block' | 'inline'
+  /** Allowed URI schemes for Canvas stream wrapper/URL props */
+  'x-allowed-schemes'?: string[]
   // Array support
   'items'?: Partial<PropDefinition>
   'maxItems'?: number
@@ -49,6 +51,48 @@ const CANVAS_TYPE_REFS: Record<string, string> = {
 }
 
 /**
+ * Known Canvas schema definitions with their required properties.
+ *
+ * These properties must be included in the component index alongside the $ref
+ * because Canvas uses them for field type determination before resolving refs.
+ *
+ * @see web/modules/contrib/canvas/schema.json
+ */
+const CANVAS_SCHEMA_DEFINITIONS: Record<string, Record<string, unknown>> = {
+  'canvas/stream-wrapper-uri': {
+    'format': 'uri',
+    'x-allowed-schemes': ['public'],
+  },
+  'canvas/stream-wrapper-image-uri': {
+    'format': 'uri',
+    'contentMediaType': 'image/*',
+    'x-allowed-schemes': ['public'],
+  },
+  'canvas/image-uri': {
+    'format': 'uri-reference',
+    'contentMediaType': 'image/*',
+    'x-allowed-schemes': ['http', 'https'],
+  },
+}
+
+/**
+ * Get additional schema properties for a known Canvas schema ref.
+ *
+ * @param shorthandRef - The shorthand ref (e.g., "canvas/stream-wrapper-uri")
+ * @returns Additional schema properties to include, or empty object if unknown
+ */
+function getSchemaRefProperties(shorthandRef: string): Record<string, unknown> {
+  return CANVAS_SCHEMA_DEFINITIONS[shorthandRef] ?? {}
+}
+
+interface SchemaRefResult {
+  /** The full $ref URI (e.g., "json-schema-definitions://canvas.module/stream-wrapper-uri") */
+  $ref: string
+  /** The shorthand ref for property lookup (e.g., "canvas/stream-wrapper-uri") */
+  shorthand: string
+}
+
+/**
  * Detect @schemaRef JSDoc tag and convert to full $ref URI.
  *
  * Supports shorthand notation: PREFIX/NAME -> json-schema-definitions://PREFIX.module/NAME
@@ -58,8 +102,10 @@ const CANVAS_TYPE_REFS: Record<string, string> = {
  *
  * Also supports full URIs if needed:
  *   @schemaRef json-schema-definitions://custom.module/my-type
+ *
+ * @returns Object with $ref (full URI) and shorthand (for property lookup), or null
  */
-function detectSchemaRefTag(tags?: Array<{ name: string, text?: string }>): string | null {
+function detectSchemaRefTag(tags?: Array<{ name: string, text?: string }>): SchemaRefResult | null {
   if (!tags) return null
 
   const schemaRefTag = tags.find(t => t.name === 'schemaRef')
@@ -67,16 +113,22 @@ function detectSchemaRefTag(tags?: Array<{ name: string, text?: string }>): stri
 
   const refValue = schemaRefTag.text.trim()
 
-  // If it's already a full URI, use as-is
+  // If it's already a full URI, extract shorthand from it
   if (refValue.startsWith('json-schema-definitions://')) {
-    return refValue
+    // Extract shorthand: json-schema-definitions://prefix.module/name -> prefix/name
+    const uriMatch = refValue.match(/^json-schema-definitions:\/\/([a-z_-]+)\.module\/([a-z_-]+)$/i)
+    const shorthand = uriMatch ? `${uriMatch[1]}/${uriMatch[2]}` : refValue
+    return { $ref: refValue, shorthand }
   }
 
   // Parse shorthand: PREFIX/NAME -> json-schema-definitions://PREFIX.module/NAME
   const match = refValue.match(/^([a-z_-]+)\/([a-z_-]+)$/i)
   if (match) {
     const [, prefix, name] = match
-    return `json-schema-definitions://${prefix}.module/${name}`
+    return {
+      $ref: `json-schema-definitions://${prefix}.module/${name}`,
+      shorthand: refValue,
+    }
   }
 
   console.warn(`[nuxt-component-preview] Invalid @schemaRef value: ${refValue}`)
@@ -294,13 +346,15 @@ function extractExamples(
 
 /** Options for building a prop definition */
 interface PropDefinitionOptions {
-  type: string
-  $ref?: string
-  format?: string
-  pattern?: string
-  contentMediaType?: string
-  formattingContext?: 'block' | 'inline'
-  exampleType?: 'string' | 'object'
+  'type': string
+  '$ref'?: string
+  'format'?: string
+  'pattern'?: string
+  'contentMediaType'?: string
+  'formattingContext'?: 'block' | 'inline'
+  'exampleType'?: 'string' | 'object'
+  /** Allowed URI schemes for Canvas stream wrapper/URL props */
+  'x-allowed-schemes'?: string[]
 }
 
 /**
@@ -323,6 +377,7 @@ function buildPropDefinition(
   if (options.pattern) propDef.pattern = options.pattern
   if (options.contentMediaType) propDef.contentMediaType = options.contentMediaType
   if (options.formattingContext) propDef['x-formatting-context'] = options.formattingContext
+  if (options['x-allowed-schemes']) propDef['x-allowed-schemes'] = options['x-allowed-schemes']
 
   // Extract examples
   const examples = extractExamples(prop, options.exampleType || 'string')
@@ -718,11 +773,15 @@ export function generateComponentIndex(
           }
 
           // Check for @schemaRef JSDoc tag (e.g., @schemaRef canvas/stream-wrapper-uri)
-          const schemaRef = detectSchemaRefTag(prop.tags)
-          if (schemaRef) {
+          const schemaRefResult = detectSchemaRefTag(prop.tags)
+          if (schemaRefResult) {
+            // Include additional schema properties for known Canvas refs
+            // (e.g., format, x-allowed-schemes, contentMediaType)
+            const additionalProps = getSchemaRefProperties(schemaRefResult.shorthand)
             acc[prop.name] = buildPropDefinition(prop, {
               type: 'string',
-              $ref: schemaRef,
+              $ref: schemaRefResult.$ref,
+              ...additionalProps,
             })
             return acc
           }

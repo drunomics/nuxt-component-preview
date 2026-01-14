@@ -940,15 +940,18 @@ describe('Component Index Generation', () => {
   })
 
   describe('@schemaRef JSDoc Tag', () => {
+    // Note: stream-wrapper-uri is tested via fixture component because Canvas
+    // doesn't yet fully support non-image stream wrapper URIs (falls back to Link field)
     it('generates $ref for @schemaRef canvas/stream-wrapper-uri', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
       const { resolve } = await import('node:path')
 
+      // Use test fixture that includes all schema ref types
       const mockComponents = [{
-        pascalName: 'TestStreamWrapper',
-        kebabName: 'test-stream-wrapper',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
-        shortPath: 'components/global/TestStreamWrapper.vue',
+        pascalName: 'TestSchemaRefAll',
+        kebabName: 'test-schema-ref-all',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestSchemaRefFile.vue'),
+        shortPath: 'components/global/TestSchemaRefFile.vue',
         global: true,
       }]
 
@@ -964,6 +967,9 @@ describe('Component Index Generation', () => {
       expect(fileUriProp['$ref']).toBe('json-schema-definitions://canvas.module/stream-wrapper-uri')
       expect(fileUriProp.title).toBe('File URI')
       expect(fileUriProp.description).toBe('A file stored in Drupal\'s public files directory.')
+      // Verify additional schema properties are included for Canvas field type determination
+      expect(fileUriProp.format).toBe('uri')
+      expect(fileUriProp['x-allowed-schemes']).toEqual(['public'])
     }, 10000)
 
     it('generates $ref for @schemaRef canvas/stream-wrapper-image-uri', async () => {
@@ -989,6 +995,10 @@ describe('Component Index Generation', () => {
       expect(imageUriProp.type).toBe('string')
       expect(imageUriProp['$ref']).toBe('json-schema-definitions://canvas.module/stream-wrapper-image-uri')
       expect(imageUriProp.title).toBe('Image URI')
+      // Verify additional schema properties are included for Canvas field type determination
+      expect(imageUriProp.format).toBe('uri')
+      expect(imageUriProp.contentMediaType).toBe('image/*')
+      expect(imageUriProp['x-allowed-schemes']).toEqual(['public'])
     }, 10000)
 
     it('generates $ref for @schemaRef canvas/image-uri', async () => {
@@ -1014,17 +1024,22 @@ describe('Component Index Generation', () => {
       expect(webImageUrlProp.type).toBe('string')
       expect(webImageUrlProp['$ref']).toBe('json-schema-definitions://canvas.module/image-uri')
       expect(webImageUrlProp.title).toBe('Web image URL')
+      // Verify additional schema properties are included for Canvas field type determination
+      expect(webImageUrlProp.format).toBe('uri-reference')
+      expect(webImageUrlProp.contentMediaType).toBe('image/*')
+      expect(webImageUrlProp['x-allowed-schemes']).toEqual(['http', 'https'])
     }, 10000)
 
     it('extracts @example for @schemaRef props', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
       const { resolve } = await import('node:path')
 
+      // Use test fixture that includes all schema ref types including fileUri
       const mockComponents = [{
-        pascalName: 'TestStreamWrapper',
-        kebabName: 'test-stream-wrapper',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
-        shortPath: 'components/global/TestStreamWrapper.vue',
+        pascalName: 'TestSchemaRefAll',
+        kebabName: 'test-schema-ref-all',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestSchemaRefFile.vue'),
+        shortPath: 'components/global/TestSchemaRefFile.vue',
         global: true,
       }]
 
