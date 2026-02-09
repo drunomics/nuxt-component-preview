@@ -83,6 +83,7 @@ export default defineEventHandler((event) => {
       // Load entry module
       const entry = document.createElement('script');
       entry.type = 'module';
+      entry.crossOrigin = 'use-credentials';
       entry.src = '${entryPathValue}';
       document.head.appendChild(entry);
     }
