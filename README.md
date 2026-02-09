@@ -327,6 +327,10 @@ withDefaults(defineProps<{
 - `@enumLabels` - Custom labels for `meta:enum` (full or partial)
 - `@contentMediaType text/html` - For string props: enables rich text editing in Canvas
 - `@formattingContext block|inline` - Controls formatting (default: `block`)
+- `@schemaRef` - Reference Canvas JSON schema definitions (see below)
+- `@format` - JSON Schema format for semantic string validation and UI widgets (e.g., date picker). Supported: `date`, `date-time`, `time`, `duration`, `email`, `idn-email`, `hostname`, `idn-hostname`, `ipv4`, `ipv6`, `uuid`, `uri`, `uri-reference`, `iri`, `iri-reference`
+- `@pattern` - JSON Schema regex pattern for string validation (e.g., `(.|\r?\n)*` for multiline/textarea)
+- `@allowed-schemes` - Allowed URI schemes for Canvas field type determination (e.g., `public` or `http, https`)
 
 Prop titles are auto-generated from the first line of JSDoc or prop name. Use `@title` to override.
 
@@ -345,6 +349,12 @@ For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special 
 - JS object: `{ src: 'https://...', alt: 'text', width: 800 }`
 
 See [TestHero.vue](./playground/components/global/TestHero.vue) and [TestBanner.vue](./playground/components/global/TestBanner.vue) for usage examples.
+
+### Canvas Schema References
+
+Use `@schemaRef` to reference Canvas JSON schema definitions, useful for `stream-wrapper-uri` and `stream-wrapper-image-uri` types. Use shorthand `prefix/name` notation (e.g., `canvas/stream-wrapper-uri` expands to `json-schema-definitions://canvas.module/stream-wrapper-uri`).
+
+See [TestStreamWrapper.vue](./playground/components/global/TestStreamWrapper.vue) for usage examples.
 
 ## Testing
 

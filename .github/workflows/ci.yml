@@ -49,5 +49,8 @@ jobs:
       - name: Playground prepare
         run: npm run dev:prepare
 
-      - name: Test
+      - name: Unit Tests
         run: npm run test
+
+      - name: E2E Tests
+        run: npm run test:e2e

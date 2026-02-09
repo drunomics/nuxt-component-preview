@@ -1,0 +1,65 @@
+<script setup lang="ts">
+/**
+ * Test fixture for @schemaRef JSDoc tag functionality.
+ * Tests all Canvas URI schema references including stream-wrapper-uri.
+ * NOTE: This is a test-only component - stream-wrapper-uri is not yet
+ * fully supported in Canvas (it falls back to Link field).
+ */
+defineProps<{
+  /**
+   * File URI
+   *
+   * A file stored in Drupal's public files directory.
+   * @schemaRef canvas/stream-wrapper-uri
+   * @example public://documents/report.pdf
+   */
+  fileUri?: string
+
+  /**
+   * Image URI
+   *
+   * An image file stored in Drupal's public files directory.
+   * @schemaRef canvas/stream-wrapper-image-uri
+   * @example public://images/hero.jpg
+   */
+  imageUri?: string
+
+  /**
+   * Web image URL
+   *
+   * An image URL from the web (http/https).
+   * @schemaRef canvas/image-uri
+   * @example https://example.com/images/photo.jpg
+   */
+  webImageUrl?: string
+
+  /**
+   * Regular text
+   *
+   * A regular string prop without schema ref for comparison.
+   */
+  caption?: string
+}>()
+</script>
+
+<template>
+  <div class="schema-ref-test">
+    <img
+      v-if="imageUri"
+      :src="imageUri"
+      alt="Stream wrapper image"
+    >
+    <img
+      v-if="webImageUrl"
+      :src="webImageUrl"
+      alt="Web image"
+    >
+    <a
+      v-if="fileUri"
+      :href="fileUri"
+    >Download file</a>
+    <p v-if="caption">
+      {{ caption }}
+    </p>
+  </div>
+</template>

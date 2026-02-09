@@ -28,19 +28,383 @@ interface PropDefinition {
   'type': string
   'title': string
   'description'?: string
-  'default'?: string | number | boolean
+  'default'?: string | number | boolean | unknown[]
   'enum'?: (string | number)[]
   'meta:enum'?: Record<string, string>
   'examples'?: (string | number | boolean | object)[]
   '$ref'?: string
+  'format'?: string
+  'pattern'?: string
   'contentMediaType'?: string
   'x-formatting-context'?: 'block' | 'inline'
+  /** Allowed URI schemes for Canvas stream wrapper/URL props */
+  'x-allowed-schemes'?: string[]
+  // Array support
+  'items'?: Partial<PropDefinition>
+  'maxItems'?: number
 }
 
 // Canvas type mappings - maps TypeScript type names to Canvas $ref values
 const CANVAS_TYPE_REFS: Record<string, string> = {
   CanvasImage: 'json-schema-definitions://canvas.module/image',
   CanvasVideo: 'json-schema-definitions://canvas.module/video',
+}
+
+/**
+ * Known Canvas schema definitions with their required properties.
+ *
+ * These properties must be included in the component index alongside the $ref
+ * because Canvas uses them for field type determination before resolving refs.
+ *
+ * @see web/modules/contrib/canvas/schema.json
+ */
+const CANVAS_SCHEMA_DEFINITIONS: Record<string, Record<string, unknown>> = {
+  'canvas/stream-wrapper-uri': {
+    'format': 'uri',
+    'x-allowed-schemes': ['public'],
+  },
+  'canvas/stream-wrapper-image-uri': {
+    'format': 'uri',
+    'contentMediaType': 'image/*',
+    'x-allowed-schemes': ['public'],
+  },
+  'canvas/image-uri': {
+    'format': 'uri-reference',
+    'contentMediaType': 'image/*',
+    'x-allowed-schemes': ['http', 'https'],
+  },
+}
+
+/**
+ * Get additional schema properties for a known Canvas schema ref.
+ *
+ * @param shorthandRef - The shorthand ref (e.g., "canvas/stream-wrapper-uri")
+ * @returns Additional schema properties to include, or empty object if unknown
+ */
+function getSchemaRefProperties(shorthandRef: string): Record<string, unknown> {
+  return CANVAS_SCHEMA_DEFINITIONS[shorthandRef] ?? {}
+}
+
+interface SchemaRefResult {
+  /** The full $ref URI (e.g., "json-schema-definitions://canvas.module/stream-wrapper-uri") */
+  $ref: string
+  /** The shorthand ref for property lookup (e.g., "canvas/stream-wrapper-uri") */
+  shorthand: string
+}
+
+/**
+ * Detect @schemaRef JSDoc tag and convert to full $ref URI.
+ *
+ * Supports shorthand notation: PREFIX/NAME -> json-schema-definitions://PREFIX.module/NAME
+ * Examples:
+ *   @schemaRef canvas/stream-wrapper-uri -> json-schema-definitions://canvas.module/stream-wrapper-uri
+ *   @schemaRef canvas/image-uri -> json-schema-definitions://canvas.module/image-uri
+ *
+ * Also supports full URIs if needed:
+ *   @schemaRef json-schema-definitions://custom.module/my-type
+ *
+ * @returns Object with $ref (full URI) and shorthand (for property lookup), or null
+ */
+function detectSchemaRefTag(tags?: Array<{ name: string, text?: string }>): SchemaRefResult | null {
+  if (!tags) return null
+
+  const schemaRefTag = tags.find(t => t.name === 'schemaRef')
+  if (!schemaRefTag?.text?.trim()) return null
+
+  const refValue = schemaRefTag.text.trim()
+
+  // If it's already a full URI, extract shorthand from it
+  if (refValue.startsWith('json-schema-definitions://')) {
+    // Extract shorthand: json-schema-definitions://prefix.module/name -> prefix/name
+    const uriMatch = refValue.match(/^json-schema-definitions:\/\/([a-z_-]+)\.module\/([a-z_-]+)$/i)
+    const shorthand = uriMatch ? `${uriMatch[1]}/${uriMatch[2]}` : refValue
+    return { $ref: refValue, shorthand }
+  }
+
+  // Parse shorthand: PREFIX/NAME -> json-schema-definitions://PREFIX.module/NAME
+  const match = refValue.match(/^([a-z_-]+)\/([a-z_-]+)$/i)
+  if (match) {
+    const [, prefix, name] = match
+    return {
+      $ref: `json-schema-definitions://${prefix}.module/${name}`,
+      shorthand: refValue,
+    }
+  }
+
+  console.warn(`[nuxt-component-preview] Invalid @schemaRef value: ${refValue}`)
+  return null
+}
+
+/**
+ * Detect @format JSDoc tag for JSON Schema string format.
+ *
+ * Canvas-supported formats with widgets:
+ * - date: Date picker (YYYY-MM-DD)
+ * - date-time: DateTime picker
+ * - email: Email input
+ * - uri / uri-reference: Link field
+ *
+ * @example
+ * // @format date
+ * eventDate?: string
+ */
+function detectFormatTag(tags?: Array<{ name: string, text?: string }>): string | null {
+  if (!tags) return null
+
+  const formatTag = tags.find(t => t.name === 'format')
+  if (!formatTag?.text?.trim()) return null
+
+  return formatTag.text.trim()
+}
+
+/**
+ * Detect @pattern JSDoc tag for JSON Schema regex pattern.
+ *
+ * Useful for textarea (multiline text):
+ *   @pattern (.|\r?\n)*
+ *
+ * @example
+ * // @pattern (.|\r?\n)*
+ * description?: string
+ */
+function detectPatternTag(tags?: Array<{ name: string, text?: string }>): string | null {
+  if (!tags) return null
+
+  const patternTag = tags.find(t => t.name === 'pattern')
+  if (!patternTag?.text?.trim()) return null
+
+  return patternTag.text.trim()
+}
+
+/**
+ * Detect @allowed-schemes JSDoc tag for URI scheme restrictions.
+ *
+ * @example
+ * // @allowed-schemes public
+ * fileUri?: string
+ *
+ * // @allowed-schemes http, https
+ * webUrl?: string
+ */
+function detectAllowedSchemesTag(tags?: Array<{ name: string, text?: string }>): string[] | null {
+  if (!tags) return null
+
+  const schemesTag = tags.find(t => t.name === 'allowed-schemes')
+  if (!schemesTag?.text?.trim()) return null
+
+  return schemesTag.text.trim().split(/[,\s]+/).filter(Boolean)
+}
+
+/**
+ * Detect @maxItems JSDoc tag for array cardinality.
+ *
+ * @example
+ * // @maxItems 10
+ * tags?: string[]
+ */
+function detectMaxItemsTag(tags?: Array<{ name: string, text?: string }>): number | null {
+  if (!tags) return null
+
+  const maxItemsTag = tags.find(t => t.name === 'maxItems')
+  if (!maxItemsTag?.text?.trim()) return null
+
+  const num = Number.parseInt(maxItemsTag.text.trim(), 10)
+  return Number.isNaN(num) ? null : num
+}
+
+/**
+ * Schema type from vue-component-meta
+ */
+interface VueMetaSchema {
+  kind?: string
+  type?: string
+  schema?: (string | VueMetaSchema)[]
+}
+
+/**
+ * Detect array type from TypeScript type string.
+ * Handles: string[], number[], Array<string>, Type[] | undefined
+ * Returns the element type or null if not an array.
+ */
+function detectArrayFromTypeString(typeStr: string): string | null {
+  // Remove " | undefined" suffix
+  const cleanType = typeStr.replace(/\s*\|\s*undefined/g, '').trim()
+
+  // Handle T[] syntax: string[], number[], CanvasImage[]
+  const bracketMatch = cleanType.match(/^(.+)\[\]$/)
+  if (bracketMatch) {
+    return bracketMatch[1]
+  }
+
+  // Handle Array<T> syntax
+  const genericMatch = cleanType.match(/^Array<(.+)>$/i)
+  if (genericMatch) {
+    return genericMatch[1]
+  }
+
+  return null
+}
+
+/**
+ * Detect array type from vue-component-meta schema or type string.
+ * Returns the element type string or null if not an array.
+ *
+ * Handles:
+ * - Structured schema: { kind: "array", schema: ["string"] }
+ * - Optional array schema: { kind: "enum", schema: ["undefined", { kind: "array", ... }] }
+ * - Type string fallback: "string[]", "Array<number>"
+ */
+function detectArrayFromSchema(schema: string | VueMetaSchema | undefined, typeString?: string): { elementType: string, elementSchema?: VueMetaSchema } | null {
+  // If schema is a string, try to parse array from type string
+  if (typeof schema === 'string' || !schema) {
+    if (typeString) {
+      const elementType = detectArrayFromTypeString(typeString)
+      if (elementType) {
+        return { elementType }
+      }
+    }
+    return null
+  }
+
+  // Direct array: { kind: "array", schema: ["string"] }
+  if (schema.kind === 'array' && Array.isArray(schema.schema) && schema.schema.length > 0) {
+    const firstElement = schema.schema[0]
+    if (typeof firstElement === 'string') {
+      return { elementType: firstElement }
+    }
+    if (typeof firstElement === 'object' && firstElement !== null) {
+      return { elementType: firstElement.type || 'unknown', elementSchema: firstElement }
+    }
+  }
+
+  // Optional array: { kind: "enum", schema: ["undefined", { kind: "array", ... }] }
+  if (schema.kind === 'enum' && Array.isArray(schema.schema)) {
+    for (const member of schema.schema) {
+      if (typeof member === 'object' && member !== null && member.kind === 'array') {
+        return detectArrayFromSchema(member, typeString)
+      }
+    }
+  }
+
+  // Fallback: try parsing from type string if schema didn't have array info
+  if (typeString) {
+    const elementType = detectArrayFromTypeString(typeString)
+    if (elementType) {
+      return { elementType }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Extract examples from @example JSDoc tags with optional default fallback.
+ * Parses examples based on the expected type (string vs object).
+ */
+function extractExamples(
+  prop: { default?: string, tags?: Array<{ name: string, text?: string }> },
+  exampleType: 'string' | 'object' = 'string',
+): (string | number | boolean | object)[] | undefined {
+  const examples: (string | number | boolean | object)[] = []
+
+  // Extract from @example tags
+  if (prop.tags) {
+    const exampleTags = prop.tags.filter(t => t.name === 'example')
+    for (const tag of exampleTags) {
+      const text = tag.text?.trim() || ''
+      if (!text) continue
+
+      if (exampleType === 'object') {
+        // Try JSON first
+        try {
+          examples.push(JSON.parse(text))
+          continue
+        }
+        catch {
+          // Not valid JSON, try other formats
+        }
+
+        // Try JS object literal syntax
+        const jsObj = parseCanvasDefault(text)
+        if (jsObj) {
+          examples.push(jsObj)
+          continue
+        }
+
+        // Try key-value pairs syntax
+        const kvObj = parseKeyValueExample(text)
+        if (kvObj) {
+          examples.push(kvObj)
+        }
+      }
+      else {
+        // String type - use as-is
+        examples.push(text)
+      }
+    }
+  }
+
+  // Fall back to default if no examples found
+  if (examples.length === 0 && prop.default) {
+    if (exampleType === 'object') {
+      const defaultObj = parseCanvasDefault(prop.default)
+      if (defaultObj) {
+        examples.push(defaultObj)
+      }
+    }
+    else {
+      const defaultVal = parseDefaultValue(prop.default)
+      if (defaultVal !== '') {
+        examples.push(defaultVal)
+      }
+    }
+  }
+
+  return examples.length > 0 ? examples : undefined
+}
+
+/** Options for building a prop definition */
+interface PropDefinitionOptions {
+  'type': string
+  '$ref'?: string
+  'format'?: string
+  'pattern'?: string
+  'contentMediaType'?: string
+  'formattingContext'?: 'block' | 'inline'
+  'exampleType'?: 'string' | 'object'
+  /** Allowed URI schemes for Canvas stream wrapper/URL props */
+  'x-allowed-schemes'?: string[]
+}
+
+/**
+ * Build a prop definition with the given options.
+ * Handles title/description extraction and examples.
+ */
+function buildPropDefinition(
+  prop: { name: string, description?: string, default?: string, tags?: Array<{ name: string, text?: string }> },
+  options: PropDefinitionOptions,
+): PropDefinition {
+  const { title, description } = extractTitleFromJSDoc(prop)
+  const propDef: PropDefinition = {
+    type: options.type,
+    title,
+  }
+
+  if (description) propDef.description = description
+  if (options.$ref) propDef.$ref = options.$ref
+  if (options.format) propDef.format = options.format
+  if (options.pattern) propDef.pattern = options.pattern
+  if (options.contentMediaType) propDef.contentMediaType = options.contentMediaType
+  if (options.formattingContext) propDef['x-formatting-context'] = options.formattingContext
+  if (options['x-allowed-schemes']) propDef['x-allowed-schemes'] = options['x-allowed-schemes']
+
+  // Extract examples
+  const examples = extractExamples(prop, options.exampleType || 'string')
+  if (examples) {
+    propDef.examples = examples
+  }
+
+  return propDef
 }
 
 /**
@@ -149,31 +513,47 @@ function detectFormattedText(tags?: Array<{ name: string, text?: string }>): { c
 }
 
 /**
- * Build a formatted text prop definition with contentMediaType and x-formatting-context
+ * Extract enum labels from @enumLabels tag or auto-generate from values.
+ * Returns undefined if labels don't add value over raw enum values.
  */
-function buildFormattedTextPropDefinition(
-  prop: { name: string, description?: string, default?: string, tags?: Array<{ name: string, text?: string }> },
-  formattedTextInfo: { contentMediaType: string, formattingContext: 'block' | 'inline' },
-): PropDefinition {
-  const { title, description } = extractTitleFromJSDoc(prop)
-  const propDef: PropDefinition = {
-    'type': 'string',
-    'title': title,
-    'contentMediaType': formattedTextInfo.contentMediaType,
-    'x-formatting-context': formattedTextInfo.formattingContext,
-  }
-
-  if (description) propDef.description = description
-
-  // Extract examples from @example tags
+function extractEnumLabels(
+  prop: { name: string, tags?: Array<{ name: string, text?: string }> },
+  enumValues: (string | number)[],
+): Record<string, string> | undefined {
+  // Check for custom @enumLabels JSDoc tag
   if (prop.tags) {
-    const exampleTags = prop.tags.filter(t => t.name === 'example')
-    if (exampleTags.length > 0) {
-      propDef.examples = exampleTags.map(t => t.text?.trim() || '').filter(Boolean)
+    const enumLabelsTag = prop.tags.find(t => t.name === 'enumLabels')
+    if (enumLabelsTag?.text) {
+      try {
+        return JSON.parse(enumLabelsTag.text)
+      }
+      catch {
+        console.warn(`Invalid @enumLabels JSON for ${prop.name}:`, enumLabelsTag.text)
+      }
     }
   }
 
-  return propDef
+  // Auto-generate labels only for string enums
+  const isNumericEnum = enumValues.every(v => typeof v === 'number')
+  if (isNumericEnum) return undefined
+
+  const metaEnum = enumValues.reduce((acc, val) => {
+    const strVal = String(val)
+    // Convert kebab-case and camelCase to Title Case
+    const label = strVal
+      .replace(/[-_]/g, ' ')
+      .replace(/([A-Z])/g, ' $1')
+      .trim()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+    acc[val] = label
+    return acc
+  }, {} as Record<string, string>)
+
+  // Only include if it differs from raw values
+  const addsValue = Object.entries(metaEnum).some(([key, val]) => key !== val)
+  return addsValue ? metaEnum : undefined
 }
 
 /**
@@ -252,64 +632,6 @@ function parseCanvasDefault(defaultStr: string): object | null {
   catch {
     return null
   }
-}
-
-/**
- * Build a Canvas-compatible prop definition with $ref
- */
-function buildCanvasPropDefinition(
-  prop: { name: string, description?: string, default?: string, tags?: Array<{ name: string, text?: string }> },
-  refValue: string,
-): PropDefinition {
-  const { title, description } = extractTitleFromJSDoc(prop)
-  const propDef: PropDefinition = {
-    type: 'object',
-    $ref: refValue,
-    title,
-  }
-
-  if (description) propDef.description = description
-
-  // Extract examples from @example tags
-  // Supports: JSON, JS object literal, key-value pairs
-  if (prop.tags) {
-    const exampleTags = prop.tags.filter(t => t.name === 'example')
-    if (exampleTags.length > 0) {
-      const examples = exampleTags.map((t) => {
-        const text = t.text?.trim() || ''
-        if (!text) return null
-
-        // Try JSON first
-        try {
-          return JSON.parse(text)
-        }
-        catch {
-          // Not valid JSON, continue
-        }
-
-        // Try JS object literal syntax
-        const jsObj = parseCanvasDefault(text)
-        if (jsObj) return jsObj
-
-        // Try key-value pairs syntax
-        const kvObj = parseKeyValueExample(text)
-        if (kvObj) return kvObj
-
-        return null
-      }).filter(Boolean)
-      if (examples.length > 0) {
-        propDef.examples = examples
-      }
-    }
-  }
-
-  // Use default as example if no @example tags
-  if ((!propDef.examples || propDef.examples.length === 0) && prop.default) {
-    const defaultObj = parseCanvasDefault(prop.default)
-    if (defaultObj) propDef.examples = [defaultObj]
-  }
-
-  return propDef
 }
 
 interface SlotDefinition {
@@ -408,89 +730,111 @@ export function generateComponentIndex(
       const props = meta.props
         .filter(p => !vueInternalProps.includes(p.name))
         .reduce((acc, prop) => {
+          // Check for array types first (string[], number[], CanvasImage[], etc.)
+          const arrayInfo = detectArrayFromSchema(prop.schema as string | VueMetaSchema | undefined, prop.type)
+          if (arrayInfo) {
+            const { title, description } = extractTitleFromJSDoc(prop)
+            const propDef: PropDefinition = {
+              type: 'array',
+              title,
+            }
+            if (description) propDef.description = description
+
+            // Build items schema based on element type
+            const elementType = arrayInfo.elementType
+            const canvasRef = detectCanvasType(elementType)
+            if (canvasRef) {
+              // Array of Canvas types (CanvasImage[], CanvasVideo[])
+              propDef.items = { type: 'object', $ref: canvasRef }
+            }
+            else {
+              // Array of primitives (string[], number[], boolean[])
+              propDef.items = { type: mapVueTypeToJsonSchema(elementType) }
+            }
+
+            // Check for @maxItems
+            const maxItems = detectMaxItemsTag(prop.tags)
+            if (maxItems) propDef.maxItems = maxItems
+
+            // Extract examples (should be arrays)
+            const examples = extractExamples(prop, 'object')
+            if (examples) propDef.examples = examples
+
+            // Parse default value for arrays
+            if (prop.default !== undefined) {
+              propDef.default = parseArrayDefaultValue(prop.default)
+            }
+
+            acc[prop.name] = propDef
+            return acc
+          }
+
           // Check for Canvas types first (CanvasImage, CanvasVideo)
           const canvasRef = detectCanvasType(prop.type)
           if (canvasRef) {
-            acc[prop.name] = buildCanvasPropDefinition(prop, canvasRef)
+            acc[prop.name] = buildPropDefinition(prop, {
+              type: 'object',
+              $ref: canvasRef,
+              exampleType: 'object',
+            })
             return acc
           }
 
           // Check for formatted text (@contentMediaType text/html)
           const formattedTextInfo = detectFormattedText(prop.tags)
           if (formattedTextInfo) {
-            acc[prop.name] = buildFormattedTextPropDefinition(prop, formattedTextInfo)
+            acc[prop.name] = buildPropDefinition(prop, {
+              type: 'string',
+              contentMediaType: formattedTextInfo.contentMediaType,
+              formattingContext: formattedTextInfo.formattingContext,
+            })
             return acc
           }
 
-          // Regular prop processing
-          const { title, description } = extractTitleFromJSDoc(prop)
-          const propDef: Partial<PropDefinition> = {
-            type: mapVueTypeToJsonSchema(prop.type),
-            title,
+          // Check for @schemaRef JSDoc tag (e.g., @schemaRef canvas/stream-wrapper-uri)
+          const schemaRefResult = detectSchemaRefTag(prop.tags)
+          if (schemaRefResult) {
+            // Include additional schema properties for known Canvas refs
+            // (e.g., format, x-allowed-schemes, contentMediaType)
+            const additionalProps = getSchemaRefProperties(schemaRefResult.shorthand)
+            acc[prop.name] = buildPropDefinition(prop, {
+              type: 'string',
+              $ref: schemaRefResult.$ref,
+              ...additionalProps,
+            })
+            return acc
           }
 
-          if (description) propDef.description = description
+          // Check for @format JSDoc tag (e.g., @format date)
+          const format = detectFormatTag(prop.tags)
+
+          // Check for @pattern JSDoc tag (e.g., @pattern (.|\r?\n)*)
+          const pattern = detectPatternTag(prop.tags)
+
+          // Check for @allowed-schemes JSDoc tag (e.g., @allowed-schemes public)
+          const allowedSchemes = detectAllowedSchemesTag(prop.tags)
+
+          // Regular prop processing - use buildPropDefinition for base, then add extras
+          const propDef = buildPropDefinition(prop, {
+            'type': mapVueTypeToJsonSchema(prop.type),
+            'format': format,
+            'pattern': pattern,
+            'x-allowed-schemes': allowedSchemes ?? undefined,
+          })
+
           if (prop.default !== undefined) propDef.default = parseDefaultValue(prop.default)
 
           // Extract enum from TypeScript union types
           const enumValues = extractEnumFromType(prop.type)
           if (enumValues.length > 0) {
             propDef.enum = enumValues
-
-            // Check for custom @enumLabels JSDoc tag
-            let metaEnum: Record<string, string> | undefined
-            if (prop.tags) {
-              const enumLabelsTag = prop.tags.find((t: { name: string, text?: string }) => t.name === 'enumLabels')
-              if (enumLabelsTag?.text) {
-                try {
-                  metaEnum = JSON.parse(enumLabelsTag.text)
-                }
-                catch {
-                  console.warn(`Invalid @enumLabels JSON for ${prop.name}:`, enumLabelsTag.text)
-                }
-              }
-            }
-
-            // Generate meta:enum only if custom labels provided or auto-generation adds value
-            if (!metaEnum) {
-              const isNumericEnum = enumValues.every(v => typeof v === 'number')
-              if (!isNumericEnum) {
-                metaEnum = enumValues.reduce((acc, val) => {
-                  const strVal = String(val)
-                  // Convert kebab-case and camelCase to Title Case
-                  const label = strVal
-                    .replace(/[-_]/g, ' ')
-                    .replace(/([A-Z])/g, ' $1')
-                    .trim()
-                    .split(' ')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(' ')
-                  acc[val] = label
-                  return acc
-                }, {} as Record<string, string>)
-
-                // Only include if it differs from raw values
-                const addsValue = Object.entries(metaEnum).some(([key, val]) => key !== val)
-                if (!addsValue) {
-                  metaEnum = undefined
-                }
-              }
-            }
-
+            const metaEnum = extractEnumLabels(prop, enumValues)
             if (metaEnum) {
               propDef['meta:enum'] = metaEnum
             }
           }
 
-          // Add examples from @example JSDoc tags
-          if (prop.tags) {
-            const exampleTags = prop.tags.filter((t: { name: string, text?: string }) => t.name === 'example')
-            if (exampleTags.length > 0) {
-              propDef.examples = exampleTags.map((t: { text?: string }) => parseDefaultValue(t.text || ''))
-            }
-          }
-
-          acc[prop.name] = propDef as PropDefinition
+          acc[prop.name] = propDef
           return acc
         }, {} as Record<string, PropDefinition>)
 
@@ -584,4 +928,36 @@ function parseDefaultValue(defaultStr: string): string | number | boolean {
   if (!Number.isNaN(Number(cleaned)) && cleaned !== '') return Number(cleaned)
 
   return cleaned
+}
+
+/**
+ * Parse default value for array props.
+ * Handles formats from vue-component-meta:
+ * - Array literal: "[\"foo\", \"bar\"]"
+ * - Factory function: "() => [\"foo\", \"bar\"]"
+ */
+function parseArrayDefaultValue(defaultStr: string): unknown[] | undefined {
+  let arrayStr = defaultStr.trim()
+
+  // Handle factory function: () => [...]
+  const factoryMatch = arrayStr.match(/\(\)\s*=>\s*(\[[\s\S]*\])/)
+  if (factoryMatch) {
+    arrayStr = factoryMatch[1]
+  }
+
+  // Check if it looks like an array literal
+  if (!arrayStr.startsWith('[') || !arrayStr.endsWith(']')) {
+    return undefined
+  }
+
+  try {
+    // Convert JS array literal to JSON
+    const jsonStr = arrayStr
+      .replace(/'/g, '"') // single to double quotes
+      .replace(/,(\s*\])/g, '$1') // remove trailing commas
+    return JSON.parse(jsonStr)
+  }
+  catch {
+    return undefined
+  }
 }

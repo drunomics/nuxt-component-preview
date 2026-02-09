@@ -29,6 +29,14 @@ export default defineNuxtConfig({
       cors: true,
     },
   },
+  componentPreview: {
+    componentIndex: {
+      exclude: {
+        // Test-only component for stream-wrapper-uri (not yet supported by Canvas)
+        components: ['TestSchemaRefFile'],
+      },
+    },
+  },
   drupalCe: {
     drupalBaseUrl: 'http://example.com',
   },
