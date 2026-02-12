@@ -10,6 +10,8 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+
 withDefaults(defineProps<{
   /**
    * Button label text
@@ -40,6 +42,9 @@ withDefaults(defineProps<{
   size: 'medium',
   disabled: false,
 })
+
+// Lifecycle hook for testing that onVue:* props are filtered from schema.
+onMounted(() => {})
 
 const emit = defineEmits(['click'])
 
