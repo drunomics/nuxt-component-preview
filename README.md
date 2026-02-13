@@ -362,10 +362,11 @@ npm run test
 
 ## Releasing
 
-Run command
-```bash
-npm run release -- --release-as 1.0.0-alpha.1
-```
+1. Update the version in `package.json`
+2. Run `npm run lint && npm run test && npm run prepack`
+3. Commit, tag, and push: `git commit -am "release: vX.Y.Z" && git tag vX.Y.Z && git push --follow-tags`
+4. Publish: `npm publish --tag beta`
+5. Ensure the `latest` dist-tag points to the new version: `npm dist-tag add nuxt-component-preview@X.Y.Z latest`
 
 ## About
 
