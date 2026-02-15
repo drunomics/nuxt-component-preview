@@ -61,6 +61,17 @@ describe('nuxt-component-preview module', async () => {
     }
   })
 
+  it('component index includes subfolder components with folder-prefixed names', async () => {
+    const index = await $fetch('/nuxt-component-preview/component-index.json')
+    const subfolderComp = index.components.find((c: any) => c.id === 'SubfolderExample')
+    expect(subfolderComp, 'SubfolderExample should be in the component index').toBeDefined()
+    expect(subfolderComp.name).toBe('Subfolder Example')
+    // Also verify a top-level component still works
+    const buttonComp = index.components.find((c: any) => c.id === 'TestButton')
+    expect(buttonComp, 'TestButton should be in the component index').toBeDefined()
+    expect(buttonComp.name).toBe('Test Button')
+  })
+
   it('app-loader.js generates valid JavaScript', async () => {
     const script = await $fetch('/nuxt-component-preview/app-loader.js', {
       responseType: 'text',

@@ -1,26 +1,24 @@
-import { scanComponentDirs } from './scanComponents'
+import type { Component } from '@nuxt/schema'
 import { generateComponentIndex, type ComponentIndexData, type ComponentIndexOptions } from './generateComponentIndex'
 
 export interface PrepareComponentIndexConfig {
-  componentDirs: string[]
+  components: Pick<Component, 'pascalName' | 'kebabName' | 'filePath' | 'shortPath' | 'global'>[]
   tsconfigPath: string
   options: ComponentIndexOptions
 }
 
 /**
- * Prepare component index by scanning directories and generating metadata.
+ * Prepare component index from pre-resolved components and generate metadata.
  * Used both at build time (production) and runtime (dev mode).
  */
 export function prepareComponentIndex(config: PrepareComponentIndexConfig): ComponentIndexData | null {
   try {
-    const components = scanComponentDirs(config.componentDirs)
-
-    if (components.length === 0) {
+    if (config.components.length === 0) {
       return { version: '1.0', components: [] }
     }
 
     return generateComponentIndex(
-      components,
+      config.components as Component[],
       config.tsconfigPath,
       config.options,
     )
