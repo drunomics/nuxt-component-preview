@@ -4,7 +4,7 @@ import { writeFileSync, unlinkSync, existsSync } from 'node:fs'
 import { describe, it, expect, afterAll } from 'vitest'
 import { setup, $fetch } from '@nuxt/test-utils/e2e'
 
-const playgroundDir = join(fileURLToPath(import.meta.url), '../../playground')
+const playgroundDir = join(fileURLToPath(import.meta.url), '../../../playground')
 const tempComponentPath = join(playgroundDir, 'components/global/HotReloadTest.vue')
 
 /**
