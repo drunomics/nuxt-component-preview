@@ -14,7 +14,7 @@ export default defineVitestConfig({
         },
       },
     },
-    testTimeout: 10000,
+    testTimeout: 5000,
     include: ['test/**/*.test.ts'],
   },
 })
