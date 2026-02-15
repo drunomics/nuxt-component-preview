@@ -1,6 +1,6 @@
 {
   "name": "nuxt-component-preview",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.6",
   "description": "A Nuxt module for component previewing functionality",
   "repository": "drunomics/nuxt-component-preview",
   "license": "MIT",
@@ -27,7 +27,6 @@
     "dev": "npm run dev:prepare && nuxi dev playground",
     "dev:build": "nuxi build playground",
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
-    "release": "npm run lint && npm run test && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
     "lint": "eslint .",
     "test": "vitest run --exclude 'test/e2e/**'",
     "test:watch": "vitest watch --exclude 'test/e2e/**'",
@@ -47,7 +46,6 @@
     "@nuxt/test-utils": "^3.20.1",
     "@types/node": "latest",
     "@vue/test-utils": "^2.4.6",
-    "changelogen": "^0.6.1",
     "eslint": "^9.28.0",
     "happy-dom": "^20.0.11",
     "minimatch": "^10.0.3",
@@ -56,6 +54,6 @@
     "playwright-core": "^1.48.0",
     "typescript": "~5.9.0",
     "vitest": "^3.2.3",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "^3.0.0"
   }
 }

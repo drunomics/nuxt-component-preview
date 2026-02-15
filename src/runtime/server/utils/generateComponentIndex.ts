@@ -729,6 +729,7 @@ export function generateComponentIndex(
       const vueInternalProps = ['key', 'ref', 'ref_for', 'ref_key', 'class', 'style']
       const props = meta.props
         .filter(p => !vueInternalProps.includes(p.name))
+        .filter(p => !p.name.startsWith('onVue:'))
         .reduce((acc, prop) => {
           // Check for array types first (string[], number[], CanvasImage[], etc.)
           const arrayInfo = detectArrayFromSchema(prop.schema as string | VueMetaSchema | undefined, prop.type)

@@ -183,6 +183,12 @@ export default defineNuxtModule<ModuleOptions>({
       // Shared config for component index preparation
       let indexConfig: import('./runtime/server/utils/prepareComponentIndex').PrepareComponentIndexConfig | null = null
 
+      // In dev mode, write config to a file so the server handler can read it
+      // without depending on virtual module re-evaluation (Nitro rebuilds).
+      const devConfigPath = nuxt.options.dev
+        ? resolve(nuxt.options.buildDir, 'nuxt-component-preview-config.json')
+        : null
+
       // Build index options once from module config
       const indexOptions = {
         category: options.componentIndex!.category!,
@@ -196,23 +202,32 @@ export default defineNuxtModule<ModuleOptions>({
       nuxt.hook('app:templatesGenerated', async () => {
         const globalComponents = nuxt.apps.default.components.filter(c => c.global)
 
-        // Extract unique directories from global components
-        const componentDirs = new Set<string>()
-        for (const component of globalComponents) {
-          if (component.filePath.includes('node_modules')) continue
-          const dirPath = component.filePath.substring(0, component.filePath.lastIndexOf('/'))
-          componentDirs.add(dirPath)
-        }
+        // Pass component objects directly with proper names resolved by Nuxt
+        const components = globalComponents
+          .filter(c => !c.filePath.includes('node_modules'))
+          .map(c => ({
+            pascalName: c.pascalName,
+            kebabName: c.kebabName,
+            filePath: c.filePath,
+            shortPath: c.shortPath,
+            global: c.global,
+          }))
 
         // Build shared config
         indexConfig = {
-          componentDirs: Array.from(componentDirs),
+          components,
           tsconfigPath: resolve(nuxt.options.rootDir, 'tsconfig.json'),
           options: indexOptions,
         }
 
-        // Generate index at build time (for production)
-        if (!nuxt.options.dev) {
+        if (nuxt.options.dev) {
+          // Write config to file for the server handler to read on each request.
+          // This ensures new/removed components are picked up immediately without
+          // requiring a Nitro rebuild.
+          fs.writeFileSync(devConfigPath!, JSON.stringify(indexConfig))
+        }
+        else {
+          // Generate index at build time (for production)
           const { prepareComponentIndex } = await import('./runtime/server/utils/prepareComponentIndex')
           componentIndexData = prepareComponentIndex(indexConfig)
         }
@@ -225,9 +240,9 @@ export default defineNuxtModule<ModuleOptions>({
         nitroConfig.virtual['#nuxt-component-preview-index-data'] = () => {
           return `export default ${JSON.stringify(componentIndexData)}`
         }
-        // Dev mode: provide config for on-the-fly regeneration
-        nitroConfig.virtual['#nuxt-component-preview-dev-config'] = () => {
-          return `export default ${nuxt.options.dev ? JSON.stringify(indexConfig) : 'null'}`
+        // Dev mode: provide path to config file (constant, set once)
+        nitroConfig.virtual['#nuxt-component-preview-dev-config-path'] = () => {
+          return `export default ${JSON.stringify(devConfigPath)}`
         }
         // Prerender component-index.json for static builds (nuxt generate)
         nitroConfig.prerender = nitroConfig.prerender || {}
