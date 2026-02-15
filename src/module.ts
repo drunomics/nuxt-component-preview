@@ -159,16 +159,11 @@ export default defineNuxtModule<ModuleOptions>({
       // Shared config for component index preparation
       let indexConfig: import('./runtime/server/utils/prepareComponentIndex').PrepareComponentIndexConfig | null = null
 
-      // Track component file paths to detect additions/removals
-      let previousComponentPaths: string[] = []
-
-      // Nitro instance for triggering dev server reloads
-      let nitroInstance: any = null
-      if (nuxt.options.dev) {
-        nuxt.hook('nitro:init', (nitro) => {
-          nitroInstance = nitro
-        })
-      }
+      // In dev mode, write config to a file so the server handler can read it
+      // without depending on virtual module re-evaluation (Nitro rebuilds).
+      const devConfigPath = nuxt.options.dev
+        ? resolve(nuxt.options.buildDir, 'nuxt-component-preview-config.json')
+        : null
 
       // Build index options once from module config
       const indexOptions = {
@@ -201,23 +196,16 @@ export default defineNuxtModule<ModuleOptions>({
           options: indexOptions,
         }
 
-        // Generate index at build time (for production)
-        if (!nuxt.options.dev) {
+        if (nuxt.options.dev) {
+          // Write config to file for the server handler to read on each request.
+          // This ensures new/removed components are picked up immediately without
+          // requiring a Nitro rebuild.
+          fs.writeFileSync(devConfigPath!, JSON.stringify(indexConfig))
+        }
+        else {
+          // Generate index at build time (for production)
           const { prepareComponentIndex } = await import('./runtime/server/utils/prepareComponentIndex')
           componentIndexData = prepareComponentIndex(indexConfig)
-        }
-
-        // In dev mode, trigger Nitro reload when components are added/removed
-        // so the virtual module picks up the updated component list.
-        if (nuxt.options.dev && nitroInstance) {
-          const currentPaths = components.map(c => c.filePath).sort()
-          const changed = currentPaths.length !== previousComponentPaths.length
-            || currentPaths.some((p, i) => p !== previousComponentPaths[i])
-          previousComponentPaths = currentPaths
-
-          if (changed) {
-            await nitroInstance.hooks.callHook('rollup:reload')
-          }
         }
       })
 
@@ -228,9 +216,9 @@ export default defineNuxtModule<ModuleOptions>({
         nitroConfig.virtual['#nuxt-component-preview-index-data'] = () => {
           return `export default ${JSON.stringify(componentIndexData)}`
         }
-        // Dev mode: provide config for on-the-fly regeneration
-        nitroConfig.virtual['#nuxt-component-preview-dev-config'] = () => {
-          return `export default ${nuxt.options.dev ? JSON.stringify(indexConfig) : 'null'}`
+        // Dev mode: provide path to config file (constant, set once)
+        nitroConfig.virtual['#nuxt-component-preview-dev-config-path'] = () => {
+          return `export default ${JSON.stringify(devConfigPath)}`
         }
       })
 
