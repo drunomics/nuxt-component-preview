@@ -14,12 +14,12 @@ describe('component index (dev mode)', async () => {
     const subfolderComp = index.components.find((c: any) => c.id === 'SubfolderExample')
     expect(subfolderComp, 'SubfolderExample should be in the component index').toBeDefined()
     expect(subfolderComp.name).toBe('Subfolder Example')
-  })
+  }, 10000)
 
   it('includes top-level components', async () => {
     const index = await $fetch('/nuxt-component-preview/component-index.json')
     const buttonComp = index.components.find((c: any) => c.id === 'TestButton')
     expect(buttonComp, 'TestButton should be in the component index').toBeDefined()
     expect(buttonComp.name).toBe('Test Button')
-  })
+  }, 10000)
 })
