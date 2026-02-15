@@ -159,6 +159,17 @@ export default defineNuxtModule<ModuleOptions>({
       // Shared config for component index preparation
       let indexConfig: import('./runtime/server/utils/prepareComponentIndex').PrepareComponentIndexConfig | null = null
 
+      // Track component file paths to detect additions/removals
+      let previousComponentPaths: string[] = []
+
+      // Nitro instance for triggering dev server reloads
+      let nitroInstance: any = null
+      if (nuxt.options.dev) {
+        nuxt.hook('nitro:init', (nitro) => {
+          nitroInstance = nitro
+        })
+      }
+
       // Build index options once from module config
       const indexOptions = {
         category: options.componentIndex!.category!,
@@ -194,6 +205,19 @@ export default defineNuxtModule<ModuleOptions>({
         if (!nuxt.options.dev) {
           const { prepareComponentIndex } = await import('./runtime/server/utils/prepareComponentIndex')
           componentIndexData = prepareComponentIndex(indexConfig)
+        }
+
+        // In dev mode, trigger Nitro reload when components are added/removed
+        // so the virtual module picks up the updated component list.
+        if (nuxt.options.dev && nitroInstance) {
+          const currentPaths = components.map(c => c.filePath).sort()
+          const changed = currentPaths.length !== previousComponentPaths.length
+            || currentPaths.some((p, i) => p !== previousComponentPaths[i])
+          previousComponentPaths = currentPaths
+
+          if (changed) {
+            await nitroInstance.hooks.callHook('rollup:reload')
+          }
         }
       })
 
