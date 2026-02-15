@@ -172,17 +172,20 @@ export default defineNuxtModule<ModuleOptions>({
       nuxt.hook('app:templatesGenerated', async () => {
         const globalComponents = nuxt.apps.default.components.filter(c => c.global)
 
-        // Extract unique directories from global components
-        const componentDirs = new Set<string>()
-        for (const component of globalComponents) {
-          if (component.filePath.includes('node_modules')) continue
-          const dirPath = component.filePath.substring(0, component.filePath.lastIndexOf('/'))
-          componentDirs.add(dirPath)
-        }
+        // Pass component objects directly with proper names resolved by Nuxt
+        const components = globalComponents
+          .filter(c => !c.filePath.includes('node_modules'))
+          .map(c => ({
+            pascalName: c.pascalName,
+            kebabName: c.kebabName,
+            filePath: c.filePath,
+            shortPath: c.shortPath,
+            global: c.global,
+          }))
 
         // Build shared config
         indexConfig = {
-          componentDirs: Array.from(componentDirs),
+          components,
           tsconfigPath: resolve(nuxt.options.rootDir, 'tsconfig.json'),
           options: indexOptions,
         }

@@ -254,6 +254,46 @@ describe('Component Index Generation', () => {
     })
   })
 
+  describe('Subfolder components preserve folder prefix in names', () => {
+    it('uses pascalName with folder prefix for subfolder components', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'SubfolderExample',
+          kebabName: 'subfolder-example',
+          filePath: resolve(process.cwd(), 'playground/components/global/Subfolder/Example.vue'),
+          shortPath: 'components/global/Subfolder/Example.vue',
+          global: true,
+        },
+        {
+          pascalName: 'TestButton',
+          kebabName: 'test-button',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'components/global/TestButton.vue',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      expect(result.components).toHaveLength(2)
+      // Subfolder component should use the folder-prefixed pascalName
+      const subfolderComp = result.components.find(c => c.id === 'SubfolderExample')
+      expect(subfolderComp).toBeDefined()
+      expect(subfolderComp!.name).toBe('Subfolder Example')
+      // Regular component should work as before
+      const buttonComp = result.components.find(c => c.id === 'TestButton')
+      expect(buttonComp).toBeDefined()
+      expect(buttonComp!.name).toBe('Test Button')
+    }, 10000)
+  })
+
   describe('Step 6: Per-Component Overrides', () => {
     it('overrides category for specific component', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
