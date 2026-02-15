@@ -1,56 +1,48 @@
-import { describe, it, expect } from 'vitest'
+import * as path from 'node:path'
+import { describe, it, expect, beforeAll } from 'vitest'
 import type { Component } from '@nuxt/schema'
+import type { ComponentIndexData } from '../src/runtime/server/utils/generateComponentIndex'
 
 // Mock component type for tests
 type MockComponent = Pick<Component, 'pascalName' | 'kebabName' | 'filePath' | 'shortPath' | 'global'>
 
+function createMockComp(pascalName: string, file: string): MockComponent {
+  return {
+    pascalName,
+    kebabName: pascalName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase(),
+    filePath: path.resolve(process.cwd(), 'playground/components/global/' + file),
+    shortPath: 'components/global/' + file,
+    global: true,
+  }
+}
+
+async function generateIndex(components: MockComponent[]): Promise<ComponentIndexData> {
+  const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+  return generateComponentIndex(
+    components as Component[],
+    path.resolve(process.cwd(), 'playground/tsconfig.json'),
+    { category: 'Test', status: 'stable' },
+  )
+}
+
 describe('Component Index - Prop Metadata Extraction', () => {
-  describe('@example Tag Extraction', () => {
-    it('extracts @example tags to examples field', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestButton group ──────────────────────────────────────────────
+  describe('TestButton props', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TestButton',
-        kebabName: 'test-button',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
-        shortPath: 'components/global/TestButton.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestButton', 'TestButton.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts @example tags to examples field', () => {
       const labelProp = result.components[0].props.properties.label
       expect(labelProp.examples).toEqual(['Submit', 'Cancel', 'Learn More'])
 
       const variantProp = result.components[0].props.properties.variant
       expect(variantProp.examples).toEqual(['primary', 'success'])
-    }, 10000)
-  })
+    })
 
-  describe('Enum Extraction from TypeScript Unions', () => {
-    it('extracts enum values from TypeScript union types', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestButton',
-        kebabName: 'test-button',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
-        shortPath: 'components/global/TestButton.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts enum values from TypeScript union types', () => {
       const variantProp = result.components[0].props.properties.variant
       expect(variantProp.enum).toBeDefined()
       expect(variantProp.enum).toContain('primary')
@@ -60,73 +52,14 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(variantProp.type).toBe('string')
     })
 
-    it('generates meta:enum for enum values', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestButton',
-        kebabName: 'test-button',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
-        shortPath: 'components/global/TestButton.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('generates meta:enum for enum values', () => {
       const variantProp = result.components[0].props.properties.variant
       expect(variantProp['meta:enum']).toBeDefined()
       expect(variantProp['meta:enum'].primary).toBe('Primary')
       expect(variantProp['meta:enum'].secondary).toBe('Secondary')
     })
 
-    it('uses custom @enumLabels from JSDoc', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TwoColumnLayout',
-        kebabName: 'two-column-layout',
-        filePath: resolve(process.cwd(), 'playground/components/global/TwoColumnLayout.vue'),
-        shortPath: 'components/global/TwoColumnLayout.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
-      const widthProp = result.components[0].props.properties.width
-      expect(widthProp['meta:enum']).toBeDefined()
-      expect(widthProp['meta:enum']['25']).toBe('25% / 75%')
-      expect(widthProp['meta:enum']['50']).toBe('50% / 50%')
-      expect(widthProp['meta:enum']['75']).toBe('75% / 25%')
-    })
-
-    it('supports partial @enumLabels (only some values labeled)', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestButton',
-        kebabName: 'test-button',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
-        shortPath: 'components/global/TestButton.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('supports partial @enumLabels (only some values labeled)', () => {
       const sizeProp = result.components[0].props.properties.size
       expect(sizeProp['meta:enum']).toBeDefined()
       expect(sizeProp['meta:enum'].large).toBe('Extra Large (XL)')
@@ -134,27 +67,31 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(sizeProp['meta:enum'].small).toBeUndefined()
       expect(sizeProp['meta:enum'].medium).toBeUndefined()
     })
+
+    it('filters out onVue: lifecycle hook props', () => {
+      const propNames = Object.keys(result.components[0].props.properties)
+      const vueLifecycleProps = propNames.filter(name => name.startsWith('onVue:'))
+      expect(vueLifecycleProps).toEqual([])
+    })
   })
 
-  describe('Slot Extraction', () => {
-    it('extracts named slots from template', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TwoColumnLayout group ─────────────────────────────────────────
+  describe('TwoColumnLayout props', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TwoColumnLayout',
-        kebabName: 'two-column-layout',
-        filePath: resolve(process.cwd(), 'playground/components/global/TwoColumnLayout.vue'),
-        shortPath: 'components/global/TwoColumnLayout.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TwoColumnLayout', 'TwoColumnLayout.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
+    it('uses custom @enumLabels from JSDoc', () => {
+      const widthProp = result.components[0].props.properties.width
+      expect(widthProp['meta:enum']).toBeDefined()
+      expect(widthProp['meta:enum']['25']).toBe('25% / 75%')
+      expect(widthProp['meta:enum']['50']).toBe('50% / 50%')
+      expect(widthProp['meta:enum']['75']).toBe('75% / 25%')
+    })
 
+    it('extracts named slots from template', () => {
       const component = result.components[0]
       expect(component.slots).toBeDefined()
       expect(Object.keys(component.slots)).toHaveLength(2)
@@ -163,25 +100,17 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(component.slots['column-two']).toBeDefined()
       expect(component.slots.default).toBeUndefined()
     })
+  })
 
-    it('extracts default slot from component', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestPopover group ─────────────────────────────────────────────
+  describe('TestPopover props', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TestPopover',
-        kebabName: 'test-popover',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestPopover.vue'),
-        shortPath: 'components/global/TestPopover.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestPopover', 'TestPopover.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts default slot from component', () => {
       const component = result.components[0]
       expect(component.slots).toBeDefined()
       expect(component.slots.default).toBeDefined()
@@ -191,25 +120,15 @@ describe('Component Index - Prop Metadata Extraction', () => {
     })
   })
 
-  describe('Canvas Type Detection', () => {
-    it('generates Canvas-compatible schema for CanvasImage props', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestHero group ────────────────────────────────────────────────
+  describe('TestHero props (Canvas types)', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TestHero',
-        kebabName: 'test-hero',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
-        shortPath: 'components/global/TestHero.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestHero', 'TestHero.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('generates Canvas-compatible schema for CanvasImage props', () => {
       const imageProp = result.components[0].props.properties.image
 
       // Validate Canvas schema format
@@ -217,26 +136,9 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(imageProp['$ref']).toBe('json-schema-definitions://canvas.module/image')
       // Title is extracted from JSDoc first line
       expect(imageProp.title).toBe('Hero image')
-    }, 10000)
+    })
 
-    it('extracts @example JSON for CanvasImage props', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestHero',
-        kebabName: 'test-hero',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
-        shortPath: 'components/global/TestHero.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts @example JSON for CanvasImage props', () => {
       const imageProp = result.components[0].props.properties.image
 
       expect(imageProp.examples).toBeDefined()
@@ -247,27 +149,10 @@ describe('Component Index - Prop Metadata Extraction', () => {
         width: 800,
         height: 600,
       })
-    }, 10000)
+    })
 
     it('validates CanvasImage examples match Canvas schema structure', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
       const canvasSchema = await import('../schema/canvas.schema.json')
-
-      const mockComponents = [{
-        pascalName: 'TestHero',
-        kebabName: 'test-hero',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
-        shortPath: 'components/global/TestHero.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
       const imageProp = result.components[0].props.properties.image
       const canvasImageDef = canvasSchema.$defs.image
 
@@ -286,26 +171,18 @@ describe('Component Index - Prop Metadata Extraction', () => {
           expect(canvasImageProps).toContain(key)
         })
       })
-    }, 10000)
+    })
+  })
 
-    it('parses @example with key-value syntax', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestBanner group ──────────────────────────────────────────────
+  describe('TestBanner props (key-value @example)', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TestBanner',
-        kebabName: 'test-banner',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestBanner.vue'),
-        shortPath: 'components/global/TestBanner.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestBanner', 'TestBanner.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('parses @example with key-value syntax', () => {
       const imageProp = result.components[0].props.properties.image
 
       // Should have $ref for Canvas type
@@ -320,26 +197,9 @@ describe('Component Index - Prop Metadata Extraction', () => {
         width: 600,
         height: 400,
       })
-    }, 10000)
+    })
 
-    it('parses numbers and booleans in key-value syntax', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestBanner',
-        kebabName: 'test-banner',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestBanner.vue'),
-        shortPath: 'components/global/TestBanner.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('parses numbers and booleans in key-value syntax', () => {
       const imageProp = result.components[0].props.properties.image
 
       // Numbers should be parsed as numbers, not strings
@@ -347,105 +207,52 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(typeof imageProp.examples![0].height).toBe('number')
       expect(imageProp.examples![0].width).toBe(600)
       expect(imageProp.examples![0].height).toBe(400)
-    }, 10000)
+    })
+  })
 
-    it('does not add $ref for regular object props', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestCard group ────────────────────────────────────────────────
+  describe('TestCard props', () => {
+    let result: ComponentIndexData
 
-      // TestCard has regular string props, not Canvas types
-      const mockComponents = [{
-        pascalName: 'TestCard',
-        kebabName: 'test-card',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestCard.vue'),
-        shortPath: 'components/global/TestCard.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestCard', 'TestCard.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('does not add $ref for regular object props', () => {
       // Regular string props should not have $ref
       const titleProp = result.components[0].props.properties.title
       expect(titleProp['$ref']).toBeUndefined()
       expect(titleProp.type).toBe('string')
-    }, 10000)
+    })
   })
 
-  describe('Formatted Text Detection', () => {
-    it('detects @contentMediaType text/html and defaults to block context', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestArticle group ─────────────────────────────────────────────
+  describe('TestArticle props (Formatted Text)', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TestArticle',
-        kebabName: 'test-article',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArticle.vue'),
-        shortPath: 'components/global/TestArticle.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestArticle', 'TestArticle.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('detects @contentMediaType text/html and defaults to block context', () => {
       // content prop has @contentMediaType but no @formattingContext, should default to block
       const contentProp = result.components[0].props.properties.content
 
       expect(contentProp.type).toBe('string')
       expect(contentProp.contentMediaType).toBe('text/html')
       expect(contentProp['x-formatting-context']).toBe('block')
-    }, 10000)
+    })
 
-    it('respects @formattingContext inline when specified', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestArticle',
-        kebabName: 'test-article',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArticle.vue'),
-        shortPath: 'components/global/TestArticle.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('respects @formattingContext inline when specified', () => {
       // summary prop has @formattingContext inline
       const summaryProp = result.components[0].props.properties.summary
 
       expect(summaryProp.type).toBe('string')
       expect(summaryProp.contentMediaType).toBe('text/html')
       expect(summaryProp['x-formatting-context']).toBe('inline')
-    }, 10000)
+    })
 
-    it('extracts @example tags for formatted text props', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestArticle',
-        kebabName: 'test-article',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArticle.vue'),
-        shortPath: 'components/global/TestArticle.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts @example tags for formatted text props', () => {
       const summaryProp = result.components[0].props.properties.summary
       const contentProp = result.components[0].props.properties.content
 
@@ -456,102 +263,41 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(contentProp.examples).toBeDefined()
       expect(contentProp.examples).toHaveLength(1)
       expect(contentProp.examples![0]).toContain('<p>First paragraph')
-    }, 10000)
+    })
 
-    it('does not add contentMediaType for regular string props', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestArticle',
-        kebabName: 'test-article',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArticle.vue'),
-        shortPath: 'components/global/TestArticle.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('does not add contentMediaType for regular string props', () => {
       // title prop is a regular string, no @contentMediaType
       const titleProp = result.components[0].props.properties.title
 
       expect(titleProp.type).toBe('string')
       expect(titleProp.contentMediaType).toBeUndefined()
       expect(titleProp['x-formatting-context']).toBeUndefined()
-    }, 10000)
+    })
   })
 
-  describe('Prop Title Extraction from JSDoc', () => {
-    it('uses @title tag when present', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestPropTitles group ──────────────────────────────────────────
+  describe('TestPropTitles (Prop Title Extraction from JSDoc)', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TestPropTitles',
-        kebabName: 'test-prop-titles',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
-        shortPath: 'components/global/TestPropTitles.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestPropTitles', 'TestPropTitles.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('uses @title tag when present', () => {
       const explicitTitleProp = result.components[0].props.properties.explicitTitle
 
       expect(explicitTitleProp.title).toBe('Custom Title Override')
       // @title doesn't affect description - it stays as-is
       expect(explicitTitleProp.description).toBe('Description for this prop')
-    }, 10000)
+    })
 
-    it('extracts title from first line of description', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestPropTitles',
-        kebabName: 'test-prop-titles',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
-        shortPath: 'components/global/TestPropTitles.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts title from first line of description', () => {
       const inferredTitleProp = result.components[0].props.properties.inferredTitle
 
       expect(inferredTitleProp.title).toBe('Short JSDoc summary')
-    }, 10000)
+    })
 
-    it('removes first line and empty separator from description', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestPropTitles',
-        kebabName: 'test-prop-titles',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
-        shortPath: 'components/global/TestPropTitles.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('removes first line and empty separator from description', () => {
       const inferredTitleProp = result.components[0].props.properties.inferredTitle
 
       // Description should be remaining text after title and empty line
@@ -559,107 +305,43 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(inferredTitleProp.description).toContain('spans multiple lines')
       // Should not start with empty line or contain the title
       expect(inferredTitleProp.description).not.toContain('Short JSDoc summary')
-    }, 10000)
+    })
 
-    it('falls back to name-based title for long descriptions', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestPropTitles',
-        kebabName: 'test-prop-titles',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
-        shortPath: 'components/global/TestPropTitles.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('falls back to name-based title for long descriptions', () => {
       const fallbackTitleProp = result.components[0].props.properties.fallbackTitle
 
       // First line is > 50 chars, should fall back to name-based title
       expect(fallbackTitleProp.title).toBe('Fallback Title')
       // Description should remain intact
       expect(fallbackTitleProp.description).toContain('way too long')
-    }, 10000)
+    })
 
-    it('handles single-line JSDoc without separator', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestPropTitles',
-        kebabName: 'test-prop-titles',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
-        shortPath: 'components/global/TestPropTitles.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('handles single-line JSDoc without separator', () => {
       const singleLineProp = result.components[0].props.properties.singleLine
 
       // Single line becomes title, no description remains
       expect(singleLineProp.title).toBe('Single line title')
       expect(singleLineProp.description).toBeUndefined()
-    }, 10000)
+    })
 
-    it('handles props without JSDoc', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestPropTitles',
-        kebabName: 'test-prop-titles',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestPropTitles.vue'),
-        shortPath: 'components/global/TestPropTitles.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('handles props without JSDoc', () => {
       const noJsDocProp = result.components[0].props.properties.noJsDoc
 
       // Falls back to name-based title
       expect(noJsDocProp.title).toBe('No Js Doc')
       expect(noJsDocProp.description).toBeUndefined()
-    }, 10000)
+    })
   })
 
-  describe('@schemaRef JSDoc Tag', () => {
-    // Note: stream-wrapper-uri is tested via fixture component because Canvas
-    // doesn't yet fully support non-image stream wrapper URIs (falls back to Link field)
-    it('generates $ref for @schemaRef canvas/stream-wrapper-uri', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestSchemaRefFile group ───────────────────────────────────────
+  describe('TestSchemaRefFile (@schemaRef)', () => {
+    let result: ComponentIndexData
 
-      // Use test fixture that includes all schema ref types
-      const mockComponents = [{
-        pascalName: 'TestSchemaRefAll',
-        kebabName: 'test-schema-ref-all',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestSchemaRefFile.vue'),
-        shortPath: 'components/global/TestSchemaRefFile.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestSchemaRefAll', 'TestSchemaRefFile.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('generates $ref for @schemaRef canvas/stream-wrapper-uri', () => {
       const fileUriProp = result.components[0].props.properties.fileUri
 
       expect(fileUriProp.type).toBe('string')
@@ -669,26 +351,26 @@ describe('Component Index - Prop Metadata Extraction', () => {
       // Verify additional schema properties are included for Canvas field type determination
       expect(fileUriProp.format).toBe('uri')
       expect(fileUriProp['x-allowed-schemes']).toEqual(['public'])
-    }, 10000)
+    })
 
-    it('generates $ref for @schemaRef canvas/stream-wrapper-image-uri', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+    it('extracts @example for @schemaRef props', () => {
+      const fileUriProp = result.components[0].props.properties.fileUri
+      const imageUriProp = result.components[0].props.properties.imageUri
 
-      const mockComponents = [{
-        pascalName: 'TestStreamWrapper',
-        kebabName: 'test-stream-wrapper',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
-        shortPath: 'components/global/TestStreamWrapper.vue',
-        global: true,
-      }]
+      expect(fileUriProp.examples).toContain('public://documents/report.pdf')
+      expect(imageUriProp.examples).toContain('public://images/hero.jpg')
+    })
+  })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
+  // ── TestStreamWrapper group ───────────────────────────────────────
+  describe('TestStreamWrapper (@schemaRef stream-wrapper)', () => {
+    let result: ComponentIndexData
 
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestStreamWrapper', 'TestStreamWrapper.vue')])
+    })
+
+    it('generates $ref for @schemaRef canvas/stream-wrapper-image-uri', () => {
       const imageUriProp = result.components[0].props.properties.imageUri
 
       expect(imageUriProp.type).toBe('string')
@@ -698,26 +380,9 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(imageUriProp.format).toBe('uri')
       expect(imageUriProp.contentMediaType).toBe('image/*')
       expect(imageUriProp['x-allowed-schemes']).toEqual(['public'])
-    }, 10000)
+    })
 
-    it('generates $ref for @schemaRef canvas/image-uri', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestStreamWrapper',
-        kebabName: 'test-stream-wrapper',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
-        shortPath: 'components/global/TestStreamWrapper.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('generates $ref for @schemaRef canvas/image-uri', () => {
       const webImageUrlProp = result.components[0].props.properties.webImageUrl
 
       expect(webImageUrlProp.type).toBe('string')
@@ -727,80 +392,27 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(webImageUrlProp.format).toBe('uri-reference')
       expect(webImageUrlProp.contentMediaType).toBe('image/*')
       expect(webImageUrlProp['x-allowed-schemes']).toEqual(['http', 'https'])
-    }, 10000)
+    })
 
-    it('extracts @example for @schemaRef props', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      // Use test fixture that includes all schema ref types including fileUri
-      const mockComponents = [{
-        pascalName: 'TestSchemaRefAll',
-        kebabName: 'test-schema-ref-all',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestSchemaRefFile.vue'),
-        shortPath: 'components/global/TestSchemaRefFile.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
-      const fileUriProp = result.components[0].props.properties.fileUri
-      const imageUriProp = result.components[0].props.properties.imageUri
-
-      expect(fileUriProp.examples).toContain('public://documents/report.pdf')
-      expect(imageUriProp.examples).toContain('public://images/hero.jpg')
-    }, 10000)
-
-    it('does not add $ref for props without @schemaRef', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestStreamWrapper',
-        kebabName: 'test-stream-wrapper',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestStreamWrapper.vue'),
-        shortPath: 'components/global/TestStreamWrapper.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('does not add $ref for props without @schemaRef', () => {
       // caption is a regular string prop without @schemaRef
       const captionProp = result.components[0].props.properties.caption
 
       expect(captionProp.type).toBe('string')
       expect(captionProp['$ref']).toBeUndefined()
       expect(captionProp.title).toBe('Regular text')
-    }, 10000)
+    })
   })
 
-  describe('@format and @pattern JSDoc Tags', () => {
-    it('generates format for @format tag', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestFormatPattern group ───────────────────────────────────────
+  describe('TestFormatPattern (@format and @pattern)', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TestFormatPattern',
-        kebabName: 'test-format-pattern',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestFormatPattern.vue'),
-        shortPath: 'components/global/TestFormatPattern.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestFormatPattern', 'TestFormatPattern.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('generates format for @format tag', () => {
       const eventDateProp = result.components[0].props.properties.eventDate
       const titleProp = result.components[0].props.properties.title
 
@@ -811,26 +423,9 @@ describe('Component Index - Prop Metadata Extraction', () => {
 
       // Props without @format have no format property
       expect(titleProp.format).toBeUndefined()
-    }, 10000)
+    })
 
-    it('generates pattern for @pattern tag', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestFormatPattern',
-        kebabName: 'test-format-pattern',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestFormatPattern.vue'),
-        shortPath: 'components/global/TestFormatPattern.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('generates pattern for @pattern tag', () => {
       const descriptionProp = result.components[0].props.properties.description
       const titleProp = result.components[0].props.properties.title
 
@@ -842,26 +437,9 @@ describe('Component Index - Prop Metadata Extraction', () => {
 
       // Props without @pattern have no pattern property
       expect(titleProp.pattern).toBeUndefined()
-    }, 10000)
+    })
 
-    it('generates x-allowed-schemes for @allowed-schemes tag', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestFormatPattern',
-        kebabName: 'test-format-pattern',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestFormatPattern.vue'),
-        shortPath: 'components/global/TestFormatPattern.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('generates x-allowed-schemes for @allowed-schemes tag', () => {
       const fileUrlProp = result.components[0].props.properties.fileUrl
       const titleProp = result.components[0].props.properties.title
 
@@ -873,77 +451,33 @@ describe('Component Index - Prop Metadata Extraction', () => {
 
       // Props without @allowed-schemes have no x-allowed-schemes property
       expect(titleProp['x-allowed-schemes']).toBeUndefined()
-    }, 10000)
+    })
   })
 
-  describe('Array Type Support', () => {
-    it('extracts string array type with items schema', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
+  // ── TestArrayTypes group ──────────────────────────────────────────
+  describe('TestArrayTypes (Array Type Support)', () => {
+    let result: ComponentIndexData
 
-      const mockComponents = [{
-        pascalName: 'TestArrayTypes',
-        kebabName: 'test-array-types',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
-        shortPath: 'components/global/TestArrayTypes.vue',
-        global: true,
-      }]
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestArrayTypes', 'TestArrayTypes.vue')])
+    })
 
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts string array type with items schema', () => {
       const tagsProp = result.components[0].props.properties.tags
 
       expect(tagsProp.type).toBe('array')
       expect(tagsProp.items).toEqual({ type: 'string' })
       expect(tagsProp.title).toBe('List of tags')
-    }, 10000)
+    })
 
-    it('extracts number array type', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestArrayTypes',
-        kebabName: 'test-array-types',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
-        shortPath: 'components/global/TestArrayTypes.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts number array type', () => {
       const numbersProp = result.components[0].props.properties.numbers
 
       expect(numbersProp.type).toBe('array')
       expect(numbersProp.items).toEqual({ type: 'number' })
-    }, 10000)
+    })
 
-    it('extracts @maxItems constraint', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestArrayTypes',
-        kebabName: 'test-array-types',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
-        shortPath: 'components/global/TestArrayTypes.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts @maxItems constraint', () => {
       const tagsProp = result.components[0].props.properties.tags
       const numbersProp = result.components[0].props.properties.numbers
 
@@ -952,74 +486,23 @@ describe('Component Index - Prop Metadata Extraction', () => {
 
       // numbers has no @maxItems
       expect(numbersProp.maxItems).toBeUndefined()
-    }, 10000)
+    })
 
-    it('extracts array examples', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestArrayTypes',
-        kebabName: 'test-array-types',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
-        shortPath: 'components/global/TestArrayTypes.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts array examples', () => {
       const tagsProp = result.components[0].props.properties.tags
 
       expect(tagsProp.examples).toBeDefined()
       expect(tagsProp.examples).toHaveLength(1)
       expect(tagsProp.examples![0]).toEqual(['foo', 'bar', 'baz'])
-    }, 10000)
+    })
 
-    it('extracts array default value', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestArrayTypes',
-        kebabName: 'test-array-types',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
-        shortPath: 'components/global/TestArrayTypes.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts array default value', () => {
       const tagsProp = result.components[0].props.properties.tags
 
       expect(tagsProp.default).toEqual(['default-tag'])
-    }, 10000)
+    })
 
-    it('extracts CanvasImage array with $ref in items', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestArrayTypes',
-        kebabName: 'test-array-types',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestArrayTypes.vue'),
-        shortPath: 'components/global/TestArrayTypes.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
+    it('extracts CanvasImage array with $ref in items', () => {
       const imagesProp = result.components[0].props.properties.images
 
       expect(imagesProp.type).toBe('array')
@@ -1028,31 +511,6 @@ describe('Component Index - Prop Metadata Extraction', () => {
         $ref: 'json-schema-definitions://canvas.module/image',
       })
       expect(imagesProp.maxItems).toBe(20)
-    }, 10000)
-  })
-
-  describe('Vue Internal Prop Filtering', () => {
-    it('filters out onVue: lifecycle hook props', async () => {
-      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
-      const { resolve } = await import('node:path')
-
-      const mockComponents = [{
-        pascalName: 'TestButton',
-        kebabName: 'test-button',
-        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
-        shortPath: 'components/global/TestButton.vue',
-        global: true,
-      }]
-
-      const result = generateComponentIndex(
-        mockComponents as MockComponent[],
-        resolve(process.cwd(), 'playground/tsconfig.json'),
-        { category: 'Test', status: 'stable' },
-      )
-
-      const propNames = Object.keys(result.components[0].props.properties)
-      const vueLifecycleProps = propNames.filter(name => name.startsWith('onVue:'))
-      expect(vueLifecycleProps).toEqual([])
-    }, 10000)
+    })
   })
 })
