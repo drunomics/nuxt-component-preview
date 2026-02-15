@@ -57,6 +57,17 @@ describe('component index hot-reload (dev mode)', async () => {
     catch { /* best effort cleanup */ }
   })
 
+  it('includes subfolder components with folder-prefixed names', async () => {
+    const index = await $fetch('/nuxt-component-preview/component-index.json')
+    const subfolderComp = index.components.find((c: any) => c.id === 'SubfolderExample')
+    expect(subfolderComp, 'SubfolderExample should be in the component index').toBeDefined()
+    expect(subfolderComp.name).toBe('Subfolder Example')
+    // Also verify a top-level component still works
+    const buttonComp = index.components.find((c: any) => c.id === 'TestButton')
+    expect(buttonComp, 'TestButton should be in the component index').toBeDefined()
+    expect(buttonComp.name).toBe('Test Button')
+  }, 10000)
+
   it('picks up a new component file', async () => {
     // Verify the component is NOT in the index yet
     const initialIndex = await $fetch('/nuxt-component-preview/component-index.json')
