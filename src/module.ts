@@ -46,12 +46,12 @@ export default defineNuxtModule<ModuleOptions>({
     addImports([
       {
         name: 'CanvasImage',
-        from: resolver.resolve('./types/canvas'),
+        from: resolver.resolve('./runtime/types/canvas'),
         type: true,
       },
       {
         name: 'CanvasVideo',
-        from: resolver.resolve('./types/canvas'),
+        from: resolver.resolve('./runtime/types/canvas'),
         type: true,
       },
     ])
