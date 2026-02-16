@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
-import { setup, createPage } from '@nuxt/test-utils/e2e'
+import { setup, getBrowser, url } from '@nuxt/test-utils/e2e'
 
 describe('preview E2E (production mode)', async () => {
   await setup({
@@ -11,15 +11,26 @@ describe('preview E2E (production mode)', async () => {
     dev: false,
   })
 
+  // Helper: open a page without waiting for Nuxt hydration.
+  // The preview HTML pages load Nuxt via app-loader.js into an external
+  // page, so the @nuxt/test-utils hydration wait never resolves
+  // (the drupal-ce module tries to fetch from the configured backend).
+  async function openPreviewPage(path: string) {
+    const browser = await getBrowser()
+    const page = await browser.newPage()
+    await page.goto(url(path), { waitUntil: 'domcontentloaded' })
+    return page
+  }
+
   describe('with app-loader.js', () => {
     it('creates DOM containers on initialization', async () => {
-      const page = await createPage('/preview-test-loader.html')
+      const page = await openPreviewPage('/preview-test-loader.html')
 
       // Wait for containers to be created
       await page.waitForFunction(() => {
         return document.getElementById('__nuxt') !== null
           && document.getElementById('teleports') !== null
-      }, { timeout: 5000 })
+      }, { timeout: 15000 })
 
       // Verify containers exist
       const containersExist = await page.evaluate(() => {
@@ -30,10 +41,10 @@ describe('preview E2E (production mode)', async () => {
 
       expect(containersExist).toBe(true)
       await page.close()
-    })
+    }, 30000)
 
     it('fires ready event when component preview is enabled', async () => {
-      const page = await createPage('/preview-test-loader.html')
+      const page = await openPreviewPage('/preview-test-loader.html')
 
       // Wait for event to fire or check if app is already ready
       const eventFired = await page.waitForFunction(() => {
@@ -42,10 +53,10 @@ describe('preview E2E (production mode)', async () => {
 
       expect(eventFired).toBeTruthy()
       await page.close()
-    })
+    }, 30000)
 
     it('renders Vue components with actual HTML content', async () => {
-      const page = await createPage('/preview-test-loader.html')
+      const page = await openPreviewPage('/preview-test-loader.html')
 
       // Wait for components to render
       await page.waitForFunction(() => {
@@ -79,7 +90,7 @@ describe('preview E2E (production mode)', async () => {
       expect(componentContent.hasButtonContent).toBe(true)
       expect(componentContent.hasLayoutWithSlots).toBe(true)
       await page.close()
-    })
+    }, 30000)
   })
 
   // Manual setup tests are not included here as they only work in dev mode
