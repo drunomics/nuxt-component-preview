@@ -91,6 +91,25 @@ export default defineNuxtModule<ModuleOptions>({
       })
     }
 
+    // Production builds: capture entry path from build:manifest
+    // This runs during the Vite client build, BEFORE Nitro bundles the virtual module
+    if (!nuxt.options.dev) {
+      nuxt.hook('build:manifest', (manifest) => {
+        // Try isEntry property first (Vite manifest standard)
+        let entryChunk = Object.values(manifest).find((chunk: { isEntry?: boolean }) => chunk.isEntry)
+        // Fallback: find by key name containing 'entry' (Nuxt <4.2 compatibility)
+        if (!entryChunk) {
+          const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
+          if (entryKey) {
+            entryChunk = manifest[entryKey]
+          }
+        }
+        if (entryChunk && 'file' in entryChunk) {
+          resolvedEntryPath = `/_nuxt/${(entryChunk as { file: string }).file}`
+        }
+      })
+    }
+
     // Configure Nitro
     nuxt.hook('nitro:config', (nitroConfig) => {
       nitroConfig.virtual = nitroConfig.virtual || {}
@@ -98,47 +117,14 @@ export default defineNuxtModule<ModuleOptions>({
         return `export default '${resolvedEntryPath}'`
       }
 
-      nuxt.hook('nitro:build:public-assets', async (nitro) => {
-        if (!nuxt.options.dev) {
-          // Nuxt >=4.2 uses client.manifest.mjs, Nuxt <4.2 uses client.manifest.json
-          const manifestPathMjs = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.mjs')
-          const manifestPathJson = resolve(nuxt.options.buildDir, 'dist/server/client.manifest.json')
-          let manifest = null
-
-          if (fs.existsSync(manifestPathMjs)) {
-            try {
-              const manifestModule = await import(manifestPathMjs)
-              manifest = manifestModule.default || manifestModule
-            }
-            catch (error) {
-              console.error('[nuxt-component-preview] Failed to load client.manifest.mjs:', error)
-            }
-          }
-          else if (fs.existsSync(manifestPathJson)) {
-            try {
-              const manifestContent = await fs.promises.readFile(manifestPathJson, 'utf-8')
-              manifest = JSON.parse(manifestContent)
-            }
-            catch (error) {
-              console.error('[nuxt-component-preview] Failed to load client.manifest.json:', error)
-            }
-          }
-          else {
-            console.error('[nuxt-component-preview] Client manifest not found. Component preview will not work in production.')
-          }
-
-          if (manifest) {
-            const entryKey = Object.keys(manifest).find(key => key.includes('entry'))
-            if (entryKey && manifest[entryKey]) {
-              resolvedEntryPath = `/_nuxt/${manifest[entryKey].file}`
-              nitro.options.virtual['#nuxt-entry-path'] = () => `export default '${resolvedEntryPath}'`
-            }
-            else {
-              console.error('[nuxt-component-preview] Entry file not found in client manifest')
-            }
-          }
-        }
-      })
+      // Only prerender app-loader.js for static generation (nuxt generate).
+      // For server builds, the handler must run dynamically to determine
+      // the correct origin from the request URL.
+      if (nuxt.options._generate) {
+        nitroConfig.prerender = nitroConfig.prerender || {}
+        nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
+        nitroConfig.prerender.routes.push('/nuxt-component-preview/app-loader.js')
+      }
     })
 
     addServerHandler({
@@ -154,16 +140,12 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Generate component index if enabled
     if (options.componentIndex!.enabled) {
-      let componentIndexData: import('./runtime/server/utils/generateComponentIndex').ComponentIndexData | null = null
-
-      // Shared config for component index preparation
-      let indexConfig: import('./runtime/server/utils/prepareComponentIndex').PrepareComponentIndexConfig | null = null
-
-      // In dev mode, write config to a file so the server handler can read it
-      // without depending on virtual module re-evaluation (Nitro rebuilds).
-      const devConfigPath = nuxt.options.dev
-        ? resolve(nuxt.options.buildDir, 'nuxt-component-preview-config.json')
-        : null
+      // Write config to a file so the server handler can read it and
+      // generate the component index. In dev mode, the file is updated on
+      // each templatesGenerated hook so new/removed components are picked
+      // up immediately. In production, it is written once and used during
+      // prerendering.
+      const configPath = resolve(nuxt.options.buildDir, 'nuxt-component-preview-config.json')
 
       // Build index options once from module config
       const indexOptions = {
@@ -189,37 +171,28 @@ export default defineNuxtModule<ModuleOptions>({
             global: c.global,
           }))
 
-        // Build shared config
-        indexConfig = {
+        // Write config to file for the server handler to generate from.
+        fs.writeFileSync(configPath, JSON.stringify({
           components,
           tsconfigPath: resolve(nuxt.options.rootDir, 'tsconfig.json'),
           options: indexOptions,
-        }
-
-        if (nuxt.options.dev) {
-          // Write config to file for the server handler to read on each request.
-          // This ensures new/removed components are picked up immediately without
-          // requiring a Nitro rebuild.
-          fs.writeFileSync(devConfigPath!, JSON.stringify(indexConfig))
-        }
-        else {
-          // Generate index at build time (for production)
-          const { prepareComponentIndex } = await import('./runtime/server/utils/prepareComponentIndex')
-          componentIndexData = prepareComponentIndex(indexConfig)
-        }
+        }))
       })
 
-      // Serve via Nitro route (both dev and production)
+      // The server handler reads the config file and generates the component
+      // index. In dev mode this runs on each request (live regeneration).
+      // In production, it is only invoked once during prerendering — the
+      // prerendered static file is then served directly by Nitro.
       nuxt.hook('nitro:config', (nitroConfig) => {
         nitroConfig.virtual = nitroConfig.virtual || {}
-        // Production: serve pre-generated index
-        nitroConfig.virtual['#nuxt-component-preview-index-data'] = () => {
-          return `export default ${JSON.stringify(componentIndexData)}`
+        nitroConfig.virtual['#nuxt-component-preview-config-path'] = () => {
+          return `export default ${JSON.stringify(configPath)}`
         }
-        // Dev mode: provide path to config file (constant, set once)
-        nitroConfig.virtual['#nuxt-component-preview-dev-config-path'] = () => {
-          return `export default ${JSON.stringify(devConfigPath)}`
-        }
+        // Prerender component-index.json so it is served as a static file
+        // in production (both SSR and SSG builds).
+        nitroConfig.prerender = nitroConfig.prerender || {}
+        nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
+        nitroConfig.prerender.routes.push('/nuxt-component-preview/component-index.json')
       })
 
       addServerHandler({

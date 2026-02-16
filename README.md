@@ -61,7 +61,7 @@ For cross-origin embedding, configure CORS in your Nuxt app:
 
 ```ts
 export default defineNuxtConfig({
-  // Development: Vite server CORS
+  // Development: Vite dev server CORS
   vite: {
     server: {
       cors: {
@@ -70,25 +70,23 @@ export default defineNuxtConfig({
     },
   },
 
-  // Production: Nitro route rules
+  // SSR production: Nitro route rules for CORS headers
   nitro: {
     routeRules: {
-      '/nuxt-component-preview/*.js': {
-        cors: true,
+      '/**': {
         headers: {
           'Access-Control-Allow-Origin': 'https://your-backend.com',
-        },
-      },
-      '/_nuxt/**': {
-        cors: true,
-        headers: {
-          'Access-Control-Allow-Origin': 'https://your-backend.com',
+          'Access-Control-Allow-Methods': 'GET',
         },
       },
     },
   },
 })
 ```
+
+> **Note:** When using [nuxtjs-drupal-ce](https://github.com/drunomics/nuxtjs-drupal-ce), CORS is configured automatically based on `drupalCe.drupalBaseUrl` — no manual setup needed.
+
+> **SSG:** For static builds, Nitro route rules have no effect since there is no server. CORS headers must be configured on the web server or CDN serving the static files.
 
 ### Reverse Proxy / CDN Configuration
 
@@ -97,6 +95,10 @@ When Nuxt runs behind a reverse proxy, be sure to configure the Nuxt CDN URL so 
 ```bash
 export NUXT_APP_CDN_URL=https://your-frontend-url.com
 ```
+
+### Static Site Generation
+
+For static builds (`nuxt generate`), configuring [`app.cdnURL`](https://nuxt.com/docs/api/nuxt-config#cdnurl) is **required** for component previews to work.
 
 ## Usage
 
