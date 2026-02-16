@@ -30,7 +30,7 @@ describe('preview E2E (production mode)', async () => {
       await page.waitForFunction(() => {
         return document.getElementById('__nuxt') !== null
           && document.getElementById('teleports') !== null
-      }, { timeout: 15000 })
+      }, { timeout: 5000 })
 
       // Verify containers exist
       const containersExist = await page.evaluate(() => {
@@ -41,7 +41,7 @@ describe('preview E2E (production mode)', async () => {
 
       expect(containersExist).toBe(true)
       await page.close()
-    }, 30000)
+    })
 
     it('fires ready event when component preview is enabled', async () => {
       const page = await openPreviewPage('/preview-test-loader.html')
@@ -53,7 +53,7 @@ describe('preview E2E (production mode)', async () => {
 
       expect(eventFired).toBeTruthy()
       await page.close()
-    }, 30000)
+    })
 
     it('renders Vue components with actual HTML content', async () => {
       const page = await openPreviewPage('/preview-test-loader.html')
@@ -90,7 +90,7 @@ describe('preview E2E (production mode)', async () => {
       expect(componentContent.hasButtonContent).toBe(true)
       expect(componentContent.hasLayoutWithSlots).toBe(true)
       await page.close()
-    }, 30000)
+    })
   })
 
   // Manual setup tests are not included here as they only work in dev mode

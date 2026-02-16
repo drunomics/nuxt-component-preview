@@ -61,28 +61,21 @@ For cross-origin embedding, configure CORS in your Nuxt app:
 
 ```ts
 export default defineNuxtConfig({
-  // Development: Vite server CORS
-  vite: {
-    server: {
-      cors: {
-        origin: ['https://your-backend.com'],
-      },
+  // Development: Nuxt dev server CORS (required since Nuxt v3.15.3 security fix)
+  devServer: {
+    cors: {
+      origin: ['https://your-backend.com'],
     },
   },
 
-  // Production: Nitro route rules
+  // Production: Nitro route rules for CORS headers
   nitro: {
     routeRules: {
-      '/nuxt-component-preview/*.js': {
+      '/**': {
         cors: true,
         headers: {
           'Access-Control-Allow-Origin': 'https://your-backend.com',
-        },
-      },
-      '/_nuxt/**': {
-        cors: true,
-        headers: {
-          'Access-Control-Allow-Origin': 'https://your-backend.com',
+          'Access-Control-Allow-Methods': 'GET',
         },
       },
     },

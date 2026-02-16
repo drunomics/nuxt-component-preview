@@ -5,30 +5,6 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
-  nitro: {
-    routeRules: {
-      // Allow CORS from anywhere for playground/development.
-      '/nuxt-component-preview/**': {
-        cors: true,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-        },
-      },
-      '/_nuxt/**': {
-        cors: true,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-        },
-      },
-    },
-  },
-  vite: {
-    server: {
-      cors: true,
-    },
-  },
   componentPreview: {
     componentIndex: {
       exclude: {
@@ -37,7 +13,10 @@ export default defineNuxtConfig({
       },
     },
   },
+  // nuxtjs-drupal-ce handles CORS configuration for cross-origin component
+  // preview embedding. Set drupalBaseUrl to the Drupal backend URL that will
+  // embed the previews - the module automatically allows this origin for CORS.
   drupalCe: {
-    drupalBaseUrl: 'http://example.com',
+    drupalBaseUrl: 'https://your-backend.com',
   },
 })
