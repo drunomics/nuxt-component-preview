@@ -23,6 +23,6 @@ export default defineNuxtConfig({
   // preview embedding. Set drupalBaseUrl to the Drupal backend URL that will
   // embed the previews - the module automatically allows this origin for CORS.
   drupalCe: {
-    drupalBaseUrl: 'http://ldp-project.localdev.space',
+    drupalBaseUrl: 'http://example.com',
   },
 })

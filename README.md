@@ -61,18 +61,19 @@ For cross-origin embedding, configure CORS in your Nuxt app:
 
 ```ts
 export default defineNuxtConfig({
-  // Development: Nuxt dev server CORS (required since Nuxt v3.15.3 security fix)
-  devServer: {
-    cors: {
-      origin: ['https://your-backend.com'],
+  // Development: Vite dev server CORS
+  vite: {
+    server: {
+      cors: {
+        origin: ['https://your-backend.com'],
+      },
     },
   },
 
-  // Production: Nitro route rules for CORS headers
+  // SSR production: Nitro route rules for CORS headers
   nitro: {
     routeRules: {
       '/**': {
-        cors: true,
         headers: {
           'Access-Control-Allow-Origin': 'https://your-backend.com',
           'Access-Control-Allow-Methods': 'GET',
@@ -82,6 +83,10 @@ export default defineNuxtConfig({
   },
 })
 ```
+
+> **Note:** When using [nuxtjs-drupal-ce](https://github.com/drunomics/nuxtjs-drupal-ce), CORS is configured automatically based on `drupalCe.drupalBaseUrl` — no manual setup needed.
+
+> **SSG:** For static builds, Nitro route rules have no effect since there is no server. CORS headers must be configured on the web server or CDN serving the static files.
 
 ### Reverse Proxy / CDN Configuration
 
