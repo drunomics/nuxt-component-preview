@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { CanvasImage } from '../../types/canvas'
-
 withDefaults(defineProps<{
   /**
    * List of tags
