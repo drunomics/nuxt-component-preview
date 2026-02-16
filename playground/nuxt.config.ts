@@ -2,6 +2,12 @@ export default defineNuxtConfig({
   modules: ['../src/module', 'nuxtjs-drupal-ce'],
   devtools: { enabled: true },
   sourcemap: true,
+  // Required for SSG (nuxt generate) so the prerendered app-loader.js
+  // contains the correct absolute URL for loading _nuxt/ assets.
+  // Uncomment and set to the URL where the static output will be served.
+  // app: {
+  //   cdnURL: 'http://localhost:3000',
+  // },
   experimental: {
     appManifest: false,
   },

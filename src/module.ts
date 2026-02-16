@@ -195,10 +195,12 @@ export default defineNuxtModule<ModuleOptions>({
         }
       })
 
-      // Serve via Nitro route (both dev and production)
+      // The server handler serves the component index in dev mode (live
+      // regeneration) and is invoked during build for prerendering. In
+      // production, the prerendered static file is served directly by Nitro.
       nuxt.hook('nitro:config', (nitroConfig) => {
         nitroConfig.virtual = nitroConfig.virtual || {}
-        // Production: serve pre-generated index
+        // Build-time data used by the handler during prerendering.
         nitroConfig.virtual['#nuxt-component-preview-index-data'] = () => {
           return `export default ${JSON.stringify(componentIndexData)}`
         }
@@ -206,7 +208,8 @@ export default defineNuxtModule<ModuleOptions>({
         nitroConfig.virtual['#nuxt-component-preview-dev-config-path'] = () => {
           return `export default ${JSON.stringify(devConfigPath)}`
         }
-        // Prerender component-index.json for static builds (nuxt generate)
+        // Prerender component-index.json so it is served as a static file
+        // in production (both SSR and SSG builds).
         nitroConfig.prerender = nitroConfig.prerender || {}
         nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
         nitroConfig.prerender.routes.push('/nuxt-component-preview/component-index.json')
