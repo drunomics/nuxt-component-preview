@@ -140,16 +140,12 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Generate component index if enabled
     if (options.componentIndex!.enabled) {
-      let componentIndexData: import('./runtime/server/utils/generateComponentIndex').ComponentIndexData | null = null
-
-      // Shared config for component index preparation
-      let indexConfig: import('./runtime/server/utils/prepareComponentIndex').PrepareComponentIndexConfig | null = null
-
-      // In dev mode, write config to a file so the server handler can read it
-      // without depending on virtual module re-evaluation (Nitro rebuilds).
-      const devConfigPath = nuxt.options.dev
-        ? resolve(nuxt.options.buildDir, 'nuxt-component-preview-config.json')
-        : null
+      // Write config to a file so the server handler can read it and
+      // generate the component index. In dev mode, the file is updated on
+      // each templatesGenerated hook so new/removed components are picked
+      // up immediately. In production, it is written once and used during
+      // prerendering.
+      const configPath = resolve(nuxt.options.buildDir, 'nuxt-component-preview-config.json')
 
       // Build index options once from module config
       const indexOptions = {
@@ -175,38 +171,22 @@ export default defineNuxtModule<ModuleOptions>({
             global: c.global,
           }))
 
-        // Build shared config
-        indexConfig = {
+        // Write config to file for the server handler to generate from.
+        fs.writeFileSync(configPath, JSON.stringify({
           components,
           tsconfigPath: resolve(nuxt.options.rootDir, 'tsconfig.json'),
           options: indexOptions,
-        }
-
-        if (nuxt.options.dev) {
-          // Write config to file for the server handler to read on each request.
-          // This ensures new/removed components are picked up immediately without
-          // requiring a Nitro rebuild.
-          fs.writeFileSync(devConfigPath!, JSON.stringify(indexConfig))
-        }
-        else {
-          // Generate index at build time (for production)
-          const { prepareComponentIndex } = await import('./runtime/server/utils/prepareComponentIndex')
-          componentIndexData = prepareComponentIndex(indexConfig)
-        }
+        }))
       })
 
-      // The server handler serves the component index in dev mode (live
-      // regeneration) and is invoked during build for prerendering. In
-      // production, the prerendered static file is served directly by Nitro.
+      // The server handler reads the config file and generates the component
+      // index. In dev mode this runs on each request (live regeneration).
+      // In production, it is only invoked once during prerendering — the
+      // prerendered static file is then served directly by Nitro.
       nuxt.hook('nitro:config', (nitroConfig) => {
         nitroConfig.virtual = nitroConfig.virtual || {}
-        // Build-time data used by the handler during prerendering.
-        nitroConfig.virtual['#nuxt-component-preview-index-data'] = () => {
-          return `export default ${JSON.stringify(componentIndexData)}`
-        }
-        // Dev mode: provide path to config file (constant, set once)
-        nitroConfig.virtual['#nuxt-component-preview-dev-config-path'] = () => {
-          return `export default ${JSON.stringify(devConfigPath)}`
+        nitroConfig.virtual['#nuxt-component-preview-config-path'] = () => {
+          return `export default ${JSON.stringify(configPath)}`
         }
         // Prerender component-index.json so it is served as a static file
         // in production (both SSR and SSG builds).
