@@ -31,23 +31,26 @@ describe('nuxt generate (static build)', () => {
     expect(existsSync(appLoaderPath)).toBe(true)
   })
 
-  it('app-loader.js uses configured cdnURL', () => {
+  it('app-loader.js uses configured cdnURL as default', () => {
     const content = readFileSync(appLoaderPath, 'utf-8')
 
-    // Check cdnURL is set correctly
-    expect(content).toContain(`cdnURL: "${testCdnUrl}"`)
+    // The build-time cdnURL should be embedded as the default value.
+    expect(content).toContain(`? attrCdnURL : "${testCdnUrl}"`)
 
-    // Check entry path uses cdnURL
-    expect(content).toMatch(new RegExp(`entry\\.src = '${testCdnUrl}/_nuxt/[^']+\\.js'`))
+    // The default entry path concatenates cdnURL + entryPath.
+    expect(content).toContain(`"${testCdnUrl}"`)
+    expect(content).toMatch(/\+ "\/_nuxt\/[^"]+\.js"/)
   })
 
   it('app-loader.js contains valid entry path', () => {
     const content = readFileSync(appLoaderPath, 'utf-8')
 
-    // Extract entry path and verify it's a valid JS file reference
-    const entryMatch = content.match(/entry\.src = '([^']+)'/)
-    expect(entryMatch).toBeTruthy()
-    expect(entryMatch![1]).toMatch(/\.js$/)
+    // Entry src is set via effectiveEntryPath variable.
+    expect(content).toContain('entry.src = effectiveEntryPath')
+
+    // The default entry path should reference a .js file.
+    const entryDefault = content.match(/\+ "([^"]+\.js)"/)
+    expect(entryDefault).toBeTruthy()
   })
 
   it('generates valid JSON with components', () => {

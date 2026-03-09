@@ -126,6 +126,34 @@ The app-loader script automatically sets up everything needed for component prev
   <title>Component Preview</title>
   <script src="http://localhost:3000/nuxt-component-preview/app-loader.js"></script>
 </head>
+```
+
+#### Overriding Asset Paths via Data Attributes
+
+When the app-loader is served from a different path than the Nuxt build (e.g. from a [Lupus CSR](https://www.drupal.org/project/lupus_csr) theme), use `data-cdn-url` and `data-build-assets-dir` to override asset resolution at runtime:
+
+```html
+<script
+  src="/themes/my_theme/dist/nuxt-component-preview/app-loader.js"
+  data-cdn-url=""
+  data-build-assets-dir="/themes/my_theme/dist/_nuxt/"
+></script>
+```
+
+- **`data-cdn-url`**: Overrides the base origin for loading assets. Set to `""` for same-origin.
+- **`data-build-assets-dir`**: Overrides the path to compiled Nuxt assets.
+
+When omitted, build-time defaults are used.
+
+#### Full Example
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Component Preview</title>
+  <script src="http://localhost:3000/nuxt-component-preview/app-loader.js"></script>
+</head>
 <body>
   <h1>Component Preview Page</h1>
 
