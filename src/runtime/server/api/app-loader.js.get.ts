@@ -22,8 +22,6 @@ export default defineEventHandler((event) => {
       : `${requestURL.protocol}//${requestURL.host}`
   }
 
-  const entryPathValue = cdnURL + entryPath
-
   // Serialize public config (with componentPreview enabled)
   // Only include what's needed for the client
   const publicConfig = {

@@ -132,7 +132,6 @@ describe('nuxt-component-preview module', async () => {
     }
 
     // Run the script in a sandboxed context.
-    const nuxtConfig = { config: { public: {}, app: {} } } as any
     const fn = new Function(
       'document',
       'window',
