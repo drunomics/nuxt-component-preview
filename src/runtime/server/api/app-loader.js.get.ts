@@ -32,8 +32,27 @@ export default defineEventHandler((event) => {
   }
   const publicConfigStr = JSON.stringify(publicConfig)
 
-  // Generate the script with prepared values
+  // Generate the script with prepared values.
+  //
+  // The script supports data-attribute overrides on the <script> element:
+  //   data-cdn-url     - Override cdnURL (use "" for same-origin / lupus_csr)
+  //   data-build-assets-dir - Override buildAssetsDir (e.g. /themes/.../dist/_nuxt/)
+  // When set, these take precedence over build-time values. This allows
+  // embedders (e.g. Drupal's custom_elements nuxt-preview.js) to configure
+  // asset paths dynamically at runtime.
   const script = `(function() {
+    // Allow data-attribute overrides on the script element.
+    var scriptEl = document.currentScript;
+    var attrCdnURL = scriptEl && scriptEl.hasAttribute('data-cdn-url')
+      ? scriptEl.getAttribute('data-cdn-url') : null;
+    var attrBuildAssetsDir = scriptEl && scriptEl.hasAttribute('data-build-assets-dir')
+      ? scriptEl.getAttribute('data-build-assets-dir') : null;
+
+    var effectiveCdnURL = attrCdnURL !== null ? attrCdnURL : "${cdnURL}";
+    var effectiveBuildAssetsDir = attrBuildAssetsDir !== null
+      ? attrBuildAssetsDir : "${buildAssetsDir}";
+    var effectiveEntryPath = (attrCdnURL !== null ? attrCdnURL : "${cdnURL}") + "${entryPath}";
+
     // Set Nuxt config IMMEDIATELY when script runs, before DOM ready
     // This ensures app.vue can read the config when it evaluates
     window.__NUXT__ = {
@@ -42,8 +61,8 @@ export default defineEventHandler((event) => {
         app: {
           baseURL: "${baseURL}",
           buildId: "${buildId}",
-          buildAssetsDir: "${buildAssetsDir}",
-          cdnURL: "${cdnURL}"
+          buildAssetsDir: effectiveBuildAssetsDir,
+          cdnURL: effectiveCdnURL
         }
       }
     };
@@ -78,13 +97,13 @@ export default defineEventHandler((event) => {
       // Add import map (must be in head before module scripts)
       const importMap = document.createElement('script');
       importMap.type = 'importmap';
-      importMap.textContent = '{"imports":{"#entry":"${entryPathValue}"}}';
+      importMap.textContent = '{"imports":{"#entry":"' + effectiveEntryPath + '"}}';
       document.head.appendChild(importMap);
 
       // Load entry module
       const entry = document.createElement('script');
       entry.type = 'module';
-      entry.src = '${entryPathValue}';
+      entry.src = effectiveEntryPath;
       document.head.appendChild(entry);
     }
 

@@ -30,34 +30,21 @@ describe('nuxt-component-preview module', async () => {
     expect(script).toContain('componentPreview')
   })
 
-  it('app-loader.js always sets cdnURL', async () => {
+  it('app-loader.js sets cdnURL as default', async () => {
     const script = await $fetch('/nuxt-component-preview/app-loader.js', {
       responseType: 'text',
     })
 
-    // Check that cdnURL is set in the config
+    // Check that cdnURL is set in the config via effectiveCdnURL
     expect(script).toContain('window.__NUXT__')
-    expect(script).toContain('cdnURL:')
+    expect(script).toContain('cdnURL: effectiveCdnURL')
 
-    // Verify the cdnURL is properly set in the generated config
-    // The script should include cdnURL in the app config section
-    const configMatch = script.match(/cdnURL:\s*"([^"]*)"/)
-    expect(configMatch).toBeTruthy()
-
-    // The cdnURL should be set to a valid URL (from request origin)
-    if (configMatch && configMatch[1]) {
-      const cdnURL = configMatch[1]
-      expect(cdnURL).toBeTruthy()
-      // Should be a valid URL with protocol and host
-      expect(cdnURL).toMatch(/^https?:\/\/[^/]+/)
-    }
-
-    // Check that entry module src uses the same URL
-    const entryMatch = script.match(/entry\.src\s*=\s*'([^']+)'/)
-    expect(entryMatch).toBeTruthy()
-    if (entryMatch && configMatch) {
-      // Entry src should start with cdnURL
-      expect(entryMatch[1]).toContain(configMatch[1])
+    // The build-time cdnURL should be a valid URL (from request origin),
+    // embedded as the default value in the script.
+    const defaultCdnMatch = script.match(/var effectiveCdnURL = attrCdnURL !== null \? attrCdnURL : "([^"]*)"/)
+    expect(defaultCdnMatch).toBeTruthy()
+    if (defaultCdnMatch && defaultCdnMatch[1]) {
+      expect(defaultCdnMatch[1]).toMatch(/^https?:\/\/[^/]+/)
     }
   })
 
@@ -88,5 +75,124 @@ describe('nuxt-component-preview module', async () => {
       }
     }
     expect(isValidJS()).toBe(true)
+  })
+
+  it('app-loader.js supports data-attribute overrides', async () => {
+    const script = await $fetch('/nuxt-component-preview/app-loader.js', {
+      responseType: 'text',
+    })
+
+    // Verify the script reads data-cdn-url and data-build-assets-dir
+    expect(script).toContain('data-cdn-url')
+    expect(script).toContain('data-build-assets-dir')
+    expect(script).toContain('document.currentScript')
+  })
+
+  it('app-loader.js uses data-attribute values when provided', async () => {
+    const script = await $fetch('/nuxt-component-preview/app-loader.js', {
+      responseType: 'text',
+    })
+
+    // Simulate data-attribute overrides for lupus_csr theme scenario:
+    // empty cdnURL + theme-prefixed buildAssetsDir.
+    const testCdnUrl = ''
+    const testBuildAssetsDir = '/themes/someprefix/dist/_nuxt/'
+
+    // Execute the script in a mock DOM context with data attributes set.
+    const mockDocument = {
+      currentScript: {
+        hasAttribute: (name: string) => {
+          return name === 'data-cdn-url' || name === 'data-build-assets-dir'
+        },
+        getAttribute: (name: string) => {
+          if (name === 'data-cdn-url') return testCdnUrl
+          if (name === 'data-build-assets-dir') return testBuildAssetsDir
+          return null
+        },
+      },
+      readyState: 'complete',
+      getElementById: () => null,
+      createElement: () => ({
+        style: {},
+        setAttribute: () => {},
+        set type(_v: string) {},
+        set textContent(_v: string) {},
+        set src(_v: string) {},
+        set id(_v: string) {},
+      }),
+      body: {
+        insertBefore: () => {},
+        appendChild: () => {},
+        firstChild: null,
+      },
+      head: {
+        appendChild: () => {},
+      },
+      addEventListener: () => {},
+    }
+
+    // Run the script in a sandboxed context.
+    const nuxtConfig = { config: { public: {}, app: {} } } as any
+    const fn = new Function(
+      'document',
+      'window',
+      'console',
+      script.replace('window.__NUXT__', 'window.__NUXT_TEST__'),
+    )
+    const mockWindow = { __NUXT_TEST__: null } as any
+    fn(mockDocument, mockWindow, { log: () => {} })
+
+    // Verify the overridden values are used.
+    expect(mockWindow.__NUXT_TEST__).toBeTruthy()
+    expect(mockWindow.__NUXT_TEST__.config.app.cdnURL).toBe(testCdnUrl)
+    expect(mockWindow.__NUXT_TEST__.config.app.buildAssetsDir).toBe(testBuildAssetsDir)
+  })
+
+  it('app-loader.js uses build-time defaults when no data attributes', async () => {
+    const script = await $fetch('/nuxt-component-preview/app-loader.js', {
+      responseType: 'text',
+    })
+
+    // Mock document WITHOUT data attributes.
+    const mockDocument = {
+      currentScript: {
+        hasAttribute: () => false,
+        getAttribute: () => null,
+      },
+      readyState: 'complete',
+      getElementById: () => null,
+      createElement: () => ({
+        style: {},
+        setAttribute: () => {},
+        set type(_v: string) {},
+        set textContent(_v: string) {},
+        set src(_v: string) {},
+        set id(_v: string) {},
+      }),
+      body: {
+        insertBefore: () => {},
+        appendChild: () => {},
+        firstChild: null,
+      },
+      head: {
+        appendChild: () => {},
+      },
+      addEventListener: () => {},
+    }
+
+    const mockWindow = { __NUXT_TEST__: null } as any
+    const fn = new Function(
+      'document',
+      'window',
+      'console',
+      script.replace('window.__NUXT__', 'window.__NUXT_TEST__'),
+    )
+    fn(mockDocument, mockWindow, { log: () => {} })
+
+    // Should use build-time cdnURL (a valid URL from request origin).
+    expect(mockWindow.__NUXT_TEST__).toBeTruthy()
+    expect(mockWindow.__NUXT_TEST__.config.app.cdnURL).toMatch(/^https?:\/\//)
+    // Default buildAssetsDir should be /_nuxt/.
+    expect(mockWindow.__NUXT_TEST__.config.app.buildAssetsDir).toBe('/_nuxt/')
   })
 })
