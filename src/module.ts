@@ -3,10 +3,15 @@ import { resolve } from 'node:path'
 import { defineNuxtModule, addPlugin, createResolver, addComponent, addServerHandler, addImports } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
+export interface CategoryDirectoryOptions {
+  directory: true
+  fallback?: string // Falls back to root folder name if not specified
+}
+
 export interface ModuleOptions {
   componentIndex?: {
     enabled?: boolean
-    category?: string
+    category?: string | CategoryDirectoryOptions
     status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
     includePackages?: boolean | string[] // false = exclude all (default), array = include only these
     exclude?: {
