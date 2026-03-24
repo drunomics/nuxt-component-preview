@@ -110,6 +110,34 @@ describe('Component Index Generation', () => {
       // Title is extracted from JSDoc first line
       expect(component.props.properties.label.title).toBe('Button label text')
     }, 10000)
+
+    it('preserves enum value ordering from TypeScript union types', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [{
+        pascalName: 'TestButton',
+        filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+        global: true,
+      }]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Test', status: 'stable' },
+      )
+
+      const component = result.components[0]
+
+      // size is defined as 'small' | 'medium' | 'large' with default 'medium'
+      // The enum order must match the TypeScript union type, not be reordered
+      // by the default value.
+      expect(component.props.properties.size.enum).toEqual(['small', 'medium', 'large'])
+
+      // variant is defined as 'primary' | 'secondary' | 'danger' | 'success'
+      // with default 'primary' - order must be preserved.
+      expect(component.props.properties.variant.enum).toEqual(['primary', 'secondary', 'danger', 'success'])
+    }, 10000)
   })
 
   describe('Step 2: Default Category/Status + Validation', () => {
