@@ -970,8 +970,11 @@ export function generateComponentIndex(
 
           if (prop.default !== undefined) propDef.default = parseDefaultValue(prop.default)
 
-          // Extract enum from TypeScript union types
-          const enumValues = extractEnumFromType(prop.type)
+          // Extract enum from TypeScript union types.
+          // Use declaration source order when available, as vue-component-meta
+          // may reorder union types (e.g., placing the default value first).
+          const enumValues = extractEnumFromDeclaration(prop, component.filePath)
+            ?? extractEnumFromType(prop.type)
           if (enumValues.length > 0) {
             propDef.enum = enumValues
             const metaEnum = extractEnumLabels(prop, enumValues)
@@ -1048,6 +1051,40 @@ function extractEnumFromType(type: string): string[] {
   }
 
   return []
+}
+
+/**
+ * Extract enum values in their original source order using vue-component-meta's
+ * declaration range.
+ *
+ * vue-component-meta may reorder union types (e.g., placing the default value
+ * first). This function uses getDeclarations() to read the original prop
+ * declaration from the source file and extract values in the authored order.
+ *
+ * @returns The enum values in source order, or null if extraction fails
+ */
+function extractEnumFromDeclaration(
+  prop: { getDeclarations?: () => Array<{ file: string, range: number[] }> },
+  filePath: string,
+): string[] | null {
+  try {
+    const decls = prop.getDeclarations?.()
+    if (!decls?.[0]?.range) return null
+
+    const source = readFileSync(decls[0].file || filePath, 'utf-8')
+    const text = source.substring(decls[0].range[0], decls[0].range[1])
+
+    // Extract quoted string values from the union type declaration
+    const values = text.match(/['"]([^'"]+)['"]/g)
+    if (values && values.length > 1) {
+      return values.map(v => v.replace(/['"]/g, ''))
+    }
+
+    return null
+  }
+  catch {
+    return null
+  }
 }
 
 function mapVueTypeToJsonSchema(vueType: string): string {
