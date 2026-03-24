@@ -7,9 +7,12 @@ import configPath from '#nuxt-component-preview-config-path'
  * Serves the component index JSON.
  *
  * Reads the config file written by the module's app:templatesGenerated hook
- * and generates the component index via vue-component-meta. In dev mode this
- * runs on each request so changes are reflected immediately. In production,
- * this handler is only invoked once during prerendering.
+ * and generates the component index via vue-component-meta.
+ *
+ * This handler is only registered for dev mode (live reload) and SSG
+ * (prerendering). For SSR production builds, the component-index is
+ * generated at build time via a Nuxt hook instead, keeping
+ * vue-component-meta and TypeScript out of the production server bundle.
  */
 export default defineEventHandler(async (event) => {
   const config = JSON.parse(readFileSync(configPath, 'utf-8'))

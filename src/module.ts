@@ -184,26 +184,44 @@ export default defineNuxtModule<ModuleOptions>({
         }))
       })
 
-      // The server handler reads the config file and generates the component
-      // index. In dev mode this runs on each request (live regeneration).
-      // In production, it is only invoked once during prerendering — the
-      // prerendered static file is then served directly by Nitro.
       nuxt.hook('nitro:config', (nitroConfig) => {
         nitroConfig.virtual = nitroConfig.virtual || {}
         nitroConfig.virtual['#nuxt-component-preview-config-path'] = () => {
           return `export default ${JSON.stringify(configPath)}`
         }
-        // Prerender component-index.json so it is served as a static file
-        // in production (both SSR and SSG builds).
-        nitroConfig.prerender = nitroConfig.prerender || {}
-        nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
-        nitroConfig.prerender.routes.push('/nuxt-component-preview/component-index.json')
       })
 
-      addServerHandler({
-        route: '/nuxt-component-preview/component-index.json',
-        handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/component-index.json.get'),
-      })
+      if (nuxt.options.dev || nuxt.options._generate) {
+        // Dev: handler for live generation on each request.
+        // SSG (nuxt generate): handler needed for prerendering.
+        addServerHandler({
+          route: '/nuxt-component-preview/component-index.json',
+          handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/component-index.json.get'),
+        })
+
+        if (nuxt.options._generate) {
+          nuxt.hook('nitro:config', (nitroConfig) => {
+            nitroConfig.prerender = nitroConfig.prerender || {}
+            nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
+            nitroConfig.prerender.routes.push('/nuxt-component-preview/component-index.json')
+          })
+        }
+      }
+      else {
+        // SSR production: generate the component-index at build time and
+        // write it as a static file. No handler registered, so
+        // vue-component-meta and TypeScript (~9MB) stay out of the bundle.
+        nuxt.hook('nitro:build:public-assets', async (nitro) => {
+          const { prepareComponentIndex } = await import('./runtime/server/utils/prepareComponentIndex')
+          const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+          const indexData = prepareComponentIndex(config)
+          if (indexData) {
+            const outputDir = resolve(nitro.options.output.publicDir, 'nuxt-component-preview')
+            fs.mkdirSync(outputDir, { recursive: true })
+            fs.writeFileSync(resolve(outputDir, 'component-index.json'), JSON.stringify(indexData))
+          }
+        })
+      }
     }
   },
 })
