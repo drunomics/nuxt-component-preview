@@ -12,8 +12,13 @@ export function extractPackageName(filePath: string): string | null {
   return match ? match[1].replace(/\\/g, '/') : null // Normalize to forward slashes
 }
 
+export interface CategoryDirectoryOptions {
+  directory: true
+  fallback?: string
+}
+
 export interface ComponentIndexOptions {
-  category: string
+  category: string | CategoryDirectoryOptions
   status: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
   includePackages?: boolean | string[] // false = exclude all packages, array = include only these
   excludeDirectories?: string[]
@@ -22,6 +27,44 @@ export interface ComponentIndexOptions {
     category?: string
     status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
   }>
+}
+
+/**
+ * Resolve category for a component based on its shortPath and the category option.
+ *
+ * When category is a string, it's used as-is.
+ * When category is { directory: true }, the parent folder name is used.
+ * Falls back to explicit fallback, then to root folder name.
+ *
+ * @example
+ * // shortPath: "components/Canvas/Base/base-button.vue"
+ * // → parent folder: "Base"
+ * // → root folder: "Canvas"
+ */
+export function resolveCategory(category: string | CategoryDirectoryOptions, shortPath: string): string {
+  if (typeof category === 'string') {
+    return category
+  }
+
+  const parts = shortPath.split('/')
+  // parts: ["components", "Canvas", "Base", "base-button.vue"]
+  // We need at least: root/subfolder/file.vue (3+ parts) to have a subfolder
+  if (parts.length >= 4) {
+    // Use the immediate parent folder (second to last)
+    return parts[parts.length - 2]
+  }
+
+  // No subfolder — use explicit fallback or root folder name
+  if (category.fallback) {
+    return category.fallback
+  }
+
+  // Root folder: second element (first is "components")
+  if (parts.length >= 3) {
+    return parts[parts.length - 2]
+  }
+
+  return 'Components'
 }
 
 interface PropDefinition {
@@ -855,7 +898,7 @@ export function generateComponentIndex(
       return {
         id: component.pascalName,
         name: generateTitle(component.pascalName),
-        category: override?.category || options.category,
+        category: override?.category || resolveCategory(options.category, component.shortPath),
         status: override?.status || options.status,
         props: {
           type: 'object',

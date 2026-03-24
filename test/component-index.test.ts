@@ -305,4 +305,101 @@ describe('Component Index Generation', () => {
       expect(result.components[0].category).toBe('Test')
     })
   })
+
+  describe('resolveCategory', () => {
+    it('returns static string as-is', async () => {
+      const { resolveCategory } = await import('../src/runtime/server/utils/generateComponentIndex')
+      expect(resolveCategory('My Category', 'components/global/TestButton.vue')).toBe('My Category')
+    })
+
+    it('extracts category from parent folder', async () => {
+      const { resolveCategory } = await import('../src/runtime/server/utils/generateComponentIndex')
+      expect(resolveCategory({ directory: true }, 'components/Canvas/Base/base-button.vue')).toBe('Base')
+      expect(resolveCategory({ directory: true }, 'components/Canvas/Layout/layout-section.vue')).toBe('Layout')
+      expect(resolveCategory({ directory: true }, 'components/Canvas/Hero/hero-cta.vue')).toBe('Hero')
+    })
+
+    it('falls back to root folder when no subfolder', async () => {
+      const { resolveCategory } = await import('../src/runtime/server/utils/generateComponentIndex')
+      expect(resolveCategory({ directory: true }, 'components/Canvas/some-util.vue')).toBe('Canvas')
+      expect(resolveCategory({ directory: true }, 'components/global/MyButton.vue')).toBe('global')
+    })
+
+    it('uses explicit fallback over root folder', async () => {
+      const { resolveCategory } = await import('../src/runtime/server/utils/generateComponentIndex')
+      expect(resolveCategory({ directory: true, fallback: 'Misc' }, 'components/Canvas/some-util.vue')).toBe('Misc')
+    })
+
+    it('falls back to Components for flat paths', async () => {
+      const { resolveCategory } = await import('../src/runtime/server/utils/generateComponentIndex')
+      expect(resolveCategory({ directory: true }, 'MyButton.vue')).toBe('Components')
+    })
+  })
+
+  describe('category: { directory: true } integration', () => {
+    it('assigns category from directory in generateComponentIndex', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'TestButton',
+          kebabName: 'test-button',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'components/global/TestButton.vue',
+          global: true,
+        },
+        {
+          pascalName: 'SubfolderExample',
+          kebabName: 'subfolder-example',
+          filePath: resolve(process.cwd(), 'playground/components/global/Subfolder/Example.vue'),
+          shortPath: 'components/global/Subfolder/Example.vue',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: { directory: true }, status: 'stable' },
+      )
+
+      // TestButton is in components/global/ (no subfolder) → falls back to "global"
+      const button = result.components.find(c => c.id === 'TestButton')
+      expect(button?.category).toBe('global')
+
+      // SubfolderExample is in components/global/Subfolder/ → "Subfolder"
+      const example = result.components.find(c => c.id === 'SubfolderExample')
+      expect(example?.category).toBe('Subfolder')
+    }, 10000)
+
+    it('overrides still take priority over directory category', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'TestButton',
+          kebabName: 'test-button',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'components/global/TestButton.vue',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        {
+          category: { directory: true },
+          status: 'stable',
+          overrides: {
+            TestButton: { category: 'Custom Override' },
+          },
+        },
+      )
+
+      expect(result.components[0].category).toBe('Custom Override')
+    }, 10000)
+  })
 })
