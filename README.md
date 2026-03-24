@@ -10,11 +10,10 @@
 
 ## Features
 
-- 🎭 **Component Preview Mode**: Conditionally render components for previewing in isolation
+- 🎭 **Component Preview Mode**: Render components in isolation via Vue Teleport — embed previews in iframes or external pages
 - 🚀 **Production Safe**: Inactive by default, only activates when explicitly enabled
-- 🎯 **Target Rendering**: Render components to specific DOM elements using CSS selectors
-- 📋 **Component Index**: Auto-generates JSON metadata for global components (Drupal Canvas compatible)
-- 🧪 **Testing Ready**: Comprehensive test coverage and playground setup
+- 📋 **Component Index**: Auto-generates JSON metadata for global components from TypeScript props and JSDoc annotations
+- 🔌 **Framework Agnostic**: Works with any backend. Built-in support for [Drupal Canvas](https://www.drupal.org/project/canvas) via [canvas_extjs](https://www.drupal.org/project/canvas_extjs)
 
 ## Quick Setup
 
@@ -98,15 +97,11 @@ export NUXT_APP_CDN_URL=https://your-frontend-url.com
 
 ### Static Site Generation
 
-For static builds (`nuxt generate`), configuring [`app.cdnURL`](https://nuxt.com/docs/api/nuxt-config#cdnurl) is **required** for component previews to work.
+For static builds (`nuxt generate`), configuring [`app.cdnURL`](https://nuxt.com/docs/api/nuxt-config#cdnurl) is recommended when assets are served from a different domain than the embedding page.
 
-## Usage
+### Preview Rendering
 
-### Rendering Component Previews
-
-To render a component preview, use the `<ComponentPreviewArea />` component in your app.
-
-**Example `app.vue`**
+Add the `<ComponentPreviewArea />` to your `app.vue` so previews render when preview mode is active:
 
 ```vue
 <template>
@@ -115,159 +110,13 @@ To render a component preview, use the `<ComponentPreviewArea />` component in y
 </template>
 ```
 
-### Using the App Loader
-
-The app-loader script automatically sets up everything needed for component preview:
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Component Preview</title>
-  <script src="http://localhost:3000/nuxt-component-preview/app-loader.js"></script>
-</head>
-```
-
-#### Overriding Asset Paths via Data Attributes
-
-When the app-loader is served from a different path than the Nuxt build (e.g. from a [Lupus CSR](https://www.drupal.org/project/lupus_csr) theme), use `data-cdn-url` and `data-build-assets-dir` to override asset resolution at runtime:
-
-```html
-<script
-  src="/themes/my_theme/dist/nuxt-component-preview/app-loader.js"
-  data-cdn-url=""
-  data-build-assets-dir="/themes/my_theme/dist/_nuxt/"
-></script>
-```
-
-- **`data-cdn-url`**: Overrides the base origin for loading assets. Set to `""` for same-origin.
-- **`data-build-assets-dir`**: Overrides the path to compiled Nuxt assets.
-
-When omitted, build-time defaults are used.
-
-#### Full Example
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Component Preview</title>
-  <script src="http://localhost:3000/nuxt-component-preview/app-loader.js"></script>
-</head>
-<body>
-  <h1>Component Preview Page</h1>
-
-  <!-- Preview targets where components will render -->
-  <div id="preview-target-1"></div>
-  <div id="preview-target-2"></div>
-
-  <script>
-    // Helper function that handles both sync and async cases:
-    const onNuxtComponentPreviewReady = (callback) =>
-      window.__nuxtComponentPreviewApp
-        ? callback(window.__nuxtComponentPreviewApp)
-        : window.addEventListener('nuxt-component-preview:ready', event => callback(event.detail.nuxtApp), { once: true })
-
-    // Example usage of the helper:
-    onNuxtComponentPreviewReady((nuxtApp) => {
-      nuxtApp.$previewComponent('MyComponent', { prop: 'value' }, {}, '#preview-target-1');
-      nuxtApp.$previewComponent('OtherComponent', { data: 123 }, {}, '#preview-target-2');
-      nuxtApp.$previewComponent('LayoutComponent', {}, { slot_name: '<p>HTML content for slot</p>' }, '#preview-target-3');
-    });
-  </script>
-</body>
-</html>
-```
-
-See [playground/public/preview-test-loader.html](./playground/public/preview-test-loader.html) for a working example.
-
-### API Reference
-
-#### `nuxt-component-preview:ready` Event
-
-Fired when the Nuxt app is ready for component preview:
-
-```javascript
-window.addEventListener('nuxt-component-preview:ready', (event) => {
-  const { nuxtApp } = event.detail;
-  // Use nuxtApp.$previewComponent() here
-});
-```
-
-#### Helper Function Pattern
-
-For convenience, you can use this helper that works whether Nuxt is already ready or still loading:
-
-```javascript
-const onNuxtComponentPreviewReady = (callback) =>
-  window.__nuxtComponentPreviewApp
-    ? callback(window.__nuxtComponentPreviewApp)
-    : window.addEventListener('nuxt-component-preview:ready', event => callback(event.detail.nuxtApp), { once: true })
-
-// Usage
-onNuxtComponentPreviewReady((nuxtApp) => {
-  nuxtApp.$previewComponent('MyComponent', props, slots, '#target');
-});
-```
-
-#### `$previewComponent(componentName, props, slots, targetSelector)`
-
-Renders a Vue component to a target element. **Returns a Promise** that resolves when rendering completes.
-
-**Parameters (in order):**
-- **componentName** (string): Name of the registered Vue component
-- **props** (object, optional): Props to pass to the component (default: `{}`)
-- **slots** (object, optional): Slot content as HTML strings OR DOM elements, keyed by slot name (default: `{}`)
-- **targetSelector** (string | Element): CSS selector or DOM element where component will be rendered
-
-**Returns:** `Promise<{unmount: Function}>`
-
-**Basic Example (HTML strings):**
-```javascript
-// Simple component
-await nuxtApp.$previewComponent('TestCard', { title: 'My Card' }, {}, '#preview-target');
-
-// Component with slots
-await nuxtApp.$previewComponent(
-  'TwoColumnLayout',
-  { width: 33 },
-  {
-    'column-one': '<h3>First Column</h3><p>Content</p>',
-    'column-two': '<h3>Second Column</h3><p>Content</p>'
-  },
-  '#preview-target'
-);
-```
-
-**Pass pre-exsiting DOM elements to slots**
-
-Slots can also accept pre-existing DOM elements instead of HTML strings. This is useful when:
-- Slot content already exists in the DOM (e.g., server-rendered content)
-- Processing needs to happen on slot content before Nuxt renders
-
-```javascript
-// Extract existing DOM elements to use as slots
-const container = document.getElementById('preview-target');
-const slotElements = {};
-container.querySelectorAll('[data-slot]').forEach(el => {
-  slotElements[el.dataset.slot] = el; // Pass the element directly
-});
-
-await nuxtApp.$previewComponent(
-  'TwoColumnLayout',
-  { width: 50 },
-  slotElements, // DOM elements instead of strings
-  '#preview-target'
-);
-```
-See [playground/public/preview-test-dom-slots.html](./playground/public/preview-test-dom-slots.html) for a complete working example.
-
-**Nested Components:** Slots can contain additional preview containers. An example implementing rendering with an
-arbitrary depth can be found at the [example](./playground/public/preview-test-loader.html), which can be tested via `npm run dev`.
+For embedding previews in external pages (e.g., Drupal Canvas editor), see the [App Loader documentation](./docs/app-loader.md).
 
 ## Component Index
 
 This module automatically generates a component index JSON file containing metadata for all global components. This is particularly useful for integration with [Drupal Canvas External JS](https://www.drupal.org/project/canvas_extjs) module.
+
+Components must be **global** (registered with `global: true` in Nuxt — components in `components/global/` are automatically global). Use TypeScript with JSDoc annotations for best metadata extraction.
 
 ### Endpoint
 
@@ -285,8 +134,11 @@ export default defineNuxtConfig({
   componentPreview: {
     componentIndex: {
       enabled: true, // default: true
-      category: 'Nuxt Components', // default category
-      status: 'stable', // default: stable, experimental, deprecated, obsolete
+
+      // Category from directory structure (e.g., Canvas/Layout/ → "Layout")
+      category: { directory: true, fallback: 'Misc' },
+      // Or use a static string:
+      // category: 'Nuxt Components',
 
       // Exclude components (overwrites defaults)
       exclude: {
@@ -301,7 +153,7 @@ export default defineNuxtConfig({
 
       // Override metadata for specific components
       overrides: {
-        TestButton: { category: 'Forms', status: 'experimental' }
+        TestButton: { name: 'Custom Button', description: 'A button', category: 'Forms', status: 'experimental' }
       }
     }
   }
@@ -318,12 +170,36 @@ The `includePackages` option controls which npm package components are included 
 
 Only affects components registered globally by Nuxt from npm packages.
 
-### Requirements for Component Index
+### Component Metadata
 
-- Components must be **global** (registered with `global: true` in Nuxt)
-  - Components in `components/global/` directory are automatically global
-  - Nuxt modules can also register global components
-- Use TypeScript inline syntax with JSDoc for best metadata extraction:
+> **Note:** Only globally registered components appear in the component index. Components in `components/global/` are automatically global, or register with `global: true` in `nuxt.config.ts`.
+
+Define name, description, category, and status for a component via a JSDoc comment at the top of `<script setup>`:
+
+```vue
+<script setup lang="ts">
+/**
+ * Hero Billboard
+ * @description A full-width hero section with background image and overlay.
+ * @category Hero
+ * @status stable
+ */
+withDefaults(defineProps<{
+  // ... props
+}>(), {
+  // ... defaults
+})
+</script>
+```
+
+- **First line** → custom display name (optional, falls back to auto-generated from PascalCase)
+- **`@description`** → component description shown in the editor
+- **`@category`** → category override (alternative to directory-based or config-based)
+- **`@status`** → status override (`experimental`, `stable`, `deprecated`, `obsolete`)
+
+All fields are optional. Config overrides take priority over JSDoc.
+
+### Prop Metadata
 
 ```vue
 <script setup lang="ts">
@@ -347,7 +223,7 @@ withDefaults(defineProps<{
 </script>
 ```
 
-**Supported JSDoc tags:**
+**Supported prop JSDoc tags:**
 - `@title` - Explicit prop title override
 - `@example` - Adds to `examples` field
 - `@enumLabels` - Custom labels for `meta:enum` (full or partial)
@@ -376,11 +252,7 @@ For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special 
 
 See [TestHero.vue](./playground/components/global/TestHero.vue) and [TestBanner.vue](./playground/components/global/TestBanner.vue) for usage examples.
 
-### Canvas Schema References
-
-Use `@schemaRef` to reference Canvas JSON schema definitions, useful for `stream-wrapper-uri` and `stream-wrapper-image-uri` types. Use shorthand `prefix/name` notation (e.g., `canvas/stream-wrapper-uri` expands to `json-schema-definitions://canvas.module/stream-wrapper-uri`).
-
-See [TestStreamWrapper.vue](./playground/components/global/TestStreamWrapper.vue) for usage examples.
+**Schema references** via `@schemaRef` allow referencing Canvas JSON schema definitions, useful for `stream-wrapper-uri` and `stream-wrapper-image-uri` types. Use shorthand `prefix/name` notation (e.g., `canvas/stream-wrapper-uri` expands to `json-schema-definitions://canvas.module/stream-wrapper-uri`). See [TestStreamWrapper.vue](./playground/components/global/TestStreamWrapper.vue) for examples.
 
 ## Testing
 
