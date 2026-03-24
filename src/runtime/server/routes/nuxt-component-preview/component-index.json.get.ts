@@ -7,20 +7,14 @@ import configPath from '#nuxt-component-preview-config-path'
  * Serves the component index JSON.
  *
  * Reads the config file written by the module's app:templatesGenerated hook
- * and generates the component index via vue-component-meta. In dev mode and
- * during prerendering this runs the full generation. In production SSR, the
- * prerendered static file is served by nitro directly — this handler is only
- * a fallback that returns 404, avoiding bundling vue-component-meta and the
- * TypeScript compiler (~8.7 MB) into the production server.
+ * and generates the component index via vue-component-meta.
+ *
+ * This handler is only registered for dev mode (live reload) and SSG
+ * (prerendering). For SSR production builds, the component-index is
+ * generated at build time via a Nuxt hook instead, keeping
+ * vue-component-meta and TypeScript out of the production server bundle.
  */
 export default defineEventHandler(async (event) => {
-  if (!import.meta.dev && !import.meta.prerender) {
-    throw createError({
-      statusCode: 404,
-      message: 'Component index is only available as a prerendered static asset.',
-    })
-  }
-
   const config = JSON.parse(readFileSync(configPath, 'utf-8'))
   const { prepareComponentIndex } = await import('../../utils/prepareComponentIndex')
   const componentIndexData = prepareComponentIndex(config)
