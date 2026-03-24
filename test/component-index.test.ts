@@ -402,4 +402,132 @@ describe('Component Index Generation', () => {
       expect(result.components[0].category).toBe('Custom Override')
     }, 10000)
   })
+
+  describe('extractComponentMeta', () => {
+    it('extracts name, description, and category from script setup JSDoc', async () => {
+      const { extractComponentMeta } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const meta = extractComponentMeta(
+        resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
+      )
+
+      expect(meta.name).toBe('Test Hero')
+      expect(meta.description).toBe('A hero section with title, description, and background image.')
+      expect(meta.category).toBe('Hero')
+      expect(meta.status).toBe('experimental')
+    })
+
+    it('returns empty meta when no component JSDoc', async () => {
+      const { extractComponentMeta } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const meta = extractComponentMeta(
+        resolve(process.cwd(), 'playground/components/global/TestCard.vue'),
+      )
+
+      expect(meta.name).toBeUndefined()
+      expect(meta.description).toBeUndefined()
+      expect(meta.category).toBeUndefined()
+    })
+
+    it('prefers vue-component-meta description when available', async () => {
+      const { extractComponentMeta } = await import('../src/runtime/server/utils/generateComponentIndex')
+
+      const meta = extractComponentMeta(
+        '/nonexistent.vue',
+        'Custom Name\n\nA description from export default.',
+      )
+
+      expect(meta.name).toBe('Custom Name')
+      expect(meta.description).toBe('A description from export default.')
+    })
+  })
+
+  describe('component metadata integration', () => {
+    it('uses JSDoc name and description in component index', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'TestHero',
+          kebabName: 'test-hero',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
+          shortPath: 'components/global/TestHero.vue',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Default', status: 'stable' },
+      )
+
+      const hero = result.components[0]
+      expect(hero.name).toBe('Test Hero')
+      expect(hero.description).toBe('A hero section with title, description, and background image.')
+      expect(hero.category).toBe('Hero')
+      expect(hero.status).toBe('experimental')
+    }, 10000)
+
+    it('override takes priority over JSDoc', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'TestHero',
+          kebabName: 'test-hero',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestHero.vue'),
+          shortPath: 'components/global/TestHero.vue',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        {
+          category: 'Default',
+          status: 'stable',
+          overrides: {
+            TestHero: { name: 'Override Name', description: 'Override desc', category: 'Override Cat' },
+          },
+        },
+      )
+
+      const hero = result.components[0]
+      expect(hero.name).toBe('Override Name')
+      expect(hero.description).toBe('Override desc')
+      expect(hero.category).toBe('Override Cat')
+    }, 10000)
+
+    it('falls back to generated name when no JSDoc', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'TestCard',
+          kebabName: 'test-card',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestCard.vue'),
+          shortPath: 'components/global/TestCard.vue',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        { category: 'Default', status: 'stable' },
+      )
+
+      const card = result.components[0]
+      expect(card.name).toBe('Test Card')
+      expect(card.description).toBeUndefined()
+      expect(card.category).toBe('Default')
+    }, 10000)
+  })
 })
