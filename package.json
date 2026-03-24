@@ -35,7 +35,7 @@
     "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit"
   },
   "dependencies": {
-    "vue-component-meta": "^3.1.0"
+    "vue-component-meta": "^3.2.6"
   },
   "devDependencies": {
     "@nuxt/devtools": "^2.5.0",
