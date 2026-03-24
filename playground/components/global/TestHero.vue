@@ -15,6 +15,12 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Test Hero
+ * @description A hero section with title, description, and background image.
+ * @category Hero
+ * @status experimental
+ */
 withDefaults(defineProps<{
   /**
    * Hero title

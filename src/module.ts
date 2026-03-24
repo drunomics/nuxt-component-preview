@@ -19,6 +19,8 @@ export interface ModuleOptions {
       directories?: string[] // Path patterns only (not packages)
     }
     overrides?: Record<string, {
+      name?: string
+      description?: string
       category?: string
       status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
     }>

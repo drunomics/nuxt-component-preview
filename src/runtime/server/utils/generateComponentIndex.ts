@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, statSync, readFileSync } from 'node:fs'
 import type { Component } from '@nuxt/schema'
 import { createChecker } from 'vue-component-meta'
 import { minimatch } from 'minimatch'
@@ -24,6 +24,8 @@ export interface ComponentIndexOptions {
   excludeDirectories?: string[]
   excludeComponents?: string[]
   overrides?: Record<string, {
+    name?: string
+    description?: string
     category?: string
     status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
   }>
@@ -65,6 +67,106 @@ export function resolveCategory(category: string | CategoryDirectoryOptions, sho
   }
 
   return 'Components'
+}
+
+/**
+ * Component-level metadata extracted from JSDoc in <script setup>.
+ */
+export interface ComponentMeta {
+  name?: string
+  description?: string
+  category?: string
+  status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
+}
+
+/**
+ * Extract component-level metadata from the first JSDoc comment in <script setup>.
+ *
+ * The first JSDoc block before any code is treated as component metadata:
+ * - First line → custom display name (if short enough)
+ * - @description tag → component description
+ * - @category tag → category override
+ * - @status tag → status override (experimental, stable, deprecated, obsolete)
+ *
+ * Also checks vue-component-meta's description field (works with export default).
+ *
+ */
+export function extractComponentMeta(filePath: string, vcmDescription?: string): ComponentMeta {
+  const result: ComponentMeta = {}
+
+  // Use vue-component-meta description if available (from export default JSDoc)
+  if (vcmDescription) {
+    const lines = vcmDescription.split('\n')
+    const firstLine = lines[0].trim()
+    if (firstLine && firstLine.length <= 50) {
+      result.name = firstLine
+    }
+    if (lines.length > 1) {
+      result.description = lines.slice(1).join('\n').trim() || undefined
+    }
+    else {
+      result.description = firstLine
+    }
+    return result
+  }
+
+  // Parse <script setup> for component-level JSDoc
+  try {
+    const source = readFileSync(filePath, 'utf-8')
+    const scriptMatch = source.match(/<script\s[^>]*setup[^>]*>([\s\S]*?)<\/script>/)
+    if (!scriptMatch) return result
+
+    const script = scriptMatch[1]
+    // Find the first JSDoc comment that appears before any code
+    const jsdocMatch = script.match(/^\s*\/\*\*([\s\S]*?)\*\//)
+    if (!jsdocMatch) return result
+
+    const comment = jsdocMatch[1]
+    const lines = comment
+      .split('\n')
+      .map(line => line.replace(/^\s*\*\s?/, '').trim())
+      .filter(line => line.length > 0)
+
+    // Extract @description tag
+    const descTag = lines.find(l => l.startsWith('@description '))
+    if (descTag) {
+      result.description = descTag.replace('@description ', '').trim()
+    }
+
+    // Extract @category tag
+    const catTag = lines.find(l => l.startsWith('@category '))
+    if (catTag) {
+      result.category = catTag.replace('@category ', '').trim()
+    }
+
+    // Extract @status tag
+    const statusTag = lines.find(l => l.startsWith('@status '))
+    if (statusTag) {
+      const statusValue = statusTag.replace('@status ', '').trim()
+      if (['experimental', 'stable', 'deprecated', 'obsolete'].includes(statusValue)) {
+        result.status = statusValue as ComponentMeta['status']
+      }
+    }
+
+    // First non-tag line is the name (if short enough)
+    const firstNonTag = lines.find(l => !l.startsWith('@'))
+    if (firstNonTag && firstNonTag.length <= 50) {
+      result.name = firstNonTag
+    }
+
+    // If no @description, use remaining non-tag lines after first as description
+    if (!result.description) {
+      const nonTagLines = lines.filter(l => !l.startsWith('@'))
+      if (nonTagLines.length > 1) {
+        result.description = nonTagLines.slice(1).join(' ').trim() || undefined
+      }
+    }
+  }
+  catch {
+    // Ignore parse errors
+  }
+
+  return result
 }
 
 interface PropDefinition {
@@ -895,14 +997,19 @@ export function generateComponentIndex(
           return acc
         }, {} as Record<string, SlotDefinition>)
 
-      // Apply overrides if present
+      // Extract component-level metadata from JSDoc and vue-component-meta
+      const componentMeta = extractComponentMeta(component.filePath, meta.description)
+
+      // Apply overrides if present (overrides take priority over JSDoc)
       const override = options.overrides?.[component.pascalName]
 
+      const description = override?.description || componentMeta.description
       return {
         id: component.pascalName,
-        name: generateTitle(component.pascalName),
-        category: override?.category || resolveCategory(options.category, component.shortPath),
-        status: override?.status || options.status,
+        name: override?.name || componentMeta.name || generateTitle(component.pascalName),
+        ...(description && { description }),
+        category: override?.category || componentMeta.category || resolveCategory(options.category, component.shortPath),
+        status: override?.status || componentMeta.status || options.status,
         props: {
           type: 'object',
           properties: props,
