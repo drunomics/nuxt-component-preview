@@ -791,6 +791,7 @@ interface ComponentDefinition {
   status: string
   props: {
     type: 'object'
+    required?: string[]
     properties: Record<string, PropDefinition>
   }
   slots?: Record<string, SlotDefinition>
@@ -987,6 +988,13 @@ export function generateComponentIndex(
           return acc
         }, {} as Record<string, PropDefinition>)
 
+      // Collect required prop names (props without ? in TypeScript and no default)
+      const requiredProps = meta.props
+        .filter(p => !vueInternalProps.includes(p.name))
+        .filter(p => !p.name.startsWith('onVue:'))
+        .filter(p => p.required)
+        .map(p => p.name)
+
       // Extract slots
       const slots = meta.slots
         .reduce((acc, slot) => {
@@ -1012,6 +1020,7 @@ export function generateComponentIndex(
         status: override?.status || componentMeta.status || options.status,
         props: {
           type: 'object',
+          ...(requiredProps.length > 0 && { required: requiredProps }),
           properties: props,
         },
         ...(Object.keys(slots).length > 0 && { slots }),

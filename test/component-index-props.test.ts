@@ -210,6 +210,35 @@ describe('Component Index - Prop Metadata Extraction', () => {
     })
   })
 
+  // ── Required vs optional props ───────────────────────────────────
+  describe('required vs optional props', () => {
+    let result: ComponentIndexData
+
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestBanner', 'TestBanner.vue')])
+    })
+
+    it('includes required array for non-optional props', () => {
+      const component = result.components[0]
+      // heading is required (no ? in TypeScript, no default)
+      expect(component.props.required).toBeDefined()
+      expect(component.props.required).toContain('heading')
+    })
+
+    it('does not include optional props in required array', () => {
+      const component = result.components[0]
+      // image is optional (has ? in TypeScript)
+      expect(component.props.required).not.toContain('image')
+    })
+
+    it('omits required array when all props are optional', async () => {
+      const allOptional = await generateIndex([createMockComp('TestCard', 'TestCard.vue')])
+      const component = allOptional.components[0]
+      // TestCard has only optional props with defaults
+      expect(component.props.required).toBeUndefined()
+    })
+  })
+
   // ── TestCard group ────────────────────────────────────────────────
   describe('TestCard props', () => {
     let result: ComponentIndexData
