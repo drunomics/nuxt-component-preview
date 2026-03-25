@@ -2,6 +2,8 @@ import { defineEventHandler, setResponseHeader, getRequestURL } from 'h3'
 import { useRuntimeConfig } from '#imports'
 // @ts-expect-error - Virtual import
 import entryPath from '#nuxt-entry-path'
+// @ts-expect-error - Virtual import
+import entryCssPaths from '#nuxt-entry-css-paths'
 
 export default defineEventHandler((event) => {
   // Get runtime config for buildId and any runtime public config
@@ -29,6 +31,7 @@ export default defineEventHandler((event) => {
     componentPreview: true,
   }
   const publicConfigStr = JSON.stringify(publicConfig)
+  const entryCssPathsStr = JSON.stringify(entryCssPaths || [])
 
   // Generate the script with prepared values.
   //
@@ -91,6 +94,17 @@ export default defineEventHandler((event) => {
       nuxtData.id = '__NUXT_DATA__';
       nuxtData.textContent = '[{"serverRendered":1},false]';
       document.body.appendChild(nuxtData);
+
+      // Load entry CSS files. In SSR mode Nuxt injects these as <link> tags
+      // in the rendered HTML. In CSR/preview mode we must add them explicitly.
+      var entryCssPaths = ${entryCssPathsStr};
+      entryCssPaths.forEach(function(cssPath) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = effectiveCdnURL + cssPath;
+        link.crossOrigin = '';
+        document.head.appendChild(link);
+      });
 
       // Add import map (must be in head before module scripts)
       const importMap = document.createElement('script');

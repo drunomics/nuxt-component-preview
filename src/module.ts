@@ -48,6 +48,7 @@ export default defineNuxtModule<ModuleOptions>({
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
     let resolvedEntryPath = ''
+    let resolvedEntryCssPaths: string[] = []
 
     // Auto-import Canvas types for component props
     addImports([
@@ -120,7 +121,14 @@ export default defineNuxtModule<ModuleOptions>({
           }
         }
         if (entryChunk && 'file' in entryChunk) {
-          resolvedEntryPath = `/_nuxt/${(entryChunk as { file: string }).file}`
+          const chunk = entryChunk as { file: string, css?: string[] }
+          resolvedEntryPath = `/_nuxt/${chunk.file}`
+          // Capture CSS files associated with the entry chunk so the
+          // app-loader can inject them as <link> tags (SSR normally does
+          // this, but CSR/preview mode skips SSR).
+          if (Array.isArray(chunk.css)) {
+            resolvedEntryCssPaths = chunk.css.map(css => `/_nuxt/${css}`)
+          }
         }
       })
     }
@@ -130,6 +138,9 @@ export default defineNuxtModule<ModuleOptions>({
       nitroConfig.virtual = nitroConfig.virtual || {}
       nitroConfig.virtual['#nuxt-entry-path'] = () => {
         return `export default '${resolvedEntryPath}'`
+      }
+      nitroConfig.virtual['#nuxt-entry-css-paths'] = () => {
+        return `export default ${JSON.stringify(resolvedEntryCssPaths)}`
       }
 
       // Only prerender app-loader.js for static generation (nuxt generate).

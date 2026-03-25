@@ -81,6 +81,30 @@ describe('preview E2E (dev mode)', async () => {
       await page.close()
     })
 
+    it('applies global CSS styles in preview mode', async () => {
+      const page = await createPage('/preview-test-loader.html')
+
+      // Wait for CSS to be loaded and applied
+      await page.waitForFunction(() => {
+        const el = document.getElementById('css-test')
+        if (!el) return false
+        const style = window.getComputedStyle(el)
+        // The global.css sets --global-css-active: 1 on .global-css-loaded
+        return style.getPropertyValue('--global-css-active') === '1'
+      }, { timeout: 10000 })
+
+      const cssApplied = await page.evaluate(() => {
+        const el = document.getElementById('css-test')!
+        const style = window.getComputedStyle(el)
+        return {
+          customProperty: style.getPropertyValue('--global-css-active'),
+        }
+      })
+
+      expect(cssApplied.customProperty).toBe('1')
+      await page.close()
+    })
+
     it('renders nested components (2 levels deep)', async () => {
       const page = await createPage('/preview-test-loader.html')
 

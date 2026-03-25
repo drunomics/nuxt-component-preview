@@ -91,6 +91,56 @@ describe('preview E2E (production mode)', async () => {
       expect(componentContent.hasLayoutWithSlots).toBe(true)
       await page.close()
     })
+
+    it('loads entry CSS via app-loader.js', async () => {
+      const page = await openPreviewPage('/preview-test-loader.html')
+
+      // Wait for Nuxt to initialize (CSS links are injected during init)
+      await page.waitForFunction(() => {
+        return document.getElementById('__nuxt') !== null
+      }, { timeout: 5000 })
+
+      // Verify entry CSS stylesheet links were injected
+      const cssResult = await page.evaluate(() => {
+        const nuxtCssLinks = document.querySelectorAll('link[rel="stylesheet"][href*="/_nuxt/"]')
+        const hasEntryCss = Array.prototype.some.call(nuxtCssLinks, function (link: HTMLLinkElement) {
+          return link.href.includes('entry') && link.href.endsWith('.css')
+        })
+        return {
+          nuxtCssCount: nuxtCssLinks.length,
+          hasEntryCss,
+        }
+      })
+
+      expect(cssResult.nuxtCssCount).toBeGreaterThan(0)
+      expect(cssResult.hasEntryCss).toBe(true)
+      await page.close()
+    })
+
+    it('applies global CSS styles from entry CSS', async () => {
+      const page = await openPreviewPage('/preview-test-loader.html')
+
+      // Wait for CSS to be loaded and applied
+      await page.waitForFunction(() => {
+        const el = document.getElementById('css-test')
+        if (!el) return false
+        const style = window.getComputedStyle(el)
+        // The global.css sets --global-css-active: 1 on .global-css-loaded
+        return style.getPropertyValue('--global-css-active') === '1'
+      }, { timeout: 10000 })
+
+      const cssApplied = await page.evaluate(() => {
+        const el = document.getElementById('css-test')!
+        const style = window.getComputedStyle(el)
+        return {
+          customProperty: style.getPropertyValue('--global-css-active'),
+          borderColor: style.borderColor,
+        }
+      })
+
+      expect(cssApplied.customProperty).toBe('1')
+      await page.close()
+    })
   })
 
   // Manual setup tests are not included here as they only work in dev mode

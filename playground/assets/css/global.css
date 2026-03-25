@@ -1,0 +1,12 @@
+/**
+ * Global CSS fixture for testing that entry CSS is loaded via app-loader.js.
+ *
+ * This file is included in nuxt.config.ts `css` array and gets bundled into
+ * the entry CSS chunk. The `.global-css-loaded` class is used by e2e tests
+ * to verify that global CSS is properly injected in CSR/preview mode.
+ */
+
+.global-css-loaded {
+  --global-css-active: 1;
+  border: 3px solid #42b883;
+}
