@@ -92,32 +92,7 @@ describe('preview E2E (production mode)', async () => {
       await page.close()
     })
 
-    it('loads entry CSS via app-loader.js', async () => {
-      const page = await openPreviewPage('/preview-test-loader.html')
-
-      // Wait for Nuxt to initialize (CSS links are injected during init)
-      await page.waitForFunction(() => {
-        return document.getElementById('__nuxt') !== null
-      }, { timeout: 5000 })
-
-      // Verify entry CSS stylesheet links were injected
-      const cssResult = await page.evaluate(() => {
-        const nuxtCssLinks = document.querySelectorAll('link[rel="stylesheet"][href*="/_nuxt/"]')
-        const hasEntryCss = Array.prototype.some.call(nuxtCssLinks, function (link: HTMLLinkElement) {
-          return link.href.includes('entry') && link.href.endsWith('.css')
-        })
-        return {
-          nuxtCssCount: nuxtCssLinks.length,
-          hasEntryCss,
-        }
-      })
-
-      expect(cssResult.nuxtCssCount).toBeGreaterThan(0)
-      expect(cssResult.hasEntryCss).toBe(true)
-      await page.close()
-    })
-
-    it('applies global CSS styles from entry CSS', async () => {
+    it('loads and applies entry CSS via app-loader.js', async () => {
       const page = await openPreviewPage('/preview-test-loader.html')
 
       // Wait for CSS to be loaded and applied

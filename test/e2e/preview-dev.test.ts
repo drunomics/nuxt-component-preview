@@ -81,7 +81,7 @@ describe('preview E2E (dev mode)', async () => {
       await page.close()
     })
 
-    it('applies global CSS styles in preview mode', async () => {
+    it('loads and applies entry CSS via app-loader.js', async () => {
       const page = await createPage('/preview-test-loader.html')
 
       // Wait for CSS to be loaded and applied
