@@ -49,10 +49,19 @@ export default defineEventHandler((event) => {
     var attrBuildAssetsDir = scriptEl && scriptEl.hasAttribute('data-build-assets-dir')
       ? scriptEl.getAttribute('data-build-assets-dir') : null;
 
-    var effectiveCdnURL = attrCdnURL !== null ? attrCdnURL : "${cdnURL}";
+    // Derive the origin from the script's own URL so it works regardless of
+    // which host/port serves the static files (important for nuxt generate).
+    // Falls back to the build-time cdnURL when the script is inlined or the
+    // src attribute is missing.
+    var scriptOrigin = "${cdnURL}";
+    if (scriptEl && scriptEl.src) {
+      try { scriptOrigin = new URL(scriptEl.src).origin; } catch(e) {}
+    }
+
+    var effectiveCdnURL = attrCdnURL !== null ? attrCdnURL : scriptOrigin;
     var effectiveBuildAssetsDir = attrBuildAssetsDir !== null
       ? attrBuildAssetsDir : "${buildAssetsDir}";
-    var effectiveEntryPath = (attrCdnURL !== null ? attrCdnURL : "${cdnURL}") + "${entryPath}";
+    var effectiveEntryPath = (attrCdnURL !== null ? attrCdnURL : scriptOrigin) + "${entryPath}";
 
     // Set Nuxt config IMMEDIATELY when script runs, before DOM ready
     // This ensures app.vue can read the config when it evaluates
