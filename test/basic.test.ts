@@ -39,13 +39,11 @@ describe('nuxt-component-preview module', async () => {
     expect(script).toContain('window.__NUXT__')
     expect(script).toContain('cdnURL: effectiveCdnURL')
 
-    // The build-time cdnURL should be a valid URL (from request origin),
-    // embedded as the default value in the script.
-    const defaultCdnMatch = script.match(/var effectiveCdnURL = attrCdnURL !== null \? attrCdnURL : "([^"]*)"/)
-    expect(defaultCdnMatch).toBeTruthy()
-    if (defaultCdnMatch && defaultCdnMatch[1]) {
-      expect(defaultCdnMatch[1]).toMatch(/^https?:\/\/[^/]+/)
-    }
+    // The build-time cdnURL is used as fallback for scriptOrigin (when
+    // document.currentScript.src is unavailable). At runtime, scriptOrigin
+    // is derived from the script's own URL for correct origin detection.
+    expect(script).toContain('var effectiveCdnURL = attrCdnURL !== null ? attrCdnURL : scriptOrigin')
+    expect(script).toMatch(/var scriptOrigin = "https?:\/\/[^"]+"/)
   })
 
   it('component index includes subfolder components with folder-prefixed names', async () => {
