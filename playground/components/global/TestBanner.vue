@@ -12,17 +12,16 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{
+defineProps<{
   /**
-   * Banner heading
+   * Banner heading (required)
+   * @example Welcome to our site
    */
-  heading?: string
+  heading: string
   /**
    * Banner image using key-value syntax
    * @example src=https://placehold.co/600x400 alt="Banner image" width=600 height=400
    */
   image?: CanvasImage
-}>(), {
-  heading: 'Default Banner',
-})
+}>()
 </script>
