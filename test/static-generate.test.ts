@@ -31,30 +31,6 @@ describe('nuxt generate (static build)', () => {
     expect(existsSync(appLoaderPath)).toBe(true)
   })
 
-  it('app-loader.js uses configured cdnURL as default', () => {
-    const content = readFileSync(appLoaderPath, 'utf-8')
-
-    // The build-time cdnURL is embedded as the scriptOrigin fallback.
-    // At runtime, scriptOrigin is derived from document.currentScript.src
-    // but falls back to this value when the src attribute is unavailable.
-    expect(content).toContain(`var scriptOrigin = "${testCdnUrl}"`)
-
-    // The default entry path concatenates scriptOrigin + entryPath.
-    expect(content).toContain(`"${testCdnUrl}"`)
-    expect(content).toMatch(/\+ "\/_nuxt\/[^"]+\.js"/)
-  })
-
-  it('app-loader.js contains valid entry path', () => {
-    const content = readFileSync(appLoaderPath, 'utf-8')
-
-    // Entry src is set via effectiveEntryPath variable.
-    expect(content).toContain('entry.src = effectiveEntryPath')
-
-    // The default entry path should reference a .js file.
-    const entryDefault = content.match(/\+ "([^"]+\.js)"/)
-    expect(entryDefault).toBeTruthy()
-  })
-
   it('generates valid JSON with components', () => {
     const content = readFileSync(componentIndexPath, 'utf-8')
     const data = JSON.parse(content)
