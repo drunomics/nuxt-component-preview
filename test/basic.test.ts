@@ -30,24 +30,6 @@ describe('nuxt-component-preview module', async () => {
     expect(script).toContain('componentPreview')
   })
 
-  it('app-loader.js sets cdnURL as default', async () => {
-    const script = await $fetch('/nuxt-component-preview/app-loader.js', {
-      responseType: 'text',
-    })
-
-    // Check that cdnURL is set in the config via effectiveCdnURL
-    expect(script).toContain('window.__NUXT__')
-    expect(script).toContain('cdnURL: effectiveCdnURL')
-
-    // The build-time cdnURL should be a valid URL (from request origin),
-    // embedded as the default value in the script.
-    const defaultCdnMatch = script.match(/var effectiveCdnURL = attrCdnURL !== null \? attrCdnURL : "([^"]*)"/)
-    expect(defaultCdnMatch).toBeTruthy()
-    if (defaultCdnMatch && defaultCdnMatch[1]) {
-      expect(defaultCdnMatch[1]).toMatch(/^https?:\/\/[^/]+/)
-    }
-  })
-
   it('component index includes subfolder components with folder-prefixed names', async () => {
     const index = await $fetch('/nuxt-component-preview/component-index.json')
     const subfolderComp = index.components.find((c: any) => c.id === 'SubfolderExample')

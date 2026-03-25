@@ -91,6 +91,31 @@ describe('preview E2E (production mode)', async () => {
       expect(componentContent.hasLayoutWithSlots).toBe(true)
       await page.close()
     })
+
+    it('loads and applies entry CSS via app-loader.js', async () => {
+      const page = await openPreviewPage('/preview-test-loader.html')
+
+      // Wait for CSS to be loaded and applied
+      await page.waitForFunction(() => {
+        const el = document.getElementById('css-test')
+        if (!el) return false
+        const style = window.getComputedStyle(el)
+        // The global.css sets --global-css-active: 1 on .global-css-loaded
+        return style.getPropertyValue('--global-css-active') === '1'
+      }, { timeout: 10000 })
+
+      const cssApplied = await page.evaluate(() => {
+        const el = document.getElementById('css-test')!
+        const style = window.getComputedStyle(el)
+        return {
+          customProperty: style.getPropertyValue('--global-css-active'),
+          borderColor: style.borderColor,
+        }
+      })
+
+      expect(cssApplied.customProperty).toBe('1')
+      await page.close()
+    })
   })
 
   // Manual setup tests are not included here as they only work in dev mode
