@@ -5,6 +5,7 @@ import { defineVitestConfig } from '@nuxt/test-utils/config'
 export default defineVitestConfig({
   test: {
     pool: 'forks',
+    teardownTimeout: 30000,
     environment: 'nuxt',
     environmentOptions: {
       nuxt: {
