@@ -178,21 +178,12 @@ Only affects components registered globally by Nuxt from npm packages.
 
 #### Directory Filtering
 
-The `include.directories` option restricts the component index to components in specific directories:
+Filter the component index by directory path patterns. Works for both app-level and package-layer components.
 
-```typescript
-componentPreview: {
-  componentIndex: {
-    include: {
-      directories: ['Canvas'], // Only components under a Canvas/ directory
-    },
-  },
-}
-```
+- `include.directories`: when set, **only** components in these directories are indexed
+- `exclude.directories`: exclude components in these directories
 
-This matches against the component's `shortPath` using glob patterns (`**/Canvas/**`). It works for both app-level components (`components/Canvas/...`) and package-layer components (`packages/my-layer/components/Canvas/...`).
-
-Use `exclude.directories` to further narrow within the included set — e.g., include `Canvas` but exclude `Canvas/Internal`.
+Both can be combined — e.g., include `Canvas` but exclude `Canvas/Internal`.
 
 ### Component Metadata
 
