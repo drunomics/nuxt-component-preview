@@ -152,10 +152,10 @@ export default defineNuxtConfig({
         directories: [] // exclude by directory pattern
       },
 
-      // Package filtering for component index (default: false = exclude all packages)
-      includePackages: false,           // Exclude all package components from node_modules
-      // includePackages: true,          // Include all package components (not recommended)
-      // includePackages: ['my-package'], // Include only components from specific packages
+      // Include components from npm packages in node_modules (default: false)
+      includePackages: false,           // Exclude all npm package components
+      // includePackages: true,          // Include all npm package components
+      // includePackages: ['my-package'], // Include only specific npm packages
 
       // Override metadata for specific components
       overrides: {
