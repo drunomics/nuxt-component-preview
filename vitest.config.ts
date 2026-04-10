@@ -6,6 +6,7 @@ export default defineVitestConfig({
   test: {
     pool: 'forks',
     teardownTimeout: 30000,
+    fileParallelism: false,
     environment: 'nuxt',
     environmentOptions: {
       nuxt: {
