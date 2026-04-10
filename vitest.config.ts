@@ -4,6 +4,9 @@ import { defineVitestConfig } from '@nuxt/test-utils/config'
 
 export default defineVitestConfig({
   test: {
+    // Prevents vitest worker RPC timeout ("onTaskUpdate") in CI
+    // with the heavy @nuxt/test-utils environment.
+    fileParallelism: false,
     environment: 'nuxt',
     environmentOptions: {
       nuxt: {

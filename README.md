@@ -140,16 +140,22 @@ export default defineNuxtConfig({
       // Or use a static string:
       // category: 'Nuxt Components',
 
+      // Include only components from specific directories (by path pattern).
+      // When set, everything outside these directories is excluded.
+      include: {
+        directories: ['Canvas'], // Only index components under Canvas/
+      },
+
       // Exclude components (overwrites defaults)
       exclude: {
         components: ['*--default'], // default: excludes *--default pattern
         directories: [] // exclude by directory pattern
       },
 
-      // Package filtering for component index (default: false = exclude all packages)
-      includePackages: false,           // Exclude all package components from node_modules
-      // includePackages: true,          // Include all package components (not recommended)
-      // includePackages: ['my-package'], // Include only components from specific packages
+      // Include components from npm packages in node_modules (default: false)
+      includePackages: false,           // Exclude all npm package components
+      // includePackages: true,          // Include all npm package components
+      // includePackages: ['my-package'], // Include only specific npm packages
 
       // Override metadata for specific components
       overrides: {
@@ -169,6 +175,15 @@ The `includePackages` option controls which npm package components are included 
 - `['package-name', '@org/package']`: Only components from specified packages are processed
 
 Only affects components registered globally by Nuxt from npm packages.
+
+#### Directory Filtering
+
+Filter the component index by directory path patterns. Works for both app-level and package-layer components.
+
+- `include.directories`: when set, **only** components in these directories are indexed
+- `exclude.directories`: exclude components in these directories
+
+Both can be combined — e.g., include `Canvas` but exclude `Canvas/Internal`.
 
 ### Component Metadata
 

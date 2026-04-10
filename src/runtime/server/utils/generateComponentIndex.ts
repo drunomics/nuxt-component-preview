@@ -21,6 +21,7 @@ export interface ComponentIndexOptions {
   category: string | CategoryDirectoryOptions
   status: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
   includePackages?: boolean | string[] // false = exclude all packages, array = include only these
+  includeDirectories?: string[] // When set, only components in these directories are indexed
   excludeDirectories?: string[]
   excludeComponents?: string[]
   overrides?: Record<string, {
@@ -844,6 +845,14 @@ export function generateComponentIndex(
         }
       }
       // If includePackages === true, include all packages (no filtering)
+    }
+
+    // Check directory inclusions — when set, only keep components in these directories
+    if (options.includeDirectories && options.includeDirectories.length > 0) {
+      const included = options.includeDirectories.some(pattern =>
+        minimatch(c.shortPath, `**/${pattern}/**`),
+      )
+      if (!included) return false
     }
 
     // Check directory exclusions (path patterns only)

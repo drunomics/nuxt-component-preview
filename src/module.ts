@@ -14,6 +14,9 @@ export interface ModuleOptions {
     category?: string | CategoryDirectoryOptions
     status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
     includePackages?: boolean | string[] // false = exclude all (default), array = include only these
+    include?: {
+      directories?: string[] // When set, only components in these directories are indexed
+    }
     exclude?: {
       components?: string[]
       directories?: string[] // Path patterns only (not packages)
@@ -38,6 +41,9 @@ export default defineNuxtModule<ModuleOptions>({
       category: 'Nuxt Components',
       status: 'stable',
       includePackages: false, // By default, exclude all packages from node_modules
+      include: {
+        directories: [], // When set, only components in these directories are indexed
+      },
       exclude: {
         components: ['*--default', 'drupal-*'],
         directories: [], // Path patterns only
@@ -178,6 +184,7 @@ export default defineNuxtModule<ModuleOptions>({
         category: options.componentIndex!.category!,
         status: options.componentIndex!.status!,
         includePackages: options.componentIndex!.includePackages,
+        includeDirectories: options.componentIndex!.include!.directories,
         excludeDirectories: options.componentIndex!.exclude!.directories,
         excludeComponents: options.componentIndex!.exclude!.components,
         overrides: options.componentIndex!.overrides,
