@@ -222,6 +222,127 @@ describe('Component Index Generation', () => {
     })
   })
 
+  describe('Directory Inclusions', () => {
+    it('includes only components from specified directories', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'TestButton',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'components/global/TestButton.vue',
+          kebabName: 'test-button',
+          global: true,
+        },
+        {
+          pascalName: 'CanvasHero',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'components/Canvas/Hero/CanvasHero.vue',
+          kebabName: 'canvas-hero',
+          global: true,
+        },
+        {
+          pascalName: 'CanvasCard',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestCard.vue'),
+          shortPath: 'components/Canvas/Base/CanvasCard.vue',
+          kebabName: 'canvas-card',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        {
+          category: 'Test',
+          status: 'stable',
+          includeDirectories: ['Canvas'],
+        },
+      )
+
+      expect(result.components).toHaveLength(2)
+      expect(result.components.map(c => c.id)).toEqual(['CanvasHero', 'CanvasCard'])
+    }, 10000)
+
+    it('does not filter when includeDirectories is empty', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'TestButton',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'components/global/TestButton.vue',
+          kebabName: 'test-button',
+          global: true,
+        },
+        {
+          pascalName: 'TestCard',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestCard.vue'),
+          shortPath: 'components/global/TestCard.vue',
+          kebabName: 'test-card',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        {
+          category: 'Test',
+          status: 'stable',
+          includeDirectories: [],
+        },
+      )
+
+      expect(result.components).toHaveLength(2)
+    }, 10000)
+
+    it('works together with excludeDirectories', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'CanvasHero',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'components/Canvas/Hero/CanvasHero.vue',
+          kebabName: 'canvas-hero',
+          global: true,
+        },
+        {
+          pascalName: 'CanvasInternal',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestCard.vue'),
+          shortPath: 'components/Canvas/Internal/CanvasInternal.vue',
+          kebabName: 'canvas-internal',
+          global: true,
+        },
+        {
+          pascalName: 'MarketingBanner',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'components/Marketing/Banner/MarketingBanner.vue',
+          kebabName: 'marketing-banner',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        {
+          category: 'Test',
+          status: 'stable',
+          includeDirectories: ['Canvas'],
+          excludeDirectories: ['Canvas/Internal'],
+        },
+      )
+
+      expect(result.components).toHaveLength(1)
+      expect(result.components[0].id).toBe('CanvasHero')
+    }, 10000)
+  })
+
   describe('Step 5: Component Name Exclusions', () => {
     it('excludes components by name pattern', async () => {
       const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
