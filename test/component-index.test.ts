@@ -341,6 +341,52 @@ describe('Component Index Generation', () => {
       expect(result.components).toHaveLength(1)
       expect(result.components[0].id).toBe('CanvasHero')
     }, 10000)
+
+    it('matches components from package layers (deep shortPath)', async () => {
+      const { generateComponentIndex } = await import('../src/runtime/server/utils/generateComponentIndex')
+      const { resolve } = await import('node:path')
+
+      const mockComponents = [
+        {
+          pascalName: 'BaseHeading',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'packages/my-kickstart-components/components/Canvas/Base/base-heading.vue',
+          kebabName: 'base-heading',
+          global: true,
+        },
+        {
+          pascalName: 'MarketingHero',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestButton.vue'),
+          shortPath: 'packages/my-kickstart-components/components/Marketing/marketing-hero.vue',
+          kebabName: 'marketing-hero',
+          global: true,
+        },
+        {
+          pascalName: 'AppLocalCanvas',
+          filePath: resolve(process.cwd(), 'playground/components/global/TestCard.vue'),
+          shortPath: 'components/Canvas/Card/app-card.vue',
+          kebabName: 'app-card',
+          global: true,
+        },
+      ]
+
+      const result = generateComponentIndex(
+        mockComponents as MockComponent[],
+        resolve(process.cwd(), 'playground/tsconfig.json'),
+        {
+          category: 'Test',
+          status: 'stable',
+          includeDirectories: ['Canvas'],
+        },
+      )
+
+      // Both package-layer and app-level Canvas components included
+      expect(result.components).toHaveLength(2)
+      const ids = result.components.map((c: { id: string }) => c.id)
+      expect(ids).toContain('BaseHeading')
+      expect(ids).toContain('AppLocalCanvas')
+      expect(ids).not.toContain('MarketingHero')
+    }, 10000)
   })
 
   describe('Step 5: Component Name Exclusions', () => {
