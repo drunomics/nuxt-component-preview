@@ -41,9 +41,26 @@ export default defineNuxtPlugin((nuxtApp) => {
     // Wait for Vue to render the component.
     await nextTick()
 
+    // Copy data-extjs-uuid to the target element so canvas_extjs can find
+    // it via querySelector for real-time preview updates.
+    if (props['data-extjs-uuid']) {
+      targetEl.setAttribute('data-extjs-uuid', props['data-extjs-uuid'])
+    }
+
+    // Set updateComponent on the target element so props can be updated
+    // in-place without a full re-render. Callers can use this for real-time
+    // preview updates or any prop patching scenario.
+    targetEl.updateComponent = (propUpdates) => {
+      const proxy = previews.value.find(p => p.target === targetEl)
+      if (!proxy) return false
+      proxy.content.props = { ...proxy.content.props, ...propUpdates }
+      return true
+    }
+
     return {
       unmount() {
         previews.value = previews.value.filter(c => c.target !== targetEl)
+        delete targetEl.updateComponent
       },
     }
   }
