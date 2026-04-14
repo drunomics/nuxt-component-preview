@@ -112,6 +112,19 @@ Add the `<ComponentPreviewArea />` to your `app.vue` so previews render when pre
 
 For embedding previews in external pages (e.g., Drupal Canvas editor), see the [App Loader documentation](./docs/app-loader.md).
 
+### Updating Component Props
+
+After `$previewComponent()` resolves, the target element has an `updateComponent()` method that allows updating props in-place without re-mounting:
+
+```javascript
+const { unmount } = await nuxtApp.$previewComponent('MyComponent', props, {}, '#target');
+
+// Later: update props in-place, triggers Vue re-render.
+document.querySelector('#target').updateComponent({ title: 'New title' });
+```
+
+This is used by [canvas_extjs](https://www.drupal.org/project/canvas_extjs) for real-time preview updates in the Canvas editor.
+
 ## Component Index
 
 This module automatically generates a component index JSON file containing metadata for all global components. This is particularly useful for integration with [Drupal Canvas External JS](https://www.drupal.org/project/canvas_extjs) module.
