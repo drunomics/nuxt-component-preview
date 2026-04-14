@@ -134,6 +134,43 @@ describe('preview E2E (dev mode)', async () => {
     })
   })
 
+  describe('updateComponent', () => {
+    it('updates props in-place and triggers re-render', async () => {
+      const page = await createPage('/preview-test-loader.html')
+
+      // Wait for component to render
+      await page.waitForFunction(() => {
+        const target = document.getElementById('preview-buttons')
+        return target && target.children.length > 0
+          && target.innerHTML.includes('Primary Button')
+      }, { timeout: 15000 })
+
+      // Call updateComponent to change the label
+      const updated = await page.evaluate(() => {
+        const target = document.getElementById('preview-buttons')
+        if (!target?.updateComponent) return { hasMethod: false }
+        const result = target.updateComponent({ label: 'Updated Label' })
+        return { hasMethod: true, result }
+      })
+
+      expect(updated.hasMethod).toBe(true)
+      expect(updated.result).toBe(true)
+
+      // Wait for Vue to re-render with new props
+      await page.waitForFunction(() => {
+        const target = document.getElementById('preview-buttons')
+        return target?.innerHTML.includes('Updated Label')
+      }, { timeout: 5000 })
+
+      const content = await page.evaluate(() => {
+        return document.getElementById('preview-buttons')?.innerHTML.includes('Updated Label')
+      })
+
+      expect(content).toBe(true)
+      await page.close()
+    })
+  })
+
   describe('without app-loader.js (manual setup)', () => {
     it('works with manually configured HTML', async () => {
       const page = await createPage('/preview-test.html')
