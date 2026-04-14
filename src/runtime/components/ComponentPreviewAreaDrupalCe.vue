@@ -28,11 +28,14 @@ function renderComponent(preview) {
           return h('div', {
             ref: (el) => {
               if (el && content.childNodes.length > 0) {
-                // Move all children from the slot container to this Vue slot element
+                // Use DocumentFragment to batch-move all children in a single
+                // DOM insertion, avoiding N separate reflows.
+                const fragment = document.createDocumentFragment()
                 while (content.firstChild) {
-                  el.appendChild(content.firstChild)
+                  fragment.appendChild(content.firstChild)
                 }
-                // Remove the now-empty wrapper
+                el.appendChild(fragment)
+                // Remove the now-empty wrapper.
                 content.remove()
               }
             },
