@@ -24,15 +24,12 @@ export default defineEventHandler((event) => {
       : `${requestURL.protocol}//${requestURL.host}`
   }
 
-  // Serialize public config and flag the preview as active. We set both
-  // `componentPreviewActive` (the new primary flag) and `componentPreview`
-  // (legacy boolean) so existing consumer code written against the old
-  // contract keeps working until callers migrate to
-  // `componentPreviewActive`.
+  // Serialize public config and flag the preview as active. We only set
+  // `componentPreviewActive` — `public.componentPreview` is left alone so
+  // users remain free to put their own object value there via runtimeConfig.
   const publicConfig = {
     ...config.public,
     componentPreviewActive: true,
-    componentPreview: true,
   }
   const publicConfigStr = JSON.stringify(publicConfig)
   const entryCssPathsStr = JSON.stringify(entryCssPaths || [])
