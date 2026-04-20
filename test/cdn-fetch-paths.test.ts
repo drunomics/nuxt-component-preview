@@ -15,7 +15,7 @@ type OnRequestHook = (ctx: { request: string, options: { baseURL?: string } }) =
 const state: {
   runtimeConfig: {
     app: { cdnURL?: string }
-    public: { componentPreview?: { cdnFetchPaths?: string[] } }
+    public: { nuxtComponentPreview?: { cdnFetchPaths?: string[] } }
   }
   capturedOnRequest: OnRequestHook | null
 } = {
@@ -61,16 +61,17 @@ function simulateRequest(hook: OnRequestHook, request: string): string | undefin
 
 describe('cdnFetchPaths client plugin', () => {
   beforeEach(() => {
-    // Pretend we're on the client so the `import.meta.client` guard doesn't
-    // short-circuit the plugin. Vitest's default environment already has
-    // `window`, so `import.meta.client` is truthy here.
+    // Reset to an empty runtime config before each test; the plugin's
+    // client-only restriction is enforced at the Nuxt module level
+    // (`mode: 'client'` + `.client.ts` suffix), not at runtime, so no env
+    // stubbing is needed here.
     state.runtimeConfig = { app: {}, public: {} }
   })
 
   it('is a no-op when cdnURL is not set', async () => {
     state.runtimeConfig = {
       app: {},
-      public: { componentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
+      public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
     }
     const hook = await runPluginSetup()
     // Plugin returns early → no wrapper installed, no hook captured.
@@ -80,13 +81,13 @@ describe('cdnFetchPaths client plugin', () => {
   it('is a no-op when cdnFetchPaths is empty', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
-      public: { componentPreview: { cdnFetchPaths: [] } },
+      public: { nuxtComponentPreview: { cdnFetchPaths: [] } },
     }
     const hook = await runPluginSetup()
     expect(hook).toBeNull()
   })
 
-  it('is a no-op when componentPreview.cdnFetchPaths is missing', async () => {
+  it('is a no-op when nuxtComponentPreview.cdnFetchPaths is missing', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
       public: {},
@@ -98,7 +99,7 @@ describe('cdnFetchPaths client plugin', () => {
   it('applies cdnURL as baseURL for matching path prefixes', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
-      public: { componentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/', '/_i18n/'] } },
+      public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/', '/_i18n/'] } },
     }
     const hook = await runPluginSetup()
     expect(hook).not.toBeNull()
@@ -112,7 +113,7 @@ describe('cdnFetchPaths client plugin', () => {
   it('strips a trailing slash from cdnURL to avoid `https://origin//api`', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com/' },
-      public: { componentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
+      public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
     }
     const hook = await runPluginSetup()
     expect(simulateRequest(hook!, '/api/_nuxt_icon/ph.json'))
@@ -122,7 +123,7 @@ describe('cdnFetchPaths client plugin', () => {
   it('leaves non-matching relative requests untouched', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
-      public: { componentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
+      public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
     }
     const hook = await runPluginSetup()
     // `/api/drupal-ce/…` is a Drupal-CE route served by the embedder —
@@ -135,7 +136,7 @@ describe('cdnFetchPaths client plugin', () => {
   it('leaves absolute URLs untouched (ofetch ignores baseURL for those, but we also early-return)', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
-      public: { componentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
+      public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
     }
     const hook = await runPluginSetup()
     expect(simulateRequest(hook!, 'https://somewhere.else/api/_nuxt_icon/ph.json'))
@@ -145,7 +146,7 @@ describe('cdnFetchPaths client plugin', () => {
   it('matches with startsWith — custom prefixes can be added', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
-      public: { componentPreview: { cdnFetchPaths: ['/api/my-custom-route/'] } },
+      public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/my-custom-route/'] } },
     }
     const hook = await runPluginSetup()
     expect(simulateRequest(hook!, '/api/my-custom-route/foo')).toBe('https://app.example.com')

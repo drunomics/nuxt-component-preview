@@ -116,10 +116,16 @@ export default defineNuxtModule<ModuleOptions>({
     // (so callers can override it via nuxt.config without rebuilding) and
     // register the plugin that rewrites matching $fetch requests to use
     // `app.cdnURL` as the base URL.
+    //
+    // Note: we deliberately use a dedicated `nuxtComponentPreview` key
+    // instead of the module's own `componentPreview` configKey namespace
+    // — that key is already treated as a boolean preview-mode switch
+    // elsewhere (see `plugin.client.ts`, `playground/app.vue`) and wrapping
+    // it in an object would flip the switch on for every consumer.
     const publicConfig = nuxt.options.runtimeConfig.public as Record<string, unknown>
-    const existingComponentPreview = (publicConfig.componentPreview as Record<string, unknown>) ?? {}
-    publicConfig.componentPreview = {
-      ...existingComponentPreview,
+    const existingNuxtComponentPreview = (publicConfig.nuxtComponentPreview as Record<string, unknown>) ?? {}
+    publicConfig.nuxtComponentPreview = {
+      ...existingNuxtComponentPreview,
       cdnFetchPaths: options.cdnFetchPaths ?? [],
     }
     addPlugin({

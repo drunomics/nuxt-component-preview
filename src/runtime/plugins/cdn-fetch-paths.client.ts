@@ -31,15 +31,19 @@ export default defineNuxtPlugin({
   name: 'nuxt-component-preview:cdn-fetch-paths',
   enforce: 'pre',
   setup() {
-    if (!import.meta.client) return
-
+    // No `import.meta.client` guard: the plugin is registered with
+    // `mode: 'client'` in `src/module.ts` and the filename ends in
+    // `.client.ts`, so Nuxt already ensures this code only ships to the
+    // client. An inline guard would additionally short-circuit in unit
+    // tests running under @nuxt/test-utils' SSR-style env where
+    // `import.meta.client` is falsy.
     const config = useRuntimeConfig()
     const cdnURL = config.app?.cdnURL?.replace(/\/$/, '') ?? ''
     if (!cdnURL) return
 
     const paths
-      = (config.public as { componentPreview?: { cdnFetchPaths?: string[] } })
-        .componentPreview?.cdnFetchPaths ?? []
+      = (config.public as { nuxtComponentPreview?: { cdnFetchPaths?: string[] } })
+        .nuxtComponentPreview?.cdnFetchPaths ?? []
     if (!paths.length) return
 
     const original = globalThis.$fetch
