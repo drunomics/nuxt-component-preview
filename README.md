@@ -174,7 +174,15 @@ export default defineNuxtConfig({
       overrides: {
         TestButton: { name: 'Custom Button', description: 'A button', category: 'Forms', status: 'experimental' }
       }
-    }
+    },
+
+    // Client-side `$fetch` path prefixes resolved against `app.cdnURL`
+    // instead of the embedding document's origin. See below.
+    cdnFetchPaths: [
+      '/nuxt-component-preview/',
+      '/api/_nuxt_icon/',
+      '/_i18n/',
+    ]
   }
 })
 ```
@@ -197,6 +205,12 @@ Filter the component index by directory path patterns. Works for both app-level 
 - `exclude.directories`: exclude components in these directories
 
 Both can be combined — e.g., include `Canvas` but exclude `Canvas/Internal`.
+
+#### `cdnFetchPaths`
+
+A `$fetch` override **for component previews**. During a preview the Nuxt app runs inside an embedder document (e.g. a Drupal admin page), so relative `$fetch('/...')` calls from modules like `@nuxtjs/i18n` or `@nuxt/icon` hit the embedder instead of Nitro. This plugin rewrites requests starting with one of the configured prefixes to use `app.cdnURL` (the Nuxt origin) as base URL.
+
+Defaults to `['/nuxt-component-preview/', '/api/_nuxt_icon/', '/_i18n/']`. Set to `[]` to disable. `$fetch.native` callers bypass ofetch and are not intercepted.
 
 ### Component Metadata
 

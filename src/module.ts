@@ -28,6 +28,15 @@ export interface ModuleOptions {
       status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
     }>
   }
+  /**
+   * Path prefixes for the component-preview `$fetch` override. Matching
+   * client-side `$fetch` requests are rerouted from the embedder's
+   * origin to `app.cdnURL` (the Nuxt origin). Active only when
+   * component preview is active. Matched with `startsWith`. Defaults
+   * to `['/nuxt-component-preview/', '/api/_nuxt_icon/', '/_i18n/']`;
+   * set to `[]` to disable.
+   */
+  cdnFetchPaths?: string[]
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -50,6 +59,11 @@ export default defineNuxtModule<ModuleOptions>({
       },
       overrides: {},
     },
+    cdnFetchPaths: [
+      '/nuxt-component-preview/',
+      '/api/_nuxt_icon/',
+      '/_i18n/',
+    ],
   },
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
@@ -86,6 +100,19 @@ export default defineNuxtModule<ModuleOptions>({
     // Add the client-side plugin for component preview functionality
     addPlugin({
       src: resolver.resolve('./runtime/plugin.client'),
+      mode: 'client',
+    })
+
+    // Dedicated `nuxtComponentPreview` runtime key — `componentPreview`
+    // is a boolean preview-mode switch used elsewhere.
+    const publicConfig = nuxt.options.runtimeConfig.public as Record<string, unknown>
+    const existingNuxtComponentPreview = (publicConfig.nuxtComponentPreview as Record<string, unknown>) ?? {}
+    publicConfig.nuxtComponentPreview = {
+      ...existingNuxtComponentPreview,
+      cdnFetchPaths: options.cdnFetchPaths ?? [],
+    }
+    addPlugin({
+      src: resolver.resolve('./runtime/plugins/cdn-fetch-paths.client'),
       mode: 'client',
     })
 
