@@ -1,4 +1,6 @@
 /**
+ * @vitest-environment happy-dom
+ *
  * Exercises the `cdnFetchPaths` client plugin introduced to re-route
  * client-side `$fetch` calls to the Nuxt app origin (`config.app.cdnURL`)
  * instead of the embedding document's origin.
@@ -7,6 +9,14 @@
  * the global `$fetch` mocked, so we can capture what `options.baseURL`
  * the plugin's `onRequest` hook applies to a given request path. No
  * playground Nuxt instance needed.
+ *
+ * The `@vitest-environment happy-dom` pragma opts this file out of the
+ * repo-wide `environment: 'nuxt'` setting from `vitest.config.ts` —
+ * under the Nuxt env, `#imports` resolves to the real Nuxt virtual
+ * module and `vi.mock('#imports')` does NOT intercept it, so
+ * `useRuntimeConfig()` returns the playground's empty config instead
+ * of the per-test stub. happy-dom gives a plain vite module graph
+ * where the mock works as written.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
