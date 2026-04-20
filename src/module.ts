@@ -103,12 +103,13 @@ export default defineNuxtModule<ModuleOptions>({
       mode: 'client',
     })
 
-    // Dedicated `nuxtComponentPreview` runtime key — `componentPreview`
-    // is a boolean preview-mode switch used elsewhere.
+    // Runtime options live under `public.componentPreview` alongside the
+    // `active` flag the SSR app-loader sets when serving a preview. Single
+    // namespace aligned with the module's configKey.
     const publicConfig = nuxt.options.runtimeConfig.public as Record<string, unknown>
-    const existingNuxtComponentPreview = (publicConfig.nuxtComponentPreview as Record<string, unknown>) ?? {}
-    publicConfig.nuxtComponentPreview = {
-      ...existingNuxtComponentPreview,
+    const existingComponentPreview = (publicConfig.componentPreview as Record<string, unknown>) ?? {}
+    publicConfig.componentPreview = {
+      ...existingComponentPreview,
       cdnFetchPaths: options.cdnFetchPaths ?? [],
     }
     addPlugin({

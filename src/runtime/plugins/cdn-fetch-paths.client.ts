@@ -9,8 +9,9 @@ import { defineNuxtPlugin, useRuntimeConfig } from '#imports'
  * plugin wraps `globalThis.$fetch` and rewrites requests matching a
  * configured `cdnFetchPaths` prefix to use `app.cdnURL` as base URL.
  *
- * Gated on `config.public.componentPreview` so regular Nuxt pages are
- * untouched (their document origin is already the Nuxt origin).
+ * Gated on `config.public.componentPreview.active` so regular Nuxt
+ * pages are untouched (their document origin is already the Nuxt
+ * origin).
  *
  * `$fetch.native` callers bypass ofetch and are not intercepted.
  */
@@ -19,15 +20,15 @@ export default defineNuxtPlugin({
   enforce: 'pre',
   setup() {
     const config = useRuntimeConfig()
+    const componentPreview = config.public.componentPreview as
+      { active?: boolean, cdnFetchPaths?: string[] } | undefined
     // Only active when component preview is active.
-    if (!config.public.componentPreview) return
+    if (!componentPreview?.active) return
 
     const cdnURL = config.app?.cdnURL?.replace(/\/$/, '') ?? ''
     if (!cdnURL) return
 
-    const paths
-      = (config.public as { nuxtComponentPreview?: { cdnFetchPaths?: string[] } })
-        .nuxtComponentPreview?.cdnFetchPaths ?? []
+    const paths = componentPreview.cdnFetchPaths ?? []
     if (!paths.length) return
 
     const original = globalThis.$fetch

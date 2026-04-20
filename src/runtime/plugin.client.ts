@@ -1,9 +1,12 @@
 import { defineNuxtPlugin, useState, useRuntimeConfig, onNuxtReady, nextTick } from '#imports'
 
 export default defineNuxtPlugin((nuxtApp) => {
-  // Only activate when preview mode is enabled
+  // Only activate when preview mode is active (SSR app-loader sets
+  // public.componentPreview.active = true; on a regular Nuxt page it is
+  // absent).
   const config = useRuntimeConfig()
-  if (!config.public.componentPreview) {
+  const componentPreview = config.public.componentPreview as { active?: boolean } | undefined
+  if (!componentPreview?.active) {
     return
   }
 

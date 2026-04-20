@@ -5,8 +5,8 @@ export default <RouterConfig>{
   // Only change history mode on client when preview mode is enabled
   history: (base) => {
     if (import.meta.client && typeof window !== 'undefined') {
-      const previewMode = useNuxtApp().payload.config?.public?.componentPreview
-      if (previewMode) {
+      const componentPreview = useNuxtApp().payload.config?.public?.componentPreview as { active?: boolean } | undefined
+      if (componentPreview?.active) {
         console.log('[Component Preview] Using memory history')
         return createMemoryHistory(base)
       }

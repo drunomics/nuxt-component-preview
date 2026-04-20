@@ -12,8 +12,7 @@ const state: {
   runtimeConfig: {
     app: { cdnURL?: string }
     public: {
-      componentPreview?: boolean
-      nuxtComponentPreview?: { cdnFetchPaths?: string[] }
+      componentPreview?: { active?: boolean, cdnFetchPaths?: string[] }
     }
   }
   capturedOnRequest: OnRequestHook | null
@@ -61,7 +60,7 @@ describe('cdnFetchPaths client plugin', () => {
   it('is a no-op when component preview is not active', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
-      public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
+      public: { componentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
     }
     const hook = await runPluginSetup()
     expect(hook).toBeNull()
@@ -71,8 +70,7 @@ describe('cdnFetchPaths client plugin', () => {
     state.runtimeConfig = {
       app: {},
       public: {
-        componentPreview: true,
-        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] },
+        componentPreview: { active: true, cdnFetchPaths: ['/api/_nuxt_icon/'] },
       },
     }
     const hook = await runPluginSetup()
@@ -83,18 +81,17 @@ describe('cdnFetchPaths client plugin', () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
       public: {
-        componentPreview: true,
-        nuxtComponentPreview: { cdnFetchPaths: [] },
+        componentPreview: { active: true, cdnFetchPaths: [] },
       },
     }
     const hook = await runPluginSetup()
     expect(hook).toBeNull()
   })
 
-  it('is a no-op when nuxtComponentPreview.cdnFetchPaths is missing', async () => {
+  it('is a no-op when cdnFetchPaths is missing', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
-      public: { componentPreview: true },
+      public: { componentPreview: { active: true } },
     }
     const hook = await runPluginSetup()
     expect(hook).toBeNull()
@@ -104,8 +101,7 @@ describe('cdnFetchPaths client plugin', () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
       public: {
-        componentPreview: true,
-        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/', '/_i18n/'] },
+        componentPreview: { active: true, cdnFetchPaths: ['/api/_nuxt_icon/', '/_i18n/'] },
       },
     }
     const hook = await runPluginSetup()
@@ -121,8 +117,7 @@ describe('cdnFetchPaths client plugin', () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com/' },
       public: {
-        componentPreview: true,
-        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] },
+        componentPreview: { active: true, cdnFetchPaths: ['/api/_nuxt_icon/'] },
       },
     }
     const hook = await runPluginSetup()
@@ -134,8 +129,7 @@ describe('cdnFetchPaths client plugin', () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
       public: {
-        componentPreview: true,
-        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] },
+        componentPreview: { active: true, cdnFetchPaths: ['/api/_nuxt_icon/'] },
       },
     }
     const hook = await runPluginSetup()
@@ -147,8 +141,7 @@ describe('cdnFetchPaths client plugin', () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
       public: {
-        componentPreview: true,
-        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] },
+        componentPreview: { active: true, cdnFetchPaths: ['/api/_nuxt_icon/'] },
       },
     }
     const hook = await runPluginSetup()
@@ -160,8 +153,7 @@ describe('cdnFetchPaths client plugin', () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
       public: {
-        componentPreview: true,
-        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] },
+        componentPreview: { active: true, cdnFetchPaths: ['/api/_nuxt_icon/'] },
       },
     }
     const hook = await runPluginSetup()
@@ -175,8 +167,7 @@ describe('cdnFetchPaths client plugin', () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
       public: {
-        componentPreview: true,
-        nuxtComponentPreview: { cdnFetchPaths: ['/api/my-custom-route/'] },
+        componentPreview: { active: true, cdnFetchPaths: ['/api/my-custom-route/'] },
       },
     }
     const hook = await runPluginSetup()

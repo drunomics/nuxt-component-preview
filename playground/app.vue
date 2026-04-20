@@ -1,5 +1,5 @@
 <template>
-  <ComponentPreviewArea v-if="useRuntimeConfig().public.componentPreview" />
+  <ComponentPreviewArea v-if="useRuntimeConfig().public.componentPreview?.active" />
   <NuxtPage v-else />
 </template>
 
