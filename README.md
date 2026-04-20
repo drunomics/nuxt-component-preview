@@ -174,7 +174,15 @@ export default defineNuxtConfig({
       overrides: {
         TestButton: { name: 'Custom Button', description: 'A button', category: 'Forms', status: 'experimental' }
       }
-    }
+    },
+
+    // Client-side `$fetch` path prefixes resolved against `app.cdnURL`
+    // instead of the embedding document's origin. See below.
+    cdnFetchPaths: [
+      '/nuxt-component-preview/',
+      '/api/_nuxt_icon/',
+      '/_i18n/',
+    ]
   }
 })
 ```
@@ -197,6 +205,10 @@ Filter the component index by directory path patterns. Works for both app-level 
 - `exclude.directories`: exclude components in these directories
 
 Both can be combined — e.g., include `Canvas` but exclude `Canvas/Internal`.
+
+#### `cdnFetchPaths`
+
+Client-side `$fetch` requests matching one of these path prefixes (via `startsWith`) are rewritten to use `app.cdnURL` as the base URL instead of resolving against the embedding document's origin. No-op when `app.cdnURL` is unset or the array is empty. Modules calling `$fetch.native` bypass ofetch and are not affected.
 
 ### Component Metadata
 
