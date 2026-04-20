@@ -27,7 +27,10 @@ describe('nuxt-component-preview module', async () => {
     })
     expect(typeof script).toBe('string')
     expect(script).toContain('function initNuxt()')
-    expect(script).toContain('componentPreview')
+    // Activates preview mode via `componentPreview.active = true` (object
+    // shape, merged with any build-time componentPreview public config).
+    expect(script).toContain('"componentPreview":{')
+    expect(script).toContain('"active":true')
   })
 
   it('component index includes subfolder components with folder-prefixed names', async () => {

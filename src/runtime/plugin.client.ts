@@ -3,7 +3,7 @@ import { defineNuxtPlugin, useState, useRuntimeConfig, onNuxtReady, nextTick } f
 export default defineNuxtPlugin((nuxtApp) => {
   // Only activate when preview mode is enabled
   const config = useRuntimeConfig()
-  if (!config.public.componentPreview) {
+  if (!config.public.componentPreview?.active) {
     return
   }
 

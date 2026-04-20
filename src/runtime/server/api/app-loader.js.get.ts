@@ -24,11 +24,12 @@ export default defineEventHandler((event) => {
       : `${requestURL.protocol}//${requestURL.host}`
   }
 
-  // Serialize public config (with componentPreview enabled)
-  // Only include what's needed for the client
+  // Serialize public config, merging `active: true` into componentPreview
+  // so any build-time componentPreview options (e.g. cdnFetchPaths) survive.
+  const existing = (config.public.componentPreview as Record<string, unknown>) ?? {}
   const publicConfig = {
     ...config.public,
-    componentPreview: true,
+    componentPreview: { ...existing, active: true },
   }
   const publicConfigStr = JSON.stringify(publicConfig)
   const entryCssPathsStr = JSON.stringify(entryCssPaths || [])
