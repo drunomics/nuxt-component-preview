@@ -29,9 +29,12 @@ export interface ModuleOptions {
     }>
   }
   /**
-   * Client-side `$fetch` path prefixes resolved against `app.cdnURL`
-   * instead of the document origin. Matched with `startsWith`. Empty
-   * array disables the interceptor; ignored when `app.cdnURL` is unset.
+   * Path prefixes for the component-preview `$fetch` override. Matching
+   * client-side `$fetch` requests are rerouted from the embedder's
+   * origin to `app.cdnURL` (the Nuxt origin). Active only when
+   * component preview is active. Matched with `startsWith`. Defaults
+   * to `['/nuxt-component-preview/', '/api/_nuxt_icon/', '/_i18n/']`;
+   * set to `[]` to disable.
    */
   cdnFetchPaths?: string[]
 }

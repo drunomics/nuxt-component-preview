@@ -208,7 +208,9 @@ Both can be combined — e.g., include `Canvas` but exclude `Canvas/Internal`.
 
 #### `cdnFetchPaths`
 
-Client-side `$fetch` requests matching one of these path prefixes (via `startsWith`) are rewritten to use `app.cdnURL` as the base URL instead of resolving against the embedding document's origin. No-op when `app.cdnURL` is unset or the array is empty. Modules calling `$fetch.native` bypass ofetch and are not affected.
+A `$fetch` override **for component previews**. During a preview the Nuxt app runs inside an embedder document (e.g. a Drupal admin page), so relative `$fetch('/...')` calls from modules like `@nuxtjs/i18n` or `@nuxt/icon` hit the embedder instead of Nitro. This plugin rewrites requests starting with one of the configured prefixes to use `app.cdnURL` (the Nuxt origin) as base URL.
+
+Defaults to `['/nuxt-component-preview/', '/api/_nuxt_icon/', '/_i18n/']`. Set to `[]` to disable. `$fetch.native` callers bypass ofetch and are not intercepted.
 
 ### Component Metadata
 

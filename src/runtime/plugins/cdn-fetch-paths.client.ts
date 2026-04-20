@@ -1,15 +1,27 @@
 import { defineNuxtPlugin, useRuntimeConfig } from '#imports'
 
 /**
- * Wraps `globalThis.$fetch` so requests whose path starts with a
- * configured `cdnFetchPaths` prefix use `app.cdnURL` as the base URL.
- * Modules using `$fetch.native` bypass ofetch and are not intercepted.
+ * `$fetch` override for component previews.
+ *
+ * In a preview the Nuxt app runs inside an embedder document, so
+ * relative `$fetch('/...')` calls from modules like `@nuxtjs/i18n` or
+ * `@nuxt/icon` resolve against the embedder instead of Nitro. This
+ * plugin wraps `globalThis.$fetch` and rewrites requests matching a
+ * configured `cdnFetchPaths` prefix to use `app.cdnURL` as base URL.
+ *
+ * Gated on `config.public.componentPreview` so regular Nuxt pages are
+ * untouched (their document origin is already the Nuxt origin).
+ *
+ * `$fetch.native` callers bypass ofetch and are not intercepted.
  */
 export default defineNuxtPlugin({
   name: 'nuxt-component-preview:cdn-fetch-paths',
   enforce: 'pre',
   setup() {
     const config = useRuntimeConfig()
+    // Only active when component preview is active.
+    if (!config.public.componentPreview) return
+
     const cdnURL = config.app?.cdnURL?.replace(/\/$/, '') ?? ''
     if (!cdnURL) return
 
