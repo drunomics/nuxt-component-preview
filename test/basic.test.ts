@@ -27,7 +27,11 @@ describe('nuxt-component-preview module', async () => {
     })
     expect(typeof script).toBe('string')
     expect(script).toContain('function initNuxt()')
-    expect(script).toContain('componentPreview')
+    // Sets the new primary flag and keeps the legacy boolean set for BC
+    // with existing `public.componentPreview` checks in kickstart
+    // (app.vue, middleware) until they migrate to componentPreviewActive.
+    expect(script).toContain('"componentPreviewActive":true')
+    expect(script).toContain('"componentPreview":true')
   })
 
   it('component index includes subfolder components with folder-prefixed names', async () => {

@@ -1,9 +1,12 @@
 import { defineNuxtPlugin, useState, useRuntimeConfig, onNuxtReady, nextTick } from '#imports'
 
 export default defineNuxtPlugin((nuxtApp) => {
-  // Only activate when preview mode is enabled
+  // Only activate when preview mode is enabled. Primary flag is
+  // `componentPreviewActive`; legacy `componentPreview === true` is also
+  // honoured so pre-migration consumers keep working.
   const config = useRuntimeConfig()
-  if (!config.public.componentPreview) {
+  const pub = config.public as { componentPreviewActive?: boolean, componentPreview?: unknown }
+  if (pub.componentPreviewActive !== true && pub.componentPreview !== true) {
     return
   }
 

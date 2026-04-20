@@ -73,7 +73,7 @@
 
     <div style="margin: 2rem 0;">
       <h2>Module Status</h2>
-      <p><strong>Preview Mode:</strong> {{ $config.public.componentPreview ? 'Enabled' : 'Disabled' }}</p>
+      <p><strong>Preview Mode:</strong> {{ $config.public.componentPreviewActive ? 'Enabled' : 'Disabled' }}</p>
       <p>Preview mode should be disabled in normal app usage and only enabled when explicitly configured.</p>
     </div>
   </div>
