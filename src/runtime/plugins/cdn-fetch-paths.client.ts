@@ -36,6 +36,8 @@ export default defineNuxtPlugin({
     globalThis.$fetch = original.create({
       onRequest({ request, options }) {
         if (typeof request !== 'string' || !request.startsWith('/')) return
+        // Respect a caller- or upstream-interceptor-provided baseURL.
+        if (options.baseURL) return
         if (!paths.some(prefix => request.startsWith(prefix))) return
         options.baseURL = cdnURL
       },

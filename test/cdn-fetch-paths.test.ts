@@ -156,6 +156,21 @@ describe('cdnFetchPaths client plugin', () => {
       .toBeUndefined()
   })
 
+  it('respects a caller-provided options.baseURL', async () => {
+    state.runtimeConfig = {
+      app: { cdnURL: 'https://app.example.com' },
+      public: {
+        componentPreview: true,
+        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] },
+      },
+    }
+    const hook = await runPluginSetup()
+    // A matching path that already has an explicit baseURL should be left alone.
+    const options: { baseURL?: string } = { baseURL: 'https://explicit.example' }
+    hook!({ request: '/api/_nuxt_icon/ph.json', options })
+    expect(options.baseURL).toBe('https://explicit.example')
+  })
+
   it('matches with startsWith — custom prefixes can be added', async () => {
     state.runtimeConfig = {
       app: { cdnURL: 'https://app.example.com' },
