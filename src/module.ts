@@ -29,21 +29,9 @@ export interface ModuleOptions {
     }>
   }
   /**
-   * Client-side `$fetch` path prefixes that should be resolved against
-   * `config.app.cdnURL` (the Nuxt app's own origin) instead of the
-   * embedding document's origin.
-   *
-   * Needed only for deployments where the Nuxt app is embedded
-   * cross-origin (micro-frontend, component preview): a module using
-   * plain `$fetch('/api/foo')` on the client otherwise resolves that
-   * relative URL against the embedder's origin.
-   *
-   * Each entry is matched with `startsWith` against the request URL.
-   * Set to an empty array to disable the interceptor entirely. Ignored
-   * when `config.app.cdnURL` is not configured (standalone Nuxt).
-   *
-   * Defaults cover the common Nitro-route-owning modules:
-   *   `/nuxt-component-preview/`, `/api/_nuxt_icon/`, `/_i18n/`
+   * Client-side `$fetch` path prefixes resolved against `app.cdnURL`
+   * instead of the document origin. Matched with `startsWith`. Empty
+   * array disables the interceptor; ignored when `app.cdnURL` is unset.
    */
   cdnFetchPaths?: string[]
 }
@@ -112,16 +100,8 @@ export default defineNuxtModule<ModuleOptions>({
       mode: 'client',
     })
 
-    // Expose cdnFetchPaths to the client plugin via public runtime config
-    // (so callers can override it via nuxt.config without rebuilding) and
-    // register the plugin that rewrites matching $fetch requests to use
-    // `app.cdnURL` as the base URL.
-    //
-    // Note: we deliberately use a dedicated `nuxtComponentPreview` key
-    // instead of the module's own `componentPreview` configKey namespace
-    // — that key is already treated as a boolean preview-mode switch
-    // elsewhere (see `plugin.client.ts`, `playground/app.vue`) and wrapping
-    // it in an object would flip the switch on for every consumer.
+    // Dedicated `nuxtComponentPreview` runtime key — `componentPreview`
+    // is a boolean preview-mode switch used elsewhere.
     const publicConfig = nuxt.options.runtimeConfig.public as Record<string, unknown>
     const existingNuxtComponentPreview = (publicConfig.nuxtComponentPreview as Record<string, unknown>) ?? {}
     publicConfig.nuxtComponentPreview = {

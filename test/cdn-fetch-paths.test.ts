@@ -1,14 +1,7 @@
 /**
- * Exercises the `cdnFetchPaths` client plugin introduced to re-route
- * client-side `$fetch` calls to the Nuxt app origin (`config.app.cdnURL`)
- * instead of the embedding document's origin.
- *
- * Unit-style test: we stub `useRuntimeConfig` via `mockNuxtImport` (the
- * Nuxt test-utils equivalent of `vi.mock('#imports')` — plain vi.mock
- * does NOT intercept Nuxt's virtual module) and capture the `onRequest`
- * hook passed to `$fetch.create` so we can invoke it directly and
- * observe what `options.baseURL` the plugin applies to a given request
- * path. No playground Nuxt instance needed.
+ * Unit tests for the `cdnFetchPaths` client plugin. Stubs
+ * `useRuntimeConfig` via `mockNuxtImport` and captures the `onRequest`
+ * hook passed to `$fetch.create` to observe the resulting `baseURL`.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
@@ -30,11 +23,6 @@ mockNuxtImport('useRuntimeConfig', () => {
   return () => state.runtimeConfig
 })
 
-/**
- * Minimal $fetch mock whose `.create()` captures the `onRequest` hook
- * passed by the plugin, so tests can call it directly and observe what
- * `options.baseURL` it sets.
- */
 function installMockFetch(): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(globalThis as any).$fetch = {
@@ -50,9 +38,7 @@ async function runPluginSetup(): Promise<OnRequestHook | null> {
   vi.resetModules()
   installMockFetch()
   const mod = await import('../src/runtime/plugins/cdn-fetch-paths.client')
-  // defineNuxtPlugin returns the `setup` function itself, decorated with
-  // the other meta properties — so the default export is directly
-  // callable with (optional) nuxtApp as the argument.
+  // `defineNuxtPlugin({ setup })` returns the setup fn itself (decorated).
   const plugin = (mod as { default: (nuxtApp?: unknown) => void | Promise<void> }).default
   await plugin()
   return state.capturedOnRequest
@@ -66,10 +52,6 @@ function simulateRequest(hook: OnRequestHook, request: string): string | undefin
 
 describe('cdnFetchPaths client plugin', () => {
   beforeEach(() => {
-    // Reset to an empty runtime config before each test; the plugin's
-    // client-only restriction is enforced at the Nuxt module level
-    // (`mode: 'client'` + `.client.ts` suffix), not at runtime, so no env
-    // stubbing is needed here.
     state.runtimeConfig = { app: {}, public: {} }
   })
 
@@ -79,7 +61,6 @@ describe('cdnFetchPaths client plugin', () => {
       public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
     }
     const hook = await runPluginSetup()
-    // Plugin returns early → no wrapper installed, no hook captured.
     expect(hook).toBeNull()
   })
 
@@ -131,10 +112,7 @@ describe('cdnFetchPaths client plugin', () => {
       public: { nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] } },
     }
     const hook = await runPluginSetup()
-    // `/api/drupal-ce/…` is a Drupal-CE route served by the embedder —
-    // must NOT be rewritten to the Nuxt origin.
     expect(simulateRequest(hook!, '/api/drupal-ce/node/42')).toBeUndefined()
-    // Root-level `/favicon.ico` likewise.
     expect(simulateRequest(hook!, '/favicon.ico')).toBeUndefined()
   })
 
