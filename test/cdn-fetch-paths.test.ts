@@ -1,24 +1,17 @@
 /**
- * @vitest-environment happy-dom
- *
  * Exercises the `cdnFetchPaths` client plugin introduced to re-route
  * client-side `$fetch` calls to the Nuxt app origin (`config.app.cdnURL`)
  * instead of the embedding document's origin.
  *
- * Unit-style test: the plugin is imported directly with `#imports` and
- * the global `$fetch` mocked, so we can capture what `options.baseURL`
- * the plugin's `onRequest` hook applies to a given request path. No
- * playground Nuxt instance needed.
- *
- * The `@vitest-environment happy-dom` pragma opts this file out of the
- * repo-wide `environment: 'nuxt'` setting from `vitest.config.ts` —
- * under the Nuxt env, `#imports` resolves to the real Nuxt virtual
- * module and `vi.mock('#imports')` does NOT intercept it, so
- * `useRuntimeConfig()` returns the playground's empty config instead
- * of the per-test stub. happy-dom gives a plain vite module graph
- * where the mock works as written.
+ * Unit-style test: we stub `useRuntimeConfig` via `mockNuxtImport` (the
+ * Nuxt test-utils equivalent of `vi.mock('#imports')` — plain vi.mock
+ * does NOT intercept Nuxt's virtual module) and capture the `onRequest`
+ * hook passed to `$fetch.create` so we can invoke it directly and
+ * observe what `options.baseURL` the plugin applies to a given request
+ * path. No playground Nuxt instance needed.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mockNuxtImport } from '@nuxt/test-utils/runtime'
 
 type OnRequestHook = (ctx: { request: string, options: { baseURL?: string } }) => void
 
@@ -33,10 +26,9 @@ const state: {
   capturedOnRequest: null,
 }
 
-vi.mock('#imports', () => ({
-  defineNuxtPlugin: (opts: unknown) => opts,
-  useRuntimeConfig: () => state.runtimeConfig,
-}))
+mockNuxtImport('useRuntimeConfig', () => {
+  return () => state.runtimeConfig
+})
 
 /**
  * Minimal $fetch mock whose `.create()` captures the `onRequest` hook
@@ -58,8 +50,11 @@ async function runPluginSetup(): Promise<OnRequestHook | null> {
   vi.resetModules()
   installMockFetch()
   const mod = await import('../src/runtime/plugins/cdn-fetch-paths.client')
-  const plugin = (mod as { default: { setup: () => void | Promise<void> } }).default
-  await plugin.setup()
+  // defineNuxtPlugin returns the `setup` function itself, decorated with
+  // the other meta properties — so the default export is directly
+  // callable with (optional) nuxtApp as the argument.
+  const plugin = (mod as { default: (nuxtApp?: unknown) => void | Promise<void> }).default
+  await plugin()
   return state.capturedOnRequest
 }
 
