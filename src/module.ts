@@ -28,6 +28,24 @@ export interface ModuleOptions {
       status?: 'experimental' | 'stable' | 'deprecated' | 'obsolete'
     }>
   }
+  /**
+   * Client-side `$fetch` path prefixes that should be resolved against
+   * `config.app.cdnURL` (the Nuxt app's own origin) instead of the
+   * embedding document's origin.
+   *
+   * Needed only for deployments where the Nuxt app is embedded
+   * cross-origin (micro-frontend, component preview): a module using
+   * plain `$fetch('/api/foo')` on the client otherwise resolves that
+   * relative URL against the embedder's origin.
+   *
+   * Each entry is matched with `startsWith` against the request URL.
+   * Set to an empty array to disable the interceptor entirely. Ignored
+   * when `config.app.cdnURL` is not configured (standalone Nuxt).
+   *
+   * Defaults cover the common Nitro-route-owning modules:
+   *   `/nuxt-component-preview/`, `/api/_nuxt_icon/`, `/_i18n/`
+   */
+  cdnFetchPaths?: string[]
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -50,6 +68,11 @@ export default defineNuxtModule<ModuleOptions>({
       },
       overrides: {},
     },
+    cdnFetchPaths: [
+      '/nuxt-component-preview/',
+      '/api/_nuxt_icon/',
+      '/_i18n/',
+    ],
   },
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
@@ -86,6 +109,21 @@ export default defineNuxtModule<ModuleOptions>({
     // Add the client-side plugin for component preview functionality
     addPlugin({
       src: resolver.resolve('./runtime/plugin.client'),
+      mode: 'client',
+    })
+
+    // Expose cdnFetchPaths to the client plugin via public runtime config
+    // (so callers can override it via nuxt.config without rebuilding) and
+    // register the plugin that rewrites matching $fetch requests to use
+    // `app.cdnURL` as the base URL.
+    const publicConfig = nuxt.options.runtimeConfig.public as Record<string, unknown>
+    const existingComponentPreview = (publicConfig.componentPreview as Record<string, unknown>) ?? {}
+    publicConfig.componentPreview = {
+      ...existingComponentPreview,
+      cdnFetchPaths: options.cdnFetchPaths ?? [],
+    }
+    addPlugin({
+      src: resolver.resolve('./runtime/plugins/cdn-fetch-paths.client'),
       mode: 'client',
     })
 
