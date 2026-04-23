@@ -13,6 +13,7 @@ const state: {
     app: { cdnURL?: string }
     public: {
       componentPreview?: boolean
+      componentPreviewActive?: boolean
       nuxtComponentPreview?: { cdnFetchPaths?: string[] }
     }
   }
@@ -65,6 +66,34 @@ describe('cdnFetchPaths client plugin', () => {
     }
     const hook = await runPluginSetup()
     expect(hook).toBeNull()
+  })
+
+  it('activates on componentPreviewActive: true (new primary flag)', async () => {
+    state.runtimeConfig = {
+      app: { cdnURL: 'https://app.example.com' },
+      public: {
+        componentPreviewActive: true,
+        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] },
+      },
+    }
+    const hook = await runPluginSetup()
+    expect(hook).not.toBeNull()
+    expect(simulateRequest(hook!, '/api/_nuxt_icon/ph.json'))
+      .toBe('https://app.example.com')
+  })
+
+  it('activates on componentPreview: true (legacy boolean flag)', async () => {
+    state.runtimeConfig = {
+      app: { cdnURL: 'https://app.example.com' },
+      public: {
+        componentPreview: true,
+        nuxtComponentPreview: { cdnFetchPaths: ['/api/_nuxt_icon/'] },
+      },
+    }
+    const hook = await runPluginSetup()
+    expect(hook).not.toBeNull()
+    expect(simulateRequest(hook!, '/api/_nuxt_icon/ph.json'))
+      .toBe('https://app.example.com')
   })
 
   it('is a no-op when cdnURL is not set', async () => {

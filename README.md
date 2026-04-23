@@ -105,7 +105,7 @@ Add the `<ComponentPreviewArea />` to your `app.vue` so previews render when pre
 
 ```vue
 <template>
-  <ComponentPreviewArea v-if="useRuntimeConfig().public.componentPreview" />
+  <ComponentPreviewArea v-if="useRuntimeConfig().public.componentPreviewActive" />
   <NuxtPage v-else />
 </template>
 ```

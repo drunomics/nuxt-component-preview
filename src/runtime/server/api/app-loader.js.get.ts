@@ -24,11 +24,18 @@ export default defineEventHandler((event) => {
       : `${requestURL.protocol}//${requestURL.host}`
   }
 
-  // Serialize public config (with componentPreview enabled)
-  // Only include what's needed for the client
+  // Serialize public config and flag the preview as active.
+  // - `componentPreviewActive: true` is always set — the new primary flag.
+  // - `componentPreview: true` is emitted as a BC default for legacy
+  //   consumer code that still reads `public.componentPreview` as a
+  //   boolean (e.g. kickstart's app.vue before it migrates). The spread
+  //   of `config.public` comes after, so if the user has populated
+  //   `componentPreview` in their runtimeConfig (e.g. as an object), that
+  //   value wins and is not clobbered.
   const publicConfig = {
-    ...config.public,
     componentPreview: true,
+    ...config.public,
+    componentPreviewActive: true,
   }
   const publicConfigStr = JSON.stringify(publicConfig)
   const entryCssPathsStr = JSON.stringify(entryCssPaths || [])

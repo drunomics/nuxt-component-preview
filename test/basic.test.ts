@@ -27,7 +27,12 @@ describe('nuxt-component-preview module', async () => {
     })
     expect(typeof script).toBe('string')
     expect(script).toContain('function initNuxt()')
-    expect(script).toContain('componentPreview')
+    // Emits the new primary flag always; defaults legacy `componentPreview`
+    // to `true` as a BC fallback for consumer code that still reads the
+    // old boolean. If the user populates `componentPreview` in their own
+    // runtimeConfig (e.g. as an object), that value overrides this default.
+    expect(script).toContain('"componentPreviewActive":true')
+    expect(script).toContain('"componentPreview":true')
   })
 
   it('component index includes subfolder components with folder-prefixed names', async () => {
