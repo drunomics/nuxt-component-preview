@@ -210,7 +210,7 @@ Both can be combined — e.g., include `Canvas` but exclude `Canvas/Internal`.
 
 A `$fetch` / `$fetch.native` override **for component previews**. During a preview the Nuxt app runs inside an embedder document (e.g. a Drupal admin page), so relative `$fetch('/...')` calls from modules like `@nuxtjs/i18n` or `@nuxt/icon` hit the embedder instead of Nitro. This plugin rewrites matching requests to absolute URLs at `app.cdnURL`, covering both ofetch (`$fetch`) and raw-fetch (`$fetch.native`, used e.g. by `@nuxt/icon`) callers.
 
-Defaults to `['/nuxt-component-preview/', '/api/_nuxt_icon/', '/_i18n/']`. Set to `[]` to disable. An explicit absolute (`http://` / `https://`) caller-provided `options.baseURL` is respected — only the Nuxt default (empty or `/`) is treated as "no caller override" and rewritten.
+Defaults to `['/nuxt-component-preview/', '/api/_nuxt_icon/', '/_i18n/']`. Set to `[]` to disable. An explicit absolute (`http://` / `https://`) caller-provided `options.baseURL` is respected; only the Nuxt default (empty or `/`) is treated as "no caller override" and rewritten.
 
 ### Component Metadata
 
