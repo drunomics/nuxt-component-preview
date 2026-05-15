@@ -188,6 +188,7 @@ interface PropDefinition {
   // Array support
   'items'?: Partial<PropDefinition>
   'maxItems'?: number
+  'minItems'?: number
 }
 
 // Canvas type mappings - maps TypeScript type names to Canvas $ref values
@@ -359,6 +360,62 @@ function detectMaxItemsTag(tags?: Array<{ name: string, text?: string }>): numbe
 }
 
 /**
+ * Detect @minItems JSDoc tag for array required cardinality.
+ *
+ * Canvas signals "required" for multi-value props via `minItems: 1`.
+ *
+ * @example
+ * // @minItems 1
+ * tags: string[]
+ */
+function detectMinItemsTag(tags?: Array<{ name: string, text?: string }>): number | null {
+  if (!tags) return null
+
+  const minItemsTag = tags.find(t => t.name === 'minItems')
+  if (!minItemsTag?.text?.trim()) return null
+
+  const num = Number.parseInt(minItemsTag.text.trim(), 10)
+  return Number.isNaN(num) ? null : num
+}
+
+/**
+ * Detect @itemsFormat JSDoc tag for the JSON Schema format of array items.
+ *
+ * Canvas-supported formats (uri, uri-reference, date, date-time, email).
+ *
+ * @example
+ * // @itemsFormat uri
+ * links?: string[]
+ */
+function detectItemsFormatTag(tags?: Array<{ name: string, text?: string }>): string | null {
+  if (!tags) return null
+
+  const itemsFormatTag = tags.find(t => t.name === 'itemsFormat')
+  if (!itemsFormatTag?.text?.trim()) return null
+
+  return itemsFormatTag.text.trim()
+}
+
+/**
+ * Detect @itemsSchemaRef JSDoc tag for the $ref of array items.
+ *
+ * Supports the same shorthand notation as @schemaRef.
+ *
+ * @example
+ * // @itemsSchemaRef canvas/stream-wrapper-uri
+ * attachments?: string[]
+ */
+function detectItemsSchemaRefTag(tags?: Array<{ name: string, text?: string }>): SchemaRefResult | null {
+  if (!tags) return null
+
+  const tag = tags.find(t => t.name === 'itemsSchemaRef')
+  if (!tag?.text?.trim()) return null
+
+  // Reuse @schemaRef parser by mapping name to 'schemaRef'.
+  return detectSchemaRefTag([{ name: 'schemaRef', text: tag.text }])
+}
+
+/**
  * Schema type from vue-component-meta
  */
 interface VueMetaSchema {
@@ -379,16 +436,31 @@ function detectArrayFromTypeString(typeStr: string): string | null {
   // Handle T[] syntax: string[], number[], CanvasImage[]
   const bracketMatch = cleanType.match(/^(.+)\[\]$/)
   if (bracketMatch) {
-    return bracketMatch[1]
+    return stripOuterParens(bracketMatch[1])
   }
 
   // Handle Array<T> syntax
   const genericMatch = cleanType.match(/^Array<(.+)>$/i)
   if (genericMatch) {
-    return genericMatch[1]
+    return stripOuterParens(genericMatch[1])
   }
 
   return null
+}
+
+/**
+ * Strip a single layer of outer parens, e.g. `(10 | 20)` -> `10 | 20`.
+ *
+ * TypeScript writes union element types of `T[]` as `(A | B)[]`; the outer
+ * parens trip up the scalar prop helpers (mapVueTypeToJsonSchema,
+ * extractEnumFromType) that operate on the union string directly.
+ */
+function stripOuterParens(type: string): string {
+  const trimmed = type.trim()
+  if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+    return trimmed.slice(1, -1).trim()
+  }
+  return trimmed
 }
 
 /**
@@ -904,13 +976,43 @@ export function generateComponentIndex(
               propDef.items = { type: 'object', $ref: canvasRef }
             }
             else {
-              // Array of primitives (string[], number[], boolean[])
-              propDef.items = { type: mapVueTypeToJsonSchema(elementType) }
+              // Array of primitives (string[], number[], boolean[]) — plus
+              // optional refinements from JSDoc / TS union literals applied
+              // to the *items* schema (canvas 1.4 multi-value props).
+              const itemsSchema: Partial<PropDefinition> = {
+                type: mapVueTypeToJsonSchema(elementType),
+              }
+
+              // Element-type enum: detect a string/integer literal union in
+              // the element type and lift it into items.enum + meta:enum.
+              const itemEnumValues = extractEnumFromType(elementType)
+              if (itemEnumValues.length > 0) {
+                itemsSchema.enum = itemEnumValues
+                const metaEnum = extractEnumLabels(prop, itemEnumValues)
+                if (metaEnum) itemsSchema['meta:enum'] = metaEnum
+              }
+
+              // @itemsFormat — applies to a string-typed element (uri, date,
+              // date-time, etc.).
+              const itemsFormat = detectItemsFormatTag(prop.tags)
+              if (itemsFormat) itemsSchema.format = itemsFormat
+
+              // @itemsSchemaRef — $ref for an element that is not a built-in
+              // Canvas alias (CanvasImage/CanvasVideo).
+              const itemsRef = detectItemsSchemaRefTag(prop.tags)
+              if (itemsRef) {
+                itemsSchema.$ref = itemsRef.$ref
+                Object.assign(itemsSchema, getSchemaRefProperties(itemsRef.shorthand))
+              }
+
+              propDef.items = itemsSchema
             }
 
-            // Check for @maxItems
+            // Check for @maxItems / @minItems
             const maxItems = detectMaxItemsTag(prop.tags)
             if (maxItems) propDef.maxItems = maxItems
+            const minItems = detectMinItemsTag(prop.tags)
+            if (minItems) propDef.minItems = minItems
 
             // Extract examples (should be arrays)
             const examples = extractExamples(prop, 'object')
