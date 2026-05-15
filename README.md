@@ -275,6 +275,8 @@ withDefaults(defineProps<{
 - `@format` - JSON Schema format for semantic string validation and UI widgets (e.g., date picker). Supported: `date`, `date-time`, `time`, `duration`, `email`, `idn-email`, `hostname`, `idn-hostname`, `ipv4`, `ipv6`, `uuid`, `uri`, `uri-reference`, `iri`, `iri-reference`
 - `@pattern` - JSON Schema regex pattern for string validation (e.g., `(.|\r?\n)*` for multiline/textarea)
 - `@allowed-schemes` - Allowed URI schemes for Canvas field type determination (e.g., `public` or `http, https`)
+- `@maxItems` / `@minItems` - Cardinality bounds for array props (see [Multi-Value Props](#multi-value-array-props))
+- `@itemsFormat` / `@itemsSchemaRef` - Format / `$ref` applied to the *items* of an array prop
 
 Prop titles are auto-generated from the first line of JSDoc or prop name. Use `@title` to override.
 
@@ -295,6 +297,8 @@ For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special 
 See [TestHero.vue](./playground/components/global/TestHero.vue) and [TestBanner.vue](./playground/components/global/TestBanner.vue) for usage examples.
 
 **Schema references** via `@schemaRef` allow referencing Canvas JSON schema definitions, useful for `stream-wrapper-uri` and `stream-wrapper-image-uri` types. Use shorthand `prefix/name` notation (e.g., `canvas/stream-wrapper-uri` expands to `json-schema-definitions://canvas.module/stream-wrapper-uri`). See [TestStreamWrapper.vue](./playground/components/global/TestStreamWrapper.vue) for examples.
+
+**Multi-value (array) props** are declared as TS array types. Enum element types (`('a' | 'b')[]`, `(10 | 20)[]`) lift into `items.enum` + `items.meta:enum` automatically; `CanvasImage[]` / `CanvasVideo[]` lift into `items.$ref`. Refinements TypeScript can't express are picked up via JSDoc: `@minItems` / `@maxItems` (cardinality), `@itemsFormat` (e.g. `uri`, `date`), `@itemsSchemaRef` (canvas $ref shorthand). See [TestMultiValueProps.vue](./playground/components/global/TestMultiValueProps.vue).
 
 ## Testing
 
