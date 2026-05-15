@@ -1,4 +1,5 @@
 import * as path from 'node:path'
+import { readFileSync } from 'node:fs'
 import { describe, it, expect, beforeAll } from 'vitest'
 import type { Component } from '@nuxt/schema'
 import type { ComponentIndexData } from '../src/runtime/server/utils/generateComponentIndex'
@@ -540,6 +541,101 @@ describe('Component Index - Prop Metadata Extraction', () => {
         $ref: 'json-schema-definitions://canvas.module/image',
       })
       expect(imagesProp.maxItems).toBe(20)
+    })
+  })
+
+  // ── TestMultiValueProps group ─────────────────────────────────────
+  // Canvas 1.4 multi-value props: each variant matches the shape canvas
+  // expects for arrays of strings/numbers/integers, with optional format,
+  // enum + meta:enum, $ref-on-items, and minItems/maxItems cardinality.
+  // @see web/modules/contrib/canvas/tests/modules/canvas_test_sdc/components/multivalue-props/multivalue-props.component.yml
+  describe('TestMultiValueProps (Canvas 1.4 multi-value props)', () => {
+    let result: ComponentIndexData
+
+    beforeAll(async () => {
+      result = await generateIndex([createMockComp('TestMultiValueProps', 'TestMultiValueProps.vue')])
+    })
+
+    function prop(name: string) {
+      return result.components[0].props.properties[name]
+    }
+
+    it('plain text array → type:array items:{type:string}', () => {
+      expect(prop('textValues')).toMatchObject({
+        type: 'array',
+        items: { type: 'string' },
+      })
+    })
+
+    it('@maxItems lifts cardinality cap to maxItems', () => {
+      expect(prop('textLimited').maxItems).toBe(3)
+    })
+
+    it('@minItems lifts required-ness to minItems on the array', () => {
+      expect(prop('requiredText').minItems).toBe(1)
+      // Non-optional prop still appears in component-level required[] too —
+      // canvas accepts either signal.
+      expect(result.components[0].props.required).toContain('requiredText')
+    })
+
+    it('@itemsFormat lifts string format to items.format', () => {
+      expect(prop('links').items).toEqual({ type: 'string', format: 'uri' })
+      expect(prop('relativeLinks').items).toEqual({ type: 'string', format: 'uri-reference' })
+      expect(prop('dateTimes').items).toEqual({ type: 'string', format: 'date-time' })
+      expect(prop('dates').items).toEqual({ type: 'string', format: 'date' })
+    })
+
+    it('string-literal union element → items.enum + auto meta:enum', () => {
+      expect(prop('listText').items).toEqual({
+        'type': 'string',
+        'enum': ['option_one', 'option_two', 'option_three', 'option_four'],
+        'meta:enum': {
+          option_one: 'Option One',
+          option_two: 'Option Two',
+          option_three: 'Option Three',
+          option_four: 'Option Four',
+        },
+      })
+    })
+
+    it('@enumLabels overrides auto-generated item labels', () => {
+      expect(prop('listTextLimited').items['meta:enum']).toEqual({
+        draft: 'Draft',
+        review: 'In Review',
+        live: 'Live',
+      })
+    })
+
+    it('numeric-literal union element → items.type:integer + enum', () => {
+      expect(prop('listInt').items).toMatchObject({
+        type: 'integer',
+        enum: [10, 20, 30, 40],
+      })
+    })
+
+    it('CanvasImage[] → items:{type:object, $ref:image}', () => {
+      expect(prop('images').items).toEqual({
+        type: 'object',
+        $ref: 'json-schema-definitions://canvas.module/image',
+      })
+      expect(prop('images').maxItems).toBe(5)
+    })
+
+    it('@itemsSchemaRef lifts known-shape $ref + properties to items', () => {
+      expect(prop('attachments').items).toEqual({
+        'type': 'string',
+        '$ref': 'json-schema-definitions://canvas.module/stream-wrapper-uri',
+        'format': 'uri',
+        'x-allowed-schemes': ['public'],
+      })
+    })
+
+    it('overall output matches the canvas_extjs fixture snapshot', () => {
+      const expected = JSON.parse(readFileSync(
+        path.resolve(__dirname, 'fixtures/multivalue-props.component-index.json'),
+        'utf-8',
+      ))
+      expect(result).toEqual(expected)
     })
   })
 })

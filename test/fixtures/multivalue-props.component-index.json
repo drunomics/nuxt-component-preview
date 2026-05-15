@@ -1,0 +1,205 @@
+{
+  "version": "1.0",
+  "components": [
+    {
+      "id": "TestMultiValueProps",
+      "name": "Test Multi Value Props",
+      "category": "Test",
+      "status": "stable",
+      "props": {
+        "type": "object",
+        "required": [
+          "requiredText"
+        ],
+        "properties": {
+          "textValues": {
+            "type": "array",
+            "title": "Plain text values",
+            "items": {
+              "type": "string"
+            },
+            "examples": [
+              [
+                "Hello World",
+                "Sample Text"
+              ]
+            ]
+          },
+          "textLimited": {
+            "type": "array",
+            "title": "Text Limited",
+            "description": "Limited plain text (max 3)",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3
+          },
+          "requiredText": {
+            "type": "array",
+            "title": "Required text values",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "numbers": {
+            "type": "array",
+            "title": "Numbers",
+            "items": {
+              "type": "number"
+            },
+            "examples": [
+              [
+                42,
+                100
+              ]
+            ]
+          },
+          "links": {
+            "type": "array",
+            "title": "Links (absolute URLs)",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "examples": [
+              [
+                "https://drupal.org",
+                "https://example.com"
+              ]
+            ]
+          },
+          "linksLimited": {
+            "type": "array",
+            "title": "Limited links (max 3)",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "maxItems": 3
+          },
+          "relativeLinks": {
+            "type": "array",
+            "title": "Relative links",
+            "items": {
+              "type": "string",
+              "format": "uri-reference"
+            },
+            "examples": [
+              [
+                "/about",
+                "/contact"
+              ]
+            ]
+          },
+          "dateTimes": {
+            "type": "array",
+            "title": "DateTimes",
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "dates": {
+            "type": "array",
+            "title": "Dates",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "listText": {
+            "type": "array",
+            "title": "Text list (string enum)",
+            "items": {
+              "type": "string",
+              "enum": [
+                "option_one",
+                "option_two",
+                "option_three",
+                "option_four"
+              ],
+              "meta:enum": {
+                "option_one": "Option One",
+                "option_two": "Option Two",
+                "option_three": "Option Three",
+                "option_four": "Option Four"
+              }
+            },
+            "examples": [
+              [
+                "option_one",
+                "option_two"
+              ]
+            ]
+          },
+          "listTextLimited": {
+            "type": "array",
+            "title": "Limited text list",
+            "items": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "review",
+                "live"
+              ],
+              "meta:enum": {
+                "draft": "Draft",
+                "review": "In Review",
+                "live": "Live"
+              }
+            },
+            "maxItems": 3
+          },
+          "listInt": {
+            "type": "array",
+            "title": "List Int",
+            "description": "Integer list (numeric enum)",
+            "items": {
+              "type": "integer",
+              "enum": [
+                10,
+                20,
+                30,
+                40
+              ],
+              "meta:enum": {
+                "10": "Ten",
+                "20": "Twenty",
+                "30": "Thirty",
+                "40": "Forty"
+              }
+            },
+            "examples": [
+              [
+                10,
+                20
+              ]
+            ]
+          },
+          "images": {
+            "type": "array",
+            "title": "Gallery images",
+            "items": {
+              "type": "object",
+              "$ref": "json-schema-definitions://canvas.module/image"
+            },
+            "maxItems": 5
+          },
+          "attachments": {
+            "type": "array",
+            "title": "Public file attachments",
+            "items": {
+              "type": "string",
+              "$ref": "json-schema-definitions://canvas.module/stream-wrapper-uri",
+              "format": "uri",
+              "x-allowed-schemes": [
+                "public"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}
