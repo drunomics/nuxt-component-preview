@@ -1122,6 +1122,16 @@ export function generateComponentIndex(
       // Apply overrides if present (overrides take priority over JSDoc)
       const override = options.overrides?.[component.pascalName]
 
+      // Required props must carry an @example — canvas core (and consuming
+      // tools like canvas_extjs) assume the SDC `examples` array exists for
+      // required props and silently produce broken field defaults otherwise.
+      // @see Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase
+      for (const requiredProp of requiredProps) {
+        if (!props[requiredProp]?.examples?.length) {
+          console.warn(`[nuxt-component-preview] Required prop "${component.pascalName}.${requiredProp}" has no @example. Canvas assumes required props always have one and silently falls back to a null value otherwise — add an @example to the prop.`)
+        }
+      }
+
       const description = override?.description || componentMeta.description
       return {
         id: component.pascalName,

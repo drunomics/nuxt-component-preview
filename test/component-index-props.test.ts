@@ -1,6 +1,6 @@
 import * as path from 'node:path'
 import { readFileSync } from 'node:fs'
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
 import type { Component } from '@nuxt/schema'
 import type { ComponentIndexData } from '../src/runtime/server/utils/generateComponentIndex'
 
@@ -636,6 +636,35 @@ describe('Component Index - Prop Metadata Extraction', () => {
         'utf-8',
       ))
       expect(result).toEqual(expected)
+    })
+  })
+
+  // ── Required-prop @example enforcement ────────────────────────────
+  // Canvas core (GeneratedFieldExplicitInputUxComponentSourceBase) assumes
+  // every required prop carries an example value and silently produces a
+  // null-valued field default otherwise. Catch it at generator time so
+  // downstream tools (canvas_extjs, canvas) don't have to.
+  describe('required-prop @example enforcement', () => {
+    it('warns when a required prop has no @example', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      await generateIndex([createMockComp('TestRequiredNoExample', 'TestRequiredNoExample.vue')])
+      const warning = warn.mock.calls
+        .map(args => args[0])
+        .find(msg => typeof msg === 'string' && msg.includes('requiredNoExample'))
+      expect(warning).toBeDefined()
+      expect(warning).toMatch(/has no @example/)
+      warn.mockRestore()
+    })
+
+    it('does not warn when a required prop carries an @example', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      // TestMultiValueProps.requiredText is required and has @example.
+      await generateIndex([createMockComp('TestMultiValueProps', 'TestMultiValueProps.vue')])
+      const offending = warn.mock.calls
+        .map(args => args[0])
+        .filter(msg => typeof msg === 'string' && msg.includes('has no @example'))
+      expect(offending).toHaveLength(0)
+      warn.mockRestore()
     })
   })
 })
