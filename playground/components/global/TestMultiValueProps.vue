@@ -13,6 +13,7 @@ withDefaults(defineProps<{
   /**
    * Required text values
    * @minItems 1
+   * @example ["Required 1", "Required 2"]
    */
   requiredText: string[]
   /**
