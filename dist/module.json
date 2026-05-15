@@ -1,0 +1,9 @@
+{
+  "name": "nuxt-component-preview",
+  "configKey": "componentPreview",
+  "version": "1.0.0-rc.3",
+  "builder": {
+    "@nuxt/module-builder": "1.0.2",
+    "unbuild": "unknown"
+  }
+}
