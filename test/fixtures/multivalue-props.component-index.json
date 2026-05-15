@@ -40,7 +40,13 @@
             "items": {
               "type": "string"
             },
-            "minItems": 1
+            "minItems": 1,
+            "examples": [
+              [
+                "Required 1",
+                "Required 2"
+              ]
+            ]
           },
           "numbers": {
             "type": "array",
