@@ -1,5 +1,7 @@
-import { resolve } from 'node:path'
-import { describe, it, expect } from 'vitest'
+import { dirname, join, resolve } from 'node:path'
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { afterAll, beforeAll, describe, it, expect } from 'vitest'
 import type { Component } from '@nuxt/schema'
 import { collectIndexComponents, extractPackageName, generateComponentIndex } from '../src/runtime/server/utils/generateComponentIndex'
 
@@ -140,6 +142,80 @@ describe('includePackages feature', () => {
       const unixPath = '/node_modules/test-pkg/Component.vue'
       expect(extractPackageName(windowsPath)).toBe('test-pkg')
       expect(extractPackageName(unixPath)).toBe('test-pkg')
+    })
+  })
+
+  // The tests above feed non-existent /fake/node_modules/... paths, so those
+  // components are dropped by the existsSync guard *before* the package filter
+  // runs — they do not actually exercise the includePackages branch. These
+  // tests write a real .vue under a node_modules path so existsSync passes and
+  // the default "ignore all packages" logic is genuinely proven.
+  describe('default exclusion with a real on-disk node_modules component', () => {
+    const tsconfigPath = resolve(process.cwd(), 'playground/tsconfig.json')
+    const localPath = resolve(process.cwd(), 'playground/components/global/TestButton.vue')
+
+    let tmpRoot: string
+    let pkgComponentPath: string
+
+    beforeAll(() => {
+      tmpRoot = mkdtempSync(join(tmpdir(), 'ncp-pkg-'))
+      // A genuine node_modules path that exists on disk.
+      pkgComponentPath = join(tmpRoot, 'node_modules', '@acme', 'ui-kit', 'AcmeButton.vue')
+      mkdirSync(dirname(pkgComponentPath), { recursive: true })
+      writeFileSync(pkgComponentPath, [
+        '<template><button>{{ label }}</button></template>',
+        '<script setup lang="ts">',
+        'defineProps<{',
+        '  /**',
+        '   * Button label',
+        '   * @example Go',
+        '   */',
+        '  label?: string',
+        '}>()',
+        '</script>',
+        '',
+      ].join('\n'))
+    })
+
+    afterAll(() => {
+      rmSync(tmpRoot, { recursive: true, force: true })
+    })
+
+    const make = (name: string, filePath: string): Partial<Component> => ({
+      pascalName: name,
+      kebabName: name.toLowerCase(),
+      filePath,
+      shortPath: filePath,
+      global: true,
+    })
+
+    const idsFor = (includePackages: boolean | string[] | undefined) =>
+      generateComponentIndex(
+        [make('UserButton', localPath), make('AcmeButton', pkgComponentPath)] as Component[],
+        tsconfigPath,
+        { category: 'Test', status: 'stable', includePackages },
+      ).components.map(c => c.id)
+
+    it('excludes the existing node_modules component when includePackages is undefined', () => {
+      expect(idsFor(undefined)).toEqual(['UserButton'])
+    })
+
+    it('excludes the existing node_modules component when includePackages is false', () => {
+      expect(idsFor(false)).toEqual(['UserButton'])
+    })
+
+    it('includes it when includePackages is true', () => {
+      const ids = idsFor(true)
+      expect(ids).toContain('UserButton')
+      expect(ids).toContain('AcmeButton')
+    })
+
+    it('includes it only when its package is whitelisted', () => {
+      expect(idsFor(['@acme/ui-kit'])).toContain('AcmeButton')
+    })
+
+    it('excludes it when a different package is whitelisted', () => {
+      expect(idsFor(['@other/pkg'])).not.toContain('AcmeButton')
     })
   })
 })
