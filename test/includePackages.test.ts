@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import type { Component } from '@nuxt/schema'
-import { extractPackageName, generateComponentIndex } from '../src/runtime/server/utils/generateComponentIndex'
+import { collectIndexComponents, extractPackageName, generateComponentIndex } from '../src/runtime/server/utils/generateComponentIndex'
 
 describe('includePackages feature', () => {
   describe('extractPackageName', () => {
@@ -21,6 +21,43 @@ describe('includePackages feature', () => {
       expect(extractPackageName('/components/MyComponent.vue')).toBe(null)
       expect(extractPackageName('/src/utils/helper.js')).toBe(null)
       expect(extractPackageName('C:\\projects\\app\\index.js')).toBe(null)
+    })
+  })
+
+  describe('collectIndexComponents (app:templatesGenerated collection)', () => {
+    const make = (name: string, filePath: string): Partial<Component> => ({
+      pascalName: name,
+      kebabName: name.toLowerCase(),
+      filePath,
+      shortPath: filePath,
+      global: true,
+    })
+
+    // Regression guard: the module hook must NOT drop node_modules components.
+    // They are filtered downstream by generateComponentIndex according to
+    // includePackages; pre-filtering them here made that option dead for layer
+    // components, silently shrinking the registry to project-local files.
+    it('keeps node_modules (layer/package) components', () => {
+      const components = [
+        make('LocalCard', '/app/components/Canvas/Card.vue'),
+        make('LayoutGrid', '/app/node_modules/@drunomics/lupus-nuxt-kickstart-components/components/Canvas/Layout/layout-grid.vue'),
+        make('NuxtIcon', '/app/node_modules/@nuxt/icon/Icon.vue'),
+      ] as Component[]
+
+      const collected = collectIndexComponents(components)
+
+      expect(collected).toHaveLength(3)
+      expect(collected.map(c => c.pascalName)).toEqual(['LocalCard', 'LayoutGrid', 'NuxtIcon'])
+      // The node_modules paths survive so includePackages can act on them.
+      expect(collected.some(c => c.filePath.includes('node_modules'))).toBe(true)
+    })
+
+    it('projects only the fields written to the index config', () => {
+      const collected = collectIndexComponents([
+        { pascalName: 'Foo', kebabName: 'foo', filePath: '/a/Foo.vue', shortPath: 'Foo.vue', global: true, mode: 'all' },
+      ] as unknown as Component[])
+
+      expect(Object.keys(collected[0]).sort()).toEqual(['filePath', 'global', 'kebabName', 'pascalName', 'shortPath'])
     })
   })
 
