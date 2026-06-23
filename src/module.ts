@@ -220,16 +220,12 @@ export default defineNuxtModule<ModuleOptions>({
       nuxt.hook('app:templatesGenerated', async () => {
         const globalComponents = nuxt.apps.default.components.filter(c => c.global)
 
-        // Pass component objects directly with proper names resolved by Nuxt
-        const components = globalComponents
-          .filter(c => !c.filePath.includes('node_modules'))
-          .map(c => ({
-            pascalName: c.pascalName,
-            kebabName: c.kebabName,
-            filePath: c.filePath,
-            shortPath: c.shortPath,
-            global: c.global,
-          }))
+        // node_modules (layer/package) components are intentionally kept:
+        // generateComponentIndex applies the includePackages / include.directories
+        // filters, so dropping them here would make those options dead for layer
+        // components and silently shrink the registry to project-local files.
+        const { collectIndexComponents } = await import('./runtime/server/utils/generateComponentIndex')
+        const components = collectIndexComponents(globalComponents)
 
         // Write config to file for the server handler to generate from.
         fs.writeFileSync(configPath, JSON.stringify({

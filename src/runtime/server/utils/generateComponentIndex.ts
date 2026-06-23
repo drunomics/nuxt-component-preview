@@ -12,6 +12,26 @@ export function extractPackageName(filePath: string): string | null {
   return match ? match[1].replace(/\\/g, '/') : null // Normalize to forward slashes
 }
 
+/** Lightweight component shape written to the index config file. */
+export type IndexComponent = Pick<Component, 'pascalName' | 'kebabName' | 'filePath' | 'shortPath' | 'global'>
+
+/**
+ * Map Nuxt's resolved global components to the shape written to the index
+ * config. node_modules (layer/package) components are intentionally retained:
+ * generateComponentIndex applies the includePackages / include.directories
+ * filters downstream, so dropping them here would make those options dead for
+ * layer components and silently shrink the registry to project-local files.
+ */
+export function collectIndexComponents(globalComponents: Component[]): IndexComponent[] {
+  return globalComponents.map(c => ({
+    pascalName: c.pascalName,
+    kebabName: c.kebabName,
+    filePath: c.filePath,
+    shortPath: c.shortPath,
+    global: c.global,
+  }))
+}
+
 export interface CategoryDirectoryOptions {
   directory: true
   fallback?: string
