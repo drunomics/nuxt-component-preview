@@ -125,18 +125,30 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     // Resolve entry path for dev.
-    // Vite serves files relative to the project root, so we need to
-    // convert the absolute appDir to a path relative to rootDir.
-    // Append buildId as cache buster so browser refetches after restart.
+    //
+    // The Nuxt app entry lives in node_modules (nuxt/dist/app), which the
+    // Vite dev server does NOT serve from a root-relative URL. Vite addresses
+    // such files via its `@fs/<absolute-path>` mechanism, so we must build the
+    // entry URL from the entry's absolute filesystem path, not a synthesized
+    // root-relative path. (A prior implementation stripped appDir down to a
+    // `node_modules/...` path relative to rootDir; that 404s whenever appDir
+    // sits under rootDir — i.e. every normal single-project frontend.)
+    //
+    // The entry filename also differs from production: in dev Vite always uses
+    // the async entry (`@nuxt/vite-builder` forces `useAsyncEntry` whenever
+    // `nuxt.options.dev` is set), so the file is `entry.async.js`, not
+    // `entry.js`.
+    //
+    // Append buildId as cache buster so the browser refetches after a restart.
     if (nuxt.options.dev) {
       nuxt.hook('ready', () => {
         const appDir = nuxt.options.appDir.replace(/\/+$/, '')
-        const rootDir = nuxt.options.rootDir.replace(/\/+$/, '')
-        const relativeAppDir = appDir.startsWith(rootDir)
-          ? appDir.slice(rootDir.length + 1)
-          : appDir
+        const baseURL = (nuxt.options.app.baseURL || '/').replace(/\/+$/, '')
+        const assetsDir = (nuxt.options.app.buildAssetsDir || '/_nuxt/').replace(/^\/+|\/+$/g, '')
+        const useAsyncEntry = nuxt.options.experimental?.asyncEntry || nuxt.options.dev
+        const entryName = useAsyncEntry ? 'entry.async' : 'entry'
         const buildId = nuxt.options.appConfig?.nuxt?.buildId
-        resolvedEntryPath = `/_nuxt/${relativeAppDir}/entry.js` + (buildId ? `?v=${buildId}` : '')
+        resolvedEntryPath = `${baseURL}/${assetsDir}/@fs${appDir}/${entryName}.js` + (buildId ? `?v=${buildId}` : '')
       })
     }
 
