@@ -895,6 +895,27 @@ export interface ComponentIndexData {
   components: ComponentDefinition[]
 }
 
+/**
+ * Read a component's metadata, registering the file with the checker if it
+ * lies outside the tsconfig project.
+ *
+ * Components pulled in via `includePackages` live in node_modules, which the
+ * project tsconfig does not cover, and vue-component-meta only reads files
+ * that belong to the project or were added explicitly.
+ */
+function getComponentMeta(checker: ReturnType<typeof createChecker>, filePath: string) {
+  try {
+    return checker.getComponentMeta(filePath)
+  }
+  catch (error) {
+    if (!(error instanceof Error) || !error.message.includes('is not part of the project')) {
+      throw error
+    }
+    checker.updateFile(filePath, readFileSync(filePath, 'utf8'))
+    return checker.getComponentMeta(filePath)
+  }
+}
+
 export function generateComponentIndex(
   components: Component[],
   tsconfigPath: string,
@@ -970,7 +991,7 @@ export function generateComponentIndex(
 
   const componentData = filtered.map((component) => {
     try {
-      const meta = checker.getComponentMeta(component.filePath)
+      const meta = getComponentMeta(checker, component.filePath)
 
       // Extract props, filtering out Vue internals
       const vueInternalProps = ['key', 'ref', 'ref_for', 'ref_key', 'class', 'style']
