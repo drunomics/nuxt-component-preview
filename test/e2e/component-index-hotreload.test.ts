@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { writeFileSync, unlinkSync, existsSync } from 'node:fs'

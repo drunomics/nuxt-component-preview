@@ -31,7 +31,12 @@ const state: {
 }
 
 mockNuxtImport('useRuntimeConfig', () => {
-  return () => state.runtimeConfig
+  // `app.baseURL` must be present: Nuxt's router plugin reads it while the
+  // test app initializes, and a router-less app breaks the environment setup.
+  return () => ({
+    ...state.runtimeConfig,
+    app: { baseURL: '/', buildAssetsDir: '/_nuxt/', ...state.runtimeConfig.app },
+  })
 })
 
 function installMockFetch(): void {
