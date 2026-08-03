@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
