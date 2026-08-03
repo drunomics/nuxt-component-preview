@@ -55,5 +55,8 @@
     "typescript": "~5.9.0",
     "vitest": "^4.1.10",
     "vue-tsc": "^3.0.0"
+  },
+  "overrides": {
+    "vite": "^8.0.0"
   }
 }

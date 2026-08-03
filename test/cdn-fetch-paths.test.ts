@@ -34,6 +34,10 @@ mockNuxtImport('useRuntimeConfig', () => {
   return () => state.runtimeConfig
 })
 
+// @nuxt/test-utils 4's setupNuxt calls `useRouter().afterEach(...)`; this
+// suite runs the plugin in isolation without a real router, so stub it.
+mockNuxtImport('useRouter', () => () => ({ afterEach: () => {} }))
+
 function installMockFetch(): void {
   state.nativeCalls = []
   const originalNative: NativeFetch = async (input, init) => {
