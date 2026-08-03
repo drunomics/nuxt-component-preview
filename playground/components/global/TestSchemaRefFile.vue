@@ -34,6 +34,15 @@ defineProps<{
   webImageUrl?: string
 
   /**
+   * Rich image
+   *
+   * An object $ref defined by a Drupal extension's own schema.json.
+   * @schemaRef lupus_image/image
+   * @schemaType object
+   */
+  richImage?: { src: string }
+
+  /**
    * Regular text
    *
    * A regular string prop without schema ref for comparison.

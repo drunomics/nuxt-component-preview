@@ -362,6 +362,38 @@ function detectAllowedSchemesTag(tags?: Array<{ name: string, text?: string }>):
   return schemesTag.text.trim().split(/[,\s]+/).filter(Boolean)
 }
 
+/** JSON Schema types a `@schemaType` tag may name. */
+const SCHEMA_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array'] as const
+
+/**
+ * Detect the @schemaType JSDoc tag naming the JSON Schema type of a $ref prop.
+ *
+ * Canvas resolves a prop's storage from `type` before it resolves the `$ref`,
+ * so a `$ref` pointing at an object definition only matches if the prop also
+ * declares `type: object`. The prop's TypeScript type is an interface name,
+ * which carries no JSON Schema type, hence this tag. Defaults to `string`,
+ * which is what every Canvas URI `$ref` needs.
+ *
+ * @example
+ * // @schemaRef lupus_image/image
+ * // @schemaType object
+ * media?: LupusImage
+ */
+function detectSchemaTypeTag(tags?: Array<{ name: string, text?: string }>): string | null {
+  if (!tags) return null
+
+  const schemaTypeTag = tags.find(t => t.name === 'schemaType')
+  const value = schemaTypeTag?.text?.trim()
+  if (!value) return null
+
+  if (!(SCHEMA_TYPES as readonly string[]).includes(value)) {
+    console.warn(`[nuxt-component-preview] Invalid @schemaType value: ${value}`)
+    return null
+  }
+
+  return value
+}
+
 /**
  * Detect @maxItems JSDoc tag for array cardinality.
  *
@@ -1076,7 +1108,7 @@ export function generateComponentIndex(
             // (e.g., format, x-allowed-schemes, contentMediaType)
             const additionalProps = getSchemaRefProperties(schemaRefResult.shorthand)
             acc[prop.name] = buildPropDefinition(prop, {
-              type: 'string',
+              type: detectSchemaTypeTag(prop.tags) ?? 'string',
               $ref: schemaRefResult.$ref,
               ...additionalProps,
             })

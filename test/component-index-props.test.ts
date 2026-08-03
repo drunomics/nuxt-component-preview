@@ -383,6 +383,20 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(fileUriProp['x-allowed-schemes']).toEqual(['public'])
     })
 
+    it('honours @schemaType for an object $ref', () => {
+      const richImageProp = result.components[0].props.properties.richImage
+
+      // Canvas resolves storage from `type` before resolving `$ref`, so an
+      // object definition only matches when the prop declares type: object.
+      expect(richImageProp.type).toBe('object')
+      expect(richImageProp['$ref']).toBe('json-schema-definitions://lupus_image.module/image')
+      expect(richImageProp.title).toBe('Rich image')
+    })
+
+    it('defaults @schemaRef props to type string without @schemaType', () => {
+      expect(result.components[0].props.properties.fileUri.type).toBe('string')
+    })
+
     it('extracts @example for @schemaRef props', () => {
       const fileUriProp = result.components[0].props.properties.fileUri
       const imageUriProp = result.components[0].props.properties.imageUri
