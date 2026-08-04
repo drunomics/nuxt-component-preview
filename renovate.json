@@ -1,6 +1,30 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
-  ]
+    "config:recommended",
+    "group:allNonMajor",
+    "schedule:monthly",
+    ":semanticCommitTypeAll(chore)"
+  ],
+  "rangeStrategy": "bump",
+  "prConcurrentLimit": 3,
+  "packageRules": [
+    {
+      "description": "All major updates in one grouped PR",
+      "matchUpdateTypes": ["major"],
+      "groupName": "major updates"
+    },
+    {
+      "description": "Security updates stay separate, bypass the schedule, high priority",
+      "matchUpdateTypes": ["patch", "minor", "major"],
+      "isVulnerabilityAlert": true,
+      "groupName": null,
+      "prPriority": 10,
+      "labels": ["security"],
+      "semanticCommitType": "fix"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  }
 }
