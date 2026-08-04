@@ -5,6 +5,14 @@
  * NOTE: This is a test-only component - stream-wrapper-uri is not yet
  * fully supported in Canvas (it falls back to Link field).
  */
+
+/** A rich image object, as a site module's own schema.json defines it. */
+interface TestRichImage {
+  src: string
+  alt?: string
+  copyright?: string
+}
+
 defineProps<{
   /**
    * File URI
@@ -38,9 +46,8 @@ defineProps<{
    *
    * An object $ref defined by a Drupal extension's own schema.json.
    * @schemaRef lupus_image/image
-   * @schemaType object
    */
-  richImage?: { src: string }
+  richImage?: TestRichImage
 
   /**
    * Regular text

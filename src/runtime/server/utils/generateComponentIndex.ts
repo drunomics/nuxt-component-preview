@@ -362,36 +362,32 @@ function detectAllowedSchemesTag(tags?: Array<{ name: string, text?: string }>):
   return schemesTag.text.trim().split(/[,\s]+/).filter(Boolean)
 }
 
-/** JSON Schema types a `@schemaType` tag may name. */
-const SCHEMA_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array'] as const
-
 /**
- * Detect the @schemaType JSDoc tag naming the JSON Schema type of a $ref prop.
+ * Derive the JSON Schema type of a `@schemaRef` prop from its TypeScript type.
  *
  * Canvas resolves a prop's storage from `type` before it resolves the `$ref`,
  * so a `$ref` pointing at an object definition only matches if the prop also
- * declares `type: object`. The prop's TypeScript type is an interface name,
- * which carries no JSON Schema type, hence this tag. Defaults to `string`,
- * which is what every Canvas URI `$ref` needs.
+ * carries `type: object`. The prop's TypeScript declaration already states
+ * that, and TypeScript is a hard prerequisite of the whole extraction, so the
+ * type is read off the resolved vue-component-meta schema rather than
+ * restated in JSDoc.
  *
  * @example
  * // @schemaRef lupus_image/image
- * // @schemaType object
- * media?: LupusImage
+ * media?: LupusImage  // -> type: object
  */
-function detectSchemaTypeTag(tags?: Array<{ name: string, text?: string }>): string | null {
-  if (!tags) return null
+function deriveSchemaRefType(schema: string | VueMetaSchema | undefined, typeString: string): string {
+  if (schema && typeof schema !== 'string') {
+    if (schema.kind === 'object') return 'object'
 
-  const schemaTypeTag = tags.find(t => t.name === 'schemaType')
-  const value = schemaTypeTag?.text?.trim()
-  if (!value) return null
-
-  if (!(SCHEMA_TYPES as readonly string[]).includes(value)) {
-    console.warn(`[nuxt-component-preview] Invalid @schemaType value: ${value}`)
-    return null
+    // Optional props resolve to `{ kind: 'enum', schema: ['undefined', …] }`.
+    if (schema.kind === 'enum' && Array.isArray(schema.schema)
+      && schema.schema.some(member => typeof member !== 'string' && member?.kind === 'object')) {
+      return 'object'
+    }
   }
 
-  return value
+  return mapVueTypeToJsonSchema(typeString)
 }
 
 /**
@@ -998,7 +994,13 @@ export function generateComponentIndex(
     return true
   })
 
-  const checker = createChecker(tsconfigPath, { printer: { newLine: 1 } })
+  // `schema: true` resolves each prop's TypeScript type into a structured
+  // schema ({ kind: 'object' | 'array' | 'enum', … }) instead of a bare type
+  // string. The nested `schema` members are lazy getters, so the cost is one
+  // level per prop. Prop shapes TypeScript states but a type string cannot —
+  // an object-typed `@schemaRef` prop, an optional array — are only visible
+  // this way.
+  const checker = createChecker(tsconfigPath, { schema: true, printer: { newLine: 1 } })
 
   const componentData = filtered.map((component) => {
     try {
@@ -1108,7 +1110,7 @@ export function generateComponentIndex(
             // (e.g., format, x-allowed-schemes, contentMediaType)
             const additionalProps = getSchemaRefProperties(schemaRefResult.shorthand)
             acc[prop.name] = buildPropDefinition(prop, {
-              type: detectSchemaTypeTag(prop.tags) ?? 'string',
+              type: deriveSchemaRefType(prop.schema as string | VueMetaSchema | undefined, prop.type),
               $ref: schemaRefResult.$ref,
               ...additionalProps,
             })
