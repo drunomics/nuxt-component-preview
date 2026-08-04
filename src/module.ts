@@ -142,13 +142,16 @@ export default defineNuxtModule<ModuleOptions>({
     // Append buildId as cache buster so the browser refetches after a restart.
     if (nuxt.options.dev) {
       nuxt.hook('ready', () => {
-        const appDir = nuxt.options.appDir.replace(/\/+$/, '')
+        // Vite's @fs URLs use posix-style paths with a leading slash, even on
+        // Windows (`/@fs/C:/...`), and the dev server decodes the URL before
+        // matching it against the filesystem.
+        const appDir = nuxt.options.appDir.replace(/\\/g, '/').replace(/\/+$/, '')
+        const fsPath = encodeURI(appDir.startsWith('/') ? appDir : `/${appDir}`)
         const baseURL = (nuxt.options.app.baseURL || '/').replace(/\/+$/, '')
         const assetsDir = (nuxt.options.app.buildAssetsDir || '/_nuxt/').replace(/^\/+|\/+$/g, '')
-        const useAsyncEntry = nuxt.options.experimental?.asyncEntry || nuxt.options.dev
-        const entryName = useAsyncEntry ? 'entry.async' : 'entry'
+        const prefix = assetsDir ? `${baseURL}/${assetsDir}` : baseURL
         const buildId = nuxt.options.appConfig?.nuxt?.buildId
-        resolvedEntryPath = `${baseURL}/${assetsDir}/@fs${appDir}/${entryName}.js` + (buildId ? `?v=${buildId}` : '')
+        resolvedEntryPath = `${prefix}/@fs${fsPath}/entry.async.js` + (buildId ? `?v=${buildId}` : '')
       })
     }
 
