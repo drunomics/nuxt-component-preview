@@ -1,4 +1,6 @@
-import { defineNuxtPlugin, useState, useRuntimeConfig, onNuxtReady, nextTick } from '#imports'
+// Portable `nuxt/app` import — via `#imports` the generated d.ts cannot name the export type (TS2742).
+import { defineNuxtPlugin } from 'nuxt/app'
+import { useState, useRuntimeConfig, onNuxtReady, nextTick } from '#imports'
 
 export default defineNuxtPlugin((nuxtApp) => {
   // Only activate when preview mode is enabled. Primary flag is

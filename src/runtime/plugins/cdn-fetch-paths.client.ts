@@ -1,4 +1,6 @@
-import { defineNuxtPlugin, useRuntimeConfig } from '#imports'
+// Portable `nuxt/app` import — via `#imports` the generated d.ts cannot name the export type (TS2742).
+import { defineNuxtPlugin } from 'nuxt/app'
+import { useRuntimeConfig } from '#imports'
 
 /**
  * `$fetch` / `$fetch.native` override for component previews.
