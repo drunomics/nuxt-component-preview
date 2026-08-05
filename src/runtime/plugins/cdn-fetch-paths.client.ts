@@ -1,4 +1,8 @@
-import { defineNuxtPlugin, useRuntimeConfig } from '#imports'
+// `defineNuxtPlugin` comes from the portable `nuxt/app` subpath: with the
+// `#imports` alias the d.ts generator can only name the inferred
+// default-export type via a `node_modules` path (TS2742).
+import { defineNuxtPlugin } from 'nuxt/app'
+import { useRuntimeConfig } from '#imports'
 
 /**
  * `$fetch` / `$fetch.native` override for component previews.

@@ -1,4 +1,8 @@
-import { defineNuxtPlugin, useState, useRuntimeConfig, onNuxtReady, nextTick } from '#imports'
+// `defineNuxtPlugin` comes from the portable `nuxt/app` subpath: with the
+// `#imports` alias the d.ts generator can only name the inferred
+// default-export type via a `node_modules` path (TS2742).
+import { defineNuxtPlugin } from 'nuxt/app'
+import { useState, useRuntimeConfig, onNuxtReady, nextTick } from '#imports'
 
 export default defineNuxtPlugin((nuxtApp) => {
   // Only activate when preview mode is enabled. Primary flag is
