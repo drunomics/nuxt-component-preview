@@ -271,7 +271,7 @@ withDefaults(defineProps<{
 - `@enumLabels` - Custom labels for `meta:enum` (full or partial)
 - `@contentMediaType text/html` - For string props: enables rich text editing in Canvas
 - `@formattingContext block|inline` - Controls formatting (default: `block`)
-- `@schemaRef` - Reference Canvas JSON schema definitions (see below)
+- `@schemaRef` - Reference a JSON schema definition (see below)
 - `@format` - JSON Schema format for semantic string validation and UI widgets (e.g., date picker). Supported: `date`, `date-time`, `time`, `duration`, `email`, `idn-email`, `hostname`, `idn-hostname`, `ipv4`, `ipv6`, `uuid`, `uri`, `uri-reference`, `iri`, `iri-reference`
 - `@pattern` - JSON Schema regex pattern for string validation (e.g., `(.|\r?\n)*` for multiline/textarea)
 - `@allowed-schemes` - Allowed URI schemes for Canvas field type determination (e.g., `public` or `http, https`)
@@ -296,7 +296,17 @@ For [Drupal Canvas](https://www.drupal.org/project/canvas) integration, special 
 
 See [TestHero.vue](./playground/components/global/TestHero.vue) and [TestBanner.vue](./playground/components/global/TestBanner.vue) for usage examples.
 
-**Schema references** via `@schemaRef` allow referencing Canvas JSON schema definitions, useful for `stream-wrapper-uri` and `stream-wrapper-image-uri` types. Use shorthand `prefix/name` notation (e.g., `canvas/stream-wrapper-uri` expands to `json-schema-definitions://canvas.module/stream-wrapper-uri`). See [TestStreamWrapper.vue](./playground/components/global/TestStreamWrapper.vue) for examples.
+**Schema references** via `@schemaRef` allow referencing JSON schema definitions, useful for `stream-wrapper-uri` and `stream-wrapper-image-uri` types. Use shorthand `prefix/name` notation (e.g., `canvas/stream-wrapper-uri` expands to `json-schema-definitions://canvas.module/stream-wrapper-uri`). See [TestStreamWrapper.vue](./playground/components/global/TestStreamWrapper.vue) for examples.
+
+The shorthand resolves against any Drupal extension that ships a `schema.json`, not only Canvas — so a site's own module can define richer definitions than the built-in ones. Canvas decides a prop's storage from its `type` *before* resolving the `$ref`, so an object definition only matches a prop carrying `type: object`. That type is derived from the prop's TypeScript type — an object-typed prop yields `object`, everything else maps as usual:
+
+```vue
+/**
+ * Image
+ * @schemaRef lupus_image/image
+ */
+media?: LupusImage
+```
 
 **Multi-value (array) props** are declared as TS array types. Enum element types (`('a' | 'b')[]`, `(10 | 20)[]`) lift into `items.enum` + `items.meta:enum` automatically; `CanvasImage[]` / `CanvasVideo[]` lift into `items.$ref`. Refinements TypeScript can't express are picked up via JSDoc: `@minItems` / `@maxItems` (cardinality), `@itemsFormat` (e.g. `uri`, `date`), `@itemsSchemaRef` (canvas $ref shorthand). See [TestMultiValueProps.vue](./playground/components/global/TestMultiValueProps.vue).
 

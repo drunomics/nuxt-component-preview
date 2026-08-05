@@ -363,6 +363,34 @@ function detectAllowedSchemesTag(tags?: Array<{ name: string, text?: string }>):
 }
 
 /**
+ * Derive the JSON Schema type of a `@schemaRef` prop from its TypeScript type.
+ *
+ * Canvas resolves a prop's storage from `type` before it resolves the `$ref`,
+ * so a `$ref` pointing at an object definition only matches if the prop also
+ * carries `type: object`. The prop's TypeScript declaration already states
+ * that, and TypeScript is a hard prerequisite of the whole extraction, so the
+ * type is read off the resolved vue-component-meta schema rather than
+ * restated in JSDoc.
+ *
+ * @example
+ * // @schemaRef lupus_image/image
+ * media?: LupusImage  // -> type: object
+ */
+function deriveSchemaRefType(schema: string | VueMetaSchema | undefined, typeString: string): string {
+  if (schema && typeof schema !== 'string') {
+    if (schema.kind === 'object') return 'object'
+
+    // Optional props resolve to `{ kind: 'enum', schema: ['undefined', …] }`.
+    if (schema.kind === 'enum' && Array.isArray(schema.schema)
+      && schema.schema.some(member => typeof member !== 'string' && member?.kind === 'object')) {
+      return 'object'
+    }
+  }
+
+  return mapVueTypeToJsonSchema(typeString)
+}
+
+/**
  * Detect @maxItems JSDoc tag for array cardinality.
  *
  * @example
@@ -987,7 +1015,13 @@ export function generateComponentIndex(
     return true
   })
 
-  const checker = createChecker(tsconfigPath, { printer: { newLine: 1 } })
+  // `schema: true` resolves each prop's TypeScript type into a structured
+  // schema ({ kind: 'object' | 'array' | 'enum', … }) instead of a bare type
+  // string. The nested `schema` members are lazy getters, so the cost is one
+  // level per prop. Prop shapes TypeScript states but a type string cannot —
+  // an object-typed `@schemaRef` prop, an optional array — are only visible
+  // this way.
+  const checker = createChecker(tsconfigPath, { schema: true, printer: { newLine: 1 } })
 
   const componentData = filtered.map((component) => {
     try {
@@ -1097,7 +1131,7 @@ export function generateComponentIndex(
             // (e.g., format, x-allowed-schemes, contentMediaType)
             const additionalProps = getSchemaRefProperties(schemaRefResult.shorthand)
             acc[prop.name] = buildPropDefinition(prop, {
-              type: 'string',
+              type: deriveSchemaRefType(prop.schema as string | VueMetaSchema | undefined, prop.type),
               $ref: schemaRefResult.$ref,
               ...additionalProps,
             })
