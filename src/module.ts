@@ -39,6 +39,19 @@ export interface ModuleOptions {
   cdnFetchPaths?: string[]
 }
 
+const COMPONENT_INDEX_ROUTE = '/nuxt-component-preview/component-index.json'
+
+/**
+ * Cache-Control for the component index.
+ *
+ * The index lives at a stable URL but its body changes with every deploy, and
+ * consumers derive persisted state from it (Drupal Canvas registers component
+ * prop shapes from this file), so a stale copy is not a cosmetic problem.
+ * A short shared TTL keeps it cacheable while bounding staleness to a minute;
+ * the ETag on the response makes the revalidation after that a 304.
+ */
+const COMPONENT_INDEX_CACHE_CONTROL = 'public, max-age=60, must-revalidate'
+
 export default defineNuxtModule<ModuleOptions>({
   meta: {
     name: 'nuxt-component-preview',
@@ -255,13 +268,27 @@ export default defineNuxtModule<ModuleOptions>({
         nitroConfig.virtual['#nuxt-component-preview-config-path'] = () => {
           return `export default ${JSON.stringify(configPath)}`
         }
+
+        // A route rule rather than a header set in the handler: it is the only
+        // form that holds in every output mode. In SSR production the index is
+        // a static file served by Nitro's public-asset handler, which sets no
+        // Cache-Control of its own and never runs our handler; for SSG,
+        // deployment presets translate route rules into their own header
+        // config (netlify `_headers`, cloudflare `_headers`, …). Spread last so
+        // an explicit rule in the consuming app still wins.
+        nitroConfig.routeRules = {
+          [COMPONENT_INDEX_ROUTE]: {
+            headers: { 'cache-control': COMPONENT_INDEX_CACHE_CONTROL },
+          },
+          ...nitroConfig.routeRules,
+        }
       })
 
       if (nuxt.options.dev || nuxt.options._generate) {
         // Dev: handler for live generation on each request.
         // SSG (nuxt generate): handler needed for prerendering.
         addServerHandler({
-          route: '/nuxt-component-preview/component-index.json',
+          route: COMPONENT_INDEX_ROUTE,
           handler: resolver.resolve('./runtime/server/routes/nuxt-component-preview/component-index.json.get'),
         })
 
@@ -269,7 +296,7 @@ export default defineNuxtModule<ModuleOptions>({
           nuxt.hook('nitro:config', (nitroConfig) => {
             nitroConfig.prerender = nitroConfig.prerender || {}
             nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
-            nitroConfig.prerender.routes.push('/nuxt-component-preview/component-index.json')
+            nitroConfig.prerender.routes.push(COMPONENT_INDEX_ROUTE)
           })
         }
       }

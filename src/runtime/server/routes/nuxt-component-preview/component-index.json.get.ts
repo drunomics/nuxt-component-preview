@@ -27,8 +27,9 @@ export default defineEventHandler(async (event) => {
   }
 
   setHeader(event, 'Content-Type', 'application/json')
-  // Allow client cache but must revalidate, no proxy caching
-  setHeader(event, 'Cache-Control', 'private, must-revalidate, max-age=0')
+
+  // Cache-Control comes from the module's Nitro route rule, so that dev, SSG
+  // and SSR production all state the same policy for this URL.
 
   return componentIndexData
 })
