@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "minimatch": "^10.0.3",
-    "vue-component-meta": "^3.3.9"
+    "vue-component-meta": "^3.3.11"
   },
   "devDependencies": {
     "@nuxt/devtools": "^3.4.1",
