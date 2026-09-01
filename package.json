@@ -43,7 +43,7 @@
     "@nuxt/eslint-config": "^1.4.1",
     "@nuxt/kit": "^4.5.1",
     "@nuxt/module-builder": "^1.0.1",
-    "@nuxt/schema": "^4.5.1",
+    "@nuxt/schema": "^4.5.2",
     "@nuxt/test-utils": "^4.1.0",
     "@types/node": "latest",
     "@vue/test-utils": "^2.4.6",
