@@ -35,7 +35,7 @@
     "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit"
   },
   "dependencies": {
-    "minimatch": "^10.0.3",
+    "minimatch": "^10.2.6",
     "vue-component-meta": "^3.3.9"
   },
   "devDependencies": {
