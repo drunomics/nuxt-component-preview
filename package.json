@@ -48,7 +48,7 @@
     "@types/node": "latest",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^10.0.0",
-    "happy-dom": "^20.0.11",
+    "happy-dom": "^20.14.5",
     "nuxt": "^4.5.1",
     "nuxtjs-drupal-ce": "^2.5.0-rc.2",
     "playwright-core": "^1.48.0",
