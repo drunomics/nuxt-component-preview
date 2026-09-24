@@ -39,7 +39,7 @@
     "vue-component-meta": "^3.3.9"
   },
   "devDependencies": {
-    "@nuxt/devtools": "^3.4.1",
+    "@nuxt/devtools": "^3.4.2",
     "@nuxt/eslint-config": "^1.4.1",
     "@nuxt/kit": "^4.5.1",
     "@nuxt/module-builder": "^1.0.1",
