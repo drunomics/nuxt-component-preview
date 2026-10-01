@@ -41,7 +41,7 @@
   "devDependencies": {
     "@nuxt/devtools": "^3.4.1",
     "@nuxt/eslint-config": "^1.4.1",
-    "@nuxt/kit": "^4.5.1",
+    "@nuxt/kit": "^4.5.2",
     "@nuxt/module-builder": "^1.0.1",
     "@nuxt/schema": "^4.5.1",
     "@nuxt/test-utils": "^4.1.0",
