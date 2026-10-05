@@ -1076,6 +1076,8 @@ export function generateComponentIndex(
               // Canvas alias (CanvasImage/CanvasVideo).
               const itemsRef = detectItemsSchemaRefTag(prop.tags)
               if (itemsRef) {
+                // Same as `@schemaRef`: an object $ref only matches with type: object.
+                if (arrayInfo.elementSchema?.kind === 'object') itemsSchema.type = 'object'
                 itemsSchema.$ref = itemsRef.$ref
                 Object.assign(itemsSchema, getSchemaRefProperties(itemsRef.shorthand))
               }

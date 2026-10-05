@@ -393,6 +393,16 @@ describe('Component Index - Prop Metadata Extraction', () => {
       expect(richImageProp.title).toBe('Rich image')
     })
 
+    it('derives items type object for an object-typed @itemsSchemaRef prop', () => {
+      const richImagesProp = result.components[0].props.properties.richImages
+
+      expect(richImagesProp.type).toBe('array')
+      expect(richImagesProp.items).toEqual({
+        type: 'object',
+        $ref: 'json-schema-definitions://lupus_image.module/image',
+      })
+    })
+
     it('derives type string for a string-typed @schemaRef prop', () => {
       expect(result.components[0].props.properties.fileUri.type).toBe('string')
     })

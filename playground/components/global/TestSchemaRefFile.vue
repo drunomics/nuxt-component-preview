@@ -50,6 +50,14 @@ defineProps<{
   richImage?: TestRichImage
 
   /**
+   * Rich images
+   *
+   * A list of an object $ref defined by a Drupal extension's own schema.json.
+   * @itemsSchemaRef lupus_image/image
+   */
+  richImages?: TestRichImage[]
+
+  /**
    * Regular text
    *
    * A regular string prop without schema ref for comparison.
