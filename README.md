@@ -303,9 +303,9 @@ The shorthand resolves against any Drupal extension that ships a `schema.json`, 
 ```vue
 /**
  * Image
- * @schemaRef lupus_image/image
+ * @schemaRef my_module/image
  */
-media?: LupusImage
+media?: MyImage
 ```
 
 **Multi-value (array) props** are declared as TS array types. Enum element types (`('a' | 'b')[]`, `(10 | 20)[]`) lift into `items.enum` + `items.meta:enum` automatically; `CanvasImage[]` / `CanvasVideo[]` lift into `items.$ref`. Refinements TypeScript can't express are picked up via JSDoc: `@minItems` / `@maxItems` (cardinality), `@itemsFormat` (e.g. `uri`, `date`), `@itemsSchemaRef` (canvas $ref shorthand; an object element type yields `items.type: object`, as with `@schemaRef`). See [TestMultiValueProps.vue](./playground/components/global/TestMultiValueProps.vue).

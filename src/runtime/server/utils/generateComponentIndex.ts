@@ -373,8 +373,8 @@ function detectAllowedSchemesTag(tags?: Array<{ name: string, text?: string }>):
  * restated in JSDoc.
  *
  * @example
- * // @schemaRef lupus_image/image
- * media?: LupusImage  // -> type: object
+ * // @schemaRef my_module/image
+ * media?: MyImage  // -> type: object
  */
 function deriveSchemaRefType(schema: string | VueMetaSchema | undefined, typeString: string): string {
   if (schema && typeof schema !== 'string') {
