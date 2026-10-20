@@ -389,8 +389,18 @@ describe('Component Index - Prop Metadata Extraction', () => {
       // Canvas resolves storage from `type` before resolving `$ref`, so an
       // object definition only matches when the prop carries type: object.
       expect(richImageProp.type).toBe('object')
-      expect(richImageProp['$ref']).toBe('json-schema-definitions://lupus_image.module/image')
+      expect(richImageProp['$ref']).toBe('json-schema-definitions://my_module.module/image')
       expect(richImageProp.title).toBe('Rich image')
+    })
+
+    it('derives items type object for an object-typed @itemsSchemaRef prop', () => {
+      const richImagesProp = result.components[0].props.properties.richImages
+
+      expect(richImagesProp.type).toBe('array')
+      expect(richImagesProp.items).toEqual({
+        type: 'object',
+        $ref: 'json-schema-definitions://my_module.module/image',
+      })
     })
 
     it('derives type string for a string-typed @schemaRef prop', () => {

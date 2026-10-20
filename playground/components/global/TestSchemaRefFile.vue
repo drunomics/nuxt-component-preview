@@ -45,9 +45,17 @@ defineProps<{
    * Rich image
    *
    * An object $ref defined by a Drupal extension's own schema.json.
-   * @schemaRef lupus_image/image
+   * @schemaRef my_module/image
    */
   richImage?: TestRichImage
+
+  /**
+   * Rich images
+   *
+   * A list of an object $ref defined by a Drupal extension's own schema.json.
+   * @itemsSchemaRef my_module/image
+   */
+  richImages?: TestRichImage[]
 
   /**
    * Regular text
