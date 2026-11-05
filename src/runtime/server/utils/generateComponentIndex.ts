@@ -373,8 +373,8 @@ function detectAllowedSchemesTag(tags?: Array<{ name: string, text?: string }>):
  * restated in JSDoc.
  *
  * @example
- * // @schemaRef lupus_image/image
- * media?: LupusImage  // -> type: object
+ * // @schemaRef my_module/image
+ * media?: MyImage  // -> type: object
  */
 function deriveSchemaRefType(schema: string | VueMetaSchema | undefined, typeString: string): string {
   if (schema && typeof schema !== 'string') {
@@ -1076,6 +1076,8 @@ export function generateComponentIndex(
               // Canvas alias (CanvasImage/CanvasVideo).
               const itemsRef = detectItemsSchemaRefTag(prop.tags)
               if (itemsRef) {
+                // Same as `@schemaRef`: an object $ref only matches with type: object.
+                if (arrayInfo.elementSchema?.kind === 'object') itemsSchema.type = 'object'
                 itemsSchema.$ref = itemsRef.$ref
                 Object.assign(itemsSchema, getSchemaRefProperties(itemsRef.shorthand))
               }
