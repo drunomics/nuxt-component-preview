@@ -46,7 +46,7 @@
     "@nuxt/schema": "^4.6.4",
     "@nuxt/test-utils": "^4.1.0",
     "@types/node": "latest",
-    "@vue/test-utils": "^2.4.6",
+    "@vue/test-utils": "^2.5.1",
     "eslint": "^10.14.0",
     "happy-dom": "^21.0.0",
     "nuxt": "^4.5.1",
